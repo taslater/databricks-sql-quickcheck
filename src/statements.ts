@@ -20,6 +20,9 @@
 //   dangling-keyword   `WHERE a > 1 AND`, `WHERE GROUP BY`, `SELECT FROM t`,
 //                      and a statement that stops on a keyword still owing an
 //                      operand: `ALTER VIEW v RENAME TO`, `DROP SCHEMA`.
+//   statement-shape    keyword pairs that cannot sit together (`SELECT ALL
+//                      DISTINCT`) or, further apart, alternatives both written
+//                      in one clause (`NATURAL JOIN b ON ...`).
 //   empty-list         a clause's bracket with nothing in it: `SET TAGS ()`.
 
 import { Ctx, isNameContext, isPunct, isWild, report } from "./common";
@@ -486,6 +489,18 @@ const FROM_JOINS = new Set([
 ]);
 const COMPARISONS = new Set(["=", "==", "<", ">", "<=", ">=", "<>", "!=", "<=>"]);
 
+/**
+ * Keywords that end the search for a join criterion: the FROM clause has moved
+ * on, so a later `ON`/`USING` belongs to something else. Used by the
+ * `NATURAL JOIN` check, where `FROM a NATURAL JOIN b JOIN c ON ...` must stay
+ * quiet because the `ON` is the second join's.
+ */
+const JOIN_CRITERIA_STOP = new Set([
+  "WHERE", "GROUP", "ORDER", "HAVING", "QUALIFY", "LIMIT", "UNION", "INTERSECT", "EXCEPT", "MINUS",
+]);
+/** Words that may sit between `NATURAL` and `JOIN`; anything else means it is a name. */
+const JOIN_TYPE_WORDS = new Set(["INNER", "LEFT", "RIGHT", "FULL", "OUTER"]);
+
 // Words that own a bracketed list only through a following `BY`. Kept apart
 // from EMPTY_LIST_OWNERS because the token adjacent to `(` is `BY`, and `BY`
 // by itself is not evidence of anything.
@@ -536,6 +551,7 @@ export function checkStatements(toks: Token[], depth: number[], ctx: Ctx): void 
   // and they are what catches `GRANT SELECT ON TABLE t TO`.
   s.truncatedStatement();
   s.forbiddenAdjacency();
+  s.exclusiveAlternatives();
   s.emptyLists();
 }
 
@@ -984,6 +1000,139 @@ export class Stmt {
       report(ctx, "statement-shape", "error", b, `${rule.why}: \`${a.text} ${b.text}\``);
       return; // one shape complaint per statement is enough
     }
+  }
+
+  /**
+   * Exclusive alternatives that are not next to each other, so a pair table
+   * cannot see them: the two words sit in the same clause but apart. Each of
+   * these carries a `conflicts:` claim in the reference corpus, so the docs
+   * close the shape and a finding is positive evidence.
+   *
+   * The clause boundary is what keeps each one safe, and it is why four of the
+   * eight non-adjacent conflicts are refused rather than tuned (see
+   * `AGENTS.md`): `GROUP BY all, a` is a valid group-by of a column named
+   * `all`, and `CREATE OR REPLACE ... IF NOT EXISTS` is written by valid
+   * sources, so neither can be an error at this depth.
+   */
+  exclusiveAlternatives(): void {
+    this.naturalJoinCriteria();
+    this.allPrivilegesInList();
+    this.copyFileOptions();
+    this.functionMixedBody();
+  }
+
+  /**
+   * `NATURAL JOIN b ON ...`: a natural join already joins on the common column
+   * names, so it takes no `ON`/`USING`. The scan stops at the next `JOIN`,
+   * which is what keeps `FROM a NATURAL JOIN b JOIN c ON ...` quiet: there the
+   * criterion belongs to the second join.
+   *
+   * `NATURAL` must follow a table reference and be followed by nothing but
+   * join modifiers before `JOIN`. That is what keeps a table or alias called
+   * `natural` quiet: `FROM natural JOIN u ON ...` is a join with criteria, and
+   * `SELECT natural FROM t JOIN u ON ...` is a column, not a natural join.
+   */
+  private naturalJoinCriteria(): void {
+    const { toks, depth, ctx } = this;
+    for (let i = 0; i < toks.length; i++) {
+      if (!this.isKw(i, "NATURAL") || !this.endsOperand(i - 1)) continue;
+      const d = depth[i];
+      let j = i + 1;
+      // The `NATURAL [INNER|LEFT|RIGHT|FULL|OUTER] JOIN` it modifies.
+      while (j < toks.length && depth[j] >= d) {
+        if (depth[j] > d) { j++; continue; }
+        if (toks[j].kind !== "word" || !this.isKw(j, toks[j].upper!)) { j = -1; break; }
+        const w = toks[j].upper!;
+        if (w === "JOIN") break;
+        if (!JOIN_TYPE_WORDS.has(w)) { j = -1; break; }
+        j++;
+      }
+      if (j < 0 || j >= toks.length || depth[j] < d) continue;
+      // Past the join's table reference, the first clause keyword decides.
+      for (j++; j < toks.length && depth[j] >= d; j++) {
+        if (depth[j] > d) continue;
+        const t = toks[j];
+        if (isPunct(t, ",") || isPunct(t, ";")) break;
+        if (t.kind !== "word" || !this.isKw(j, t.upper!)) continue;
+        const w = t.upper!;
+        if (w === "ON" || w === "USING") {
+          if (!ctx.flagged?.has(t.start)) {
+            report(ctx, "statement-shape", "error", t,
+              `\`NATURAL JOIN\` already joins on the common column names, so ${w} cannot follow it`);
+          }
+          break;
+        }
+        if (w === "JOIN" || JOIN_CRITERIA_STOP.has(w)) break;
+      }
+    }
+  }
+
+  /** `GRANT ALL PRIVILEGES, SELECT ...`: the whole list or a list, not both. */
+  private allPrivilegesInList(): void {
+    if (this.lead !== "GRANT" && this.lead !== "REVOKE" && this.lead !== "DENY") return;
+    const { toks, depth, ctx } = this;
+    for (let i = 0; i + 2 < toks.length; i++) {
+      if (depth[i] !== 0) continue;
+      if (!this.isKw(i, "ALL") || !this.isKw(i + 1, "PRIVILEGES")) continue;
+      if (!isPunct(toks[i + 2], ",")) continue;
+      if (ctx.flagged?.has(toks[i + 1].start)) continue;
+      report(ctx, "statement-shape", "error", toks[i + 1],
+        "`ALL PRIVILEGES` is the whole privilege list, so no further privilege can be listed after it");
+      return;
+    }
+  }
+
+  /** `COPY INTO ... FILES = (...) PATTERN = ...`: one source or the other. */
+  private copyFileOptions(): void {
+    if (this.lead !== "COPY") return;
+    const { toks, depth, ctx } = this;
+    let files = -1;
+    let pattern = -1;
+    for (let i = 1; i + 1 < toks.length; i++) {
+      if (depth[i] !== 0) continue;
+      const t = toks[i];
+      if (t.kind !== "word" || !this.isKw(i, t.upper!)) continue;
+      if (t.upper === "FILES" && this.isOpAt(i + 1, "=")) files = i;
+      else if (t.upper === "PATTERN" && this.isOpAt(i + 1, "=")) pattern = i;
+    }
+    if (files < 0 || pattern < 0) return;
+    const at = toks[Math.max(files, pattern)];
+    if (ctx.flagged?.has(at.start)) return;
+    report(ctx, "statement-shape", "error", at,
+      "`FILES` and `PATTERN` are alternatives: COPY INTO takes one source or the other, not both");
+  }
+
+  /**
+   * `CREATE FUNCTION f() RETURNS INT RETURN 1 AS $$ ... $$`: a function body is
+   * either `RETURN <expression>` or `AS <quoted body>`, not both. The `AS` test
+   * requires a `$`-quoted token next, and a `RETURN` inside one is not a token,
+   * so the legal one-body forms stay quiet.
+   */
+  private functionMixedBody(): void {
+    if (this.lead !== "CREATE") return;
+    const { toks, depth, ctx } = this;
+    let isFunction = false;
+    for (let i = 0; i < toks.length; i++) {
+      if (depth[i] !== 0) continue;
+      if (isPunct(toks[i], "(")) break;
+      if (this.isKw(i, "FUNCTION")) { isFunction = true; break; }
+      if (this.isKw(i, "TABLE", "VIEW", "SCHEMA", "CATALOG")) break;
+    }
+    if (!isFunction) return;
+    let ret = -1;
+    let asBody = -1;
+    for (let i = 0; i + 1 < toks.length; i++) {
+      if (depth[i] !== 0) continue;
+      const t = toks[i];
+      if (t.kind !== "word" || !this.isKw(i, t.upper!)) continue;
+      if (t.upper === "RETURN" && ret < 0) ret = i;
+      else if (t.upper === "AS" && toks[i + 1].kind === "dollar" && asBody < 0) asBody = i;
+    }
+    if (ret < 0 || asBody < 0) return;
+    const at = toks[Math.max(ret, asBody)];
+    if (ctx.flagged?.has(at.start)) return;
+    report(ctx, "statement-shape", "error", at,
+      "A function body is either `RETURN <expression>` or `AS <quoted body>`, not both");
   }
 
   /**

@@ -501,6 +501,58 @@ describe("forbidden adjacency", () => {
   });
 });
 
+describe("exclusive alternatives that are not adjacent", () => {
+  it("NATURAL JOIN takes no ON/USING", () => {
+    assert.deepEqual(codes("SELECT * FROM a NATURAL JOIN b ON a.id = b.id"), ["statement-shape"]);
+    assert.deepEqual(codes("SELECT * FROM a NATURAL LEFT JOIN b USING (id)"), ["statement-shape"]);
+  });
+
+  it("a criterion after a later join belongs to that join", () => {
+    clean("SELECT * FROM a NATURAL JOIN b");
+    clean("SELECT * FROM a NATURAL JOIN b JOIN c ON b.id = c.id");
+    clean("SELECT nt1.*, nt2.*, nt3.* FROM nt1 natural join nt2 join nt3 on nt2.k = nt3.k");
+    clean("SELECT * FROM a NATURAL JOIN b WHERE a.x = 1");
+  });
+
+  it("`natural` is not read as a join when a table or column name", () => {
+    // Opening the FROM list (`FROM natural ...`) or a select list, where only a
+    // name can go -- SQLFluff also rejects these as a natural join.
+    clean("SELECT natural FROM t JOIN u ON t.id = u.id");
+    clean("SELECT * FROM natural JOIN u ON natural.id = u.id");
+  });
+
+  it("ALL PRIVILEGES is the whole list", () => {
+    assert.deepEqual(codes("GRANT ALL PRIVILEGES, SELECT ON TABLE t TO p"), ["statement-shape"]);
+    assert.deepEqual(codes("REVOKE ALL PRIVILEGES, SELECT ON TABLE t FROM p"), ["statement-shape"]);
+    clean("GRANT ALL PRIVILEGES ON TABLE t TO p");
+    clean("GRANT SELECT, MODIFY ON TABLE t TO p");
+  });
+
+  it("COPY INTO takes FILES or PATTERN, not both", () => {
+    assert.deepEqual(
+      codes("COPY INTO t FROM 's3://b/p' FILEFORMAT = CSV FILES = ('a.csv') PATTERN = '*.csv'"),
+      ["statement-shape"],
+    );
+    clean("COPY INTO t FROM 's3://b/p' FILEFORMAT = CSV FILES = ('a.csv')");
+    clean("COPY INTO t FROM 's3://b/p' FILEFORMAT = CSV PATTERN = '*.csv'");
+  });
+
+  it("a function body is either RETURN or AS, not both", () => {
+    assert.deepEqual(codes("CREATE FUNCTION f() RETURNS INT RETURN 1 AS $$ return 1 $$"), ["statement-shape"]);
+    clean("CREATE FUNCTION f() RETURNS INT RETURN 1");
+    clean("CREATE FUNCTION f() RETURNS INT AS $$ return 1 $$");
+    clean("CREATE FUNCTION f() RETURNS INT LANGUAGE PYTHON AS $$ def f(): return 1 $$");
+  });
+
+  it("the two conflicts that cannot be told from valid SQL stay quiet", () => {
+    // `all` is a legal column name, so `GROUP BY all, a` groups by it.
+    clean("SELECT a FROM t GROUP BY ALL, a");
+    clean("SELECT * FROM t ORDER BY ALL, a");
+    // Valid sources write OR REPLACE together with IF NOT EXISTS.
+    clean("CREATE OR REPLACE TEMPORARY FUNCTION IF NOT EXISTS f() RETURNS INT RETURN 1");
+  });
+});
+
 describe("two-word tails that owe a follower", () => {
   it("neither word alone would be evidence", () => {
     assert.deepEqual(codes("CREATE CATALOG c MANAGED LOCATION"), ["dangling-keyword"]);
