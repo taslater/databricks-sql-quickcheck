@@ -329,6 +329,85 @@ describe("dangling keywords", () => {
   });
 });
 
+describe("truncated statements", () => {
+  it("a statement that stops on a keyword still owing an operand", () => {
+    assert.deepEqual(codes("ALTER VIEW v RENAME TO"), ["dangling-keyword"]);
+    assert.deepEqual(codes("ALTER CATALOG c DEFAULT COLLATION"), ["dangling-keyword"]);
+    assert.deepEqual(codes("CREATE VIEW v AS"), ["dangling-keyword"]);
+    assert.deepEqual(codes("ALTER TABLE t SET TBLPROPERTIES"), ["dangling-keyword"]);
+    assert.deepEqual(codes("SELECT a FROM t LIMIT"), ["dangling-keyword"]);
+    assert.deepEqual(codes("CREATE SCHEMA s COMMENT"), ["dangling-keyword"]);
+    assert.deepEqual(codes("CREATE EXTERNAL VOLUME v LOCATION"), ["dangling-keyword"]);
+  });
+
+  it("an object type with no object named", () => {
+    assert.deepEqual(codes("DROP SCHEMA"), ["dangling-keyword"]);
+    assert.deepEqual(codes("CACHE TABLE"), ["dangling-keyword"]);
+    assert.deepEqual(codes("SHOW CREATE TABLE"), ["dangling-keyword"]);
+    assert.deepEqual(codes("DESCRIBE EXTERNAL LOCATION"), ["dangling-keyword"]);
+    assert.deepEqual(codes("DROP TEMPORARY VARIABLE"), ["dangling-keyword"]);
+    assert.deepEqual(codes("SHOW GRANTS ON MATERIALIZED VIEW"), ["dangling-keyword"]);
+  });
+
+  // The near-misses. Every one of these is a real statement, and several were
+  // found firing during the adversarial pass over Spark's own suite.
+  it("statements that legitimately end in a keyword stay quiet", () => {
+    clean("ANALYZE TABLE t COMPUTE STATISTICS");
+    clean("VACUUM t LITE");
+    clean("VACUUM t DRY RUN");
+    clean("SHOW PARTITIONS t");
+    clean("CLEAR CACHE");
+    clean("SHOW TABLES");
+    clean("SHOW CURRENT SCHEMA");
+    clean("FSCK REPAIR TABLE t VERIFY ALL");
+  });
+
+  it("the keyword is the object's own name, not a missing one", () => {
+    clean("DROP VIEW view");
+    clean("SHOW TBLPROPERTIES view");
+    clean("SELECT id, location");
+    clean("ALTER TABLE t DROP COLUMN location");
+    clean("ALTER TABLE t RENAME COLUMN a TO view");
+    clean("GRANT SELECT ON view TO u");
+    clean("SHOW TABLES IN share");
+  });
+
+  // CATALOG's name is optional in every production that takes it, so the
+  // bare forms parse. Both are must-parse cases in the reference corpus.
+  it("CATALOG without a name parses", () => {
+    clean("USE CATALOG");
+    clean("SHOW GRANTS ON CATALOG");
+  });
+});
+
+describe("empty lists", () => {
+  it("a clause bracket with nothing in it", () => {
+    assert.deepEqual(codes("ALTER SCHEMA s SET DBPROPERTIES ()"), ["empty-list"]);
+    assert.deepEqual(codes("ALTER RECIPIENT r SET PROPERTIES ()"), ["empty-list"]);
+    assert.deepEqual(codes("ALTER TABLE t SET TAGS ()"), ["empty-list"]);
+    assert.deepEqual(codes("CREATE TABLE t (a INT) OPTIONS ()"), ["empty-list"]);
+  });
+
+  it("empty brackets that are a real call or a real grouping stay quiet", () => {
+    clean("SELECT array(), map(), current_timestamp()");
+    clean("SELECT a, count(*) FROM t GROUP BY GROUPING SETS (())");
+    clean("SELECT uuid()");
+  });
+});
+
+describe("casts and JSON paths with nothing after them", () => {
+  it("a clause keyword cannot be a type or a field", () => {
+    assert.deepEqual(codes("SELECT a:: FROM t"), ["missing-operand"]);
+    assert.deepEqual(codes("SELECT '2147483648' :: SELECT"), ["missing-operand"]);
+  });
+
+  it("real casts and paths stay quiet", () => {
+    clean("SELECT a::date, b::string, c::INTERVAL DAY FROM t");
+    clean("SELECT v:name, v:items[0].id FROM t");
+    clean("SELECT CAST(a AS STRUCT<f: INT>) FROM t");
+  });
+});
+
 describe("operator typos", () => {
   it("=< and a stray =>", () => {
     assert.deepEqual(codes("SELECT * FROM t WHERE a =< 1"), ["operator-typo"]);

@@ -16,7 +16,10 @@
 //                      `b INT` on the next line.
 //   clause-order       `GROUP BY a WHERE b`, or a second WHERE.
 //   case-structure     THEN without WHEN, WHEN without THEN, a second ELSE.
-//   dangling-keyword   `WHERE a > 1 AND`, `WHERE GROUP BY`, `SELECT FROM t`.
+//   dangling-keyword   `WHERE a > 1 AND`, `WHERE GROUP BY`, `SELECT FROM t`,
+//                      and a statement that stops on a keyword still owing an
+//                      operand: `ALTER VIEW v RENAME TO`, `DROP SCHEMA`.
+//   empty-list         a clause's bracket with nothing in it: `SET TAGS ()`.
 
 import { Ctx, isNameContext, isPunct, isWild, report } from "./common";
 import { KEYWORDS } from "./keywords";
@@ -247,6 +250,82 @@ const DANGLING: Record<string, string[]> = {
   BY: CLAUSE_STARTS, UNION: CLAUSE_STARTS, INTERSECT: CLAUSE_STARTS, MINUS: CLAUSE_STARTS,
 };
 
+// Keywords that cannot be the last token of a statement, whatever precedes
+// them: syntax glue that always owes something after it. A statement ending
+// here is truncated (`CREATE VIEW v AS`, `ALTER CONNECTION c RENAME TO`).
+//
+// Membership is the opposite trade from KEYWORDS: an extra word here is a
+// false positive, not a lost catch, so a word goes in only if no valid
+// statement anywhere ends with it. `scripts/derive_shape_sets.py` checks that
+// against the 866 corpus files, the reference must-parse cases and
+// spark-sql-tests, and fails if one of these ever ends a valid statement.
+// That is why `STATISTICS`, `PARTITIONS`, `DELTA`, `LITE`, `CSV` and `END` are
+// absent: `ANALYZE TABLE t COMPUTE STATISTICS` and `VACUUM t LITE` are real.
+const NEEDS_FOLLOWER = new Set([
+  "AS", "CLONE", "COLLATION", "DECLARE", "EXPLAIN", "FROM", "GROUP", "INTO", "LIMIT", "NO", "OF",
+  "OFFSET", "OPTIMIZE", "PARTITIONED", "SET", "TBLPROPERTIES", "TO", "USING", "VACUUM", "VALUES",
+  "WITH",
+]);
+
+// The same, but only where a name has just been given, so the word cannot be
+// the name itself. `CREATE SCHEMA s COMMENT` owes a string; `SELECT id,
+// comment` and `ALTER TABLE t DROP COLUMN location` are a column called
+// `comment` and one called `location`, and must stay quiet. The discriminator
+// is the token before: a name or `)` means the clause keyword is structural,
+// while a keyword before it (`COLUMN`, `TO`) means a name is what is expected.
+const NEEDS_FOLLOWER_AFTER_NAME = new Set(["COMMENT", "LOCATION", "ENABLE", "URL"]);
+
+// Object types that a statement must name. `DROP SCHEMA` has lost its name --
+// but only when the statement names nothing at all, which is the guard that
+// makes this safe: `ALTER TABLE t DROP COLUMN query` mentions `t`, so it is a
+// column called `query` and never fires. Every real statement names its
+// object, so "ends in an object type and contains no identifier" is truncated.
+//
+// `CATALOG` is deliberately absent. Its name is optional wherever it appears
+// -- `{ USE | SET } CATALOG [ catalog_name ]` and the securable production's
+// `CATALOG [ catalog_name ]` -- so `USE CATALOG` and `SHOW GRANTS ON CATALOG`
+// both parse, and both are must-parse cases in the reference corpus. Adding
+// it costs `DROP CATALOG` and `DESCRIBE CATALOG`; that is the right trade.
+const OBJECT_TYPES = new Set([
+  "TABLE", "VIEW", "SCHEMA", "DATABASE", "FUNCTION", "VOLUME", "CONNECTION", "SHARE",
+  "RECIPIENT", "PROVIDER", "CREDENTIAL", "PROCEDURE", "VARIABLE", "INDEX", "QUERY", "LOCATION",
+  "STREAMING", "MATERIALIZED", "PIPELINE",
+]);
+
+// Verbs whose statement is about a named object. A query (`SELECT`) is not
+// here: its tail is a select list, where keywords are routinely column names.
+const OBJECT_VERBS = new Set([
+  "DROP", "DESCRIBE", "DESC", "CACHE", "UNCACHE", "TRUNCATE", "UNDROP", "REPAIR", "FSCK", "USE",
+  "CREATE", "ALTER", "SHOW", "COMMENT", "GENERATE", "LOAD", "GRANT", "REVOKE", "DENY", "CONVERT",
+  "MSCK", "REFRESH", "ANALYZE", "OPTIMIZE", "VACUUM", "RESTORE", "SYNC",
+]);
+
+// Words that may sit between the verb and the object type. The object type
+// must follow one of these or the verb itself, because the alternative is
+// that the word IS the name: Spark's own suite writes `DROP VIEW view` and
+// `SHOW TBLPROPERTIES view`, and `SHOW CURRENT SCHEMA` is a real statement.
+// Each of those has something else directly before the final word, so the
+// allowlist is what separates a truncated statement from a named one.
+//
+// `ON`, `IN` and `TO` are deliberately absent, even though they would add
+// `SHOW GRANTS ON VIEW` and `GRANT ... TO RECIPIENT`: they also precede a
+// name, so `GRANT SELECT ON view` and `RENAME COLUMN a TO view` would fire.
+const OBJECT_MODIFIER_WORDS = new Set([
+  "EXTERNAL", "MANAGED", "MATERIALIZED", "TEMPORARY", "GLOBAL", "LIVE", "PRIVATE", "BLOOMFILTER",
+  "STORAGE", "SERVICE", "STREAMING", "CREATE", "REPLACE", "REFRESH", "ADD",
+]);
+
+// Clause keywords whose bracket is a list the reference requires to be
+// non-empty. Keyed on the keyword before the `(` rather than on `()` itself,
+// because `array()`, `map()` and `current_timestamp()` are valid calls.
+// `TABLE`, `AS`, `BY`, `EXCEPT`, `TABLESAMPLE` and `CURRENT_TIMESTAMP` are
+// left out: valid SQL writes each with an empty bracket somewhere.
+const EMPTY_LIST_OWNERS = new Set([
+  "APPLY", "COLUMNS", "COPY_OPTIONS", "DBPROPERTIES", "ENCRYPTION", "ENVIRONMENT",
+  "FORMAT_OPTIONS", "IDENTIFIER", "IN", "OPTIONS", "PARTITION", "PIVOT", "PROPERTIES",
+  "REPEATABLE", "SETS", "TAGS", "TBLPROPERTIES", "UNIFORM", "UNPIVOT", "USING", "VALUES", "ZORDER",
+]);
+
 /** Optimal string alignment distance of exactly 1 (one edit or one adjacent swap). */
 export function oneEditAway(a: string, b: string): boolean {
   if (a === b || Math.abs(a.length - b.length) > 1) return false;
@@ -274,6 +353,8 @@ export function checkStatements(toks: Token[], depth: number[], ctx: Ctx): void 
   s.clauseOrder();
   s.caseStructure();
   s.danglingKeywords();
+  s.truncatedStatement();
+  s.emptyLists();
   s.namedArgumentArrows();
 }
 
@@ -648,6 +729,67 @@ export class Stmt {
       if (!forbidden.includes(nextName)) continue;
       if ((nextName === "GROUP" || nextName === "ORDER")) continue; // GROUP / ORDER without BY
       report(ctx, "dangling-keyword", "error", t, `${t.upper} is followed directly by ${nextName}: something is missing between them`);
+    }
+  }
+
+  /**
+   * A statement that stops on a keyword still owing an operand:
+   * `ALTER VIEW v RENAME TO`, `CREATE SCHEMA s COMMENT`, `DROP SCHEMA`.
+   *
+   * Only the last token is judged, and only when the lexer reached a real end
+   * (`openEnded` means an unterminated token already truncated the input, so
+   * the statement is cut off for a reason already reported).
+   */
+  truncatedStatement(): void {
+    const { toks, ctx } = this;
+    if (ctx.openEnded) return;
+    const i = toks.length - 1;
+    const t = toks[i];
+    if (t.kind !== "word" || !this.isKw(i, t.upper!)) return;
+    if (ctx.flagged?.has(t.start)) return;
+    const u = t.upper!;
+    const p = toks[i - 1];
+    // After `,` or `(` Spark reads most keywords as a column name.
+    if (p && (isPunct(p, ",") || isPunct(p, "("))) return;
+    const say = (why: string): void => report(ctx, "dangling-keyword", "error", t, why);
+
+    if (NEEDS_FOLLOWER.has(u)) {
+      return say(`${u} has nothing after it: the statement is incomplete`);
+    }
+    // A clause keyword directly after the name it applies to.
+    if (NEEDS_FOLLOWER_AFTER_NAME.has(u) && this.ddl && p !== undefined &&
+        (this.isName(i - 1) || isPunct(p, ")"))) {
+      return say(`${u} has nothing after it: the statement is incomplete`);
+    }
+    // `DROP SCHEMA`, `SHOW CREATE TABLE`: an object type and no object named.
+    if (OBJECT_TYPES.has(u) && OBJECT_VERBS.has(this.lead) && p?.kind === "word" &&
+        (OBJECT_VERBS.has(p.upper!) || OBJECT_MODIFIER_WORDS.has(p.upper!)) &&
+        !this.namesSomething()) {
+      return say(`${u} needs a name: nothing in this statement names the ${u.toLowerCase()}`);
+    }
+  }
+
+  /** True when any token could be the object's name, or part of its value. */
+  private namesSomething(): boolean {
+    for (let k = 1; k < this.toks.length; k++) {
+      const t = this.toks[k];
+      if (t.kind === "qident" || t.kind === "number" || t.kind === "string" ||
+          t.kind === "dollar" || t.kind === "template") return true;
+      if (t.kind === "word" && k < this.toks.length - 1 && this.isName(k)) return true;
+    }
+    return false;
+  }
+
+  /** `ALTER SCHEMA s SET DBPROPERTIES ()`: a required list with nothing in it. */
+  emptyLists(): void {
+    const { toks } = this;
+    for (let i = 1; i + 1 < toks.length; i++) {
+      if (!isPunct(toks[i], "(") || !isPunct(toks[i + 1], ")")) continue;
+      const owner = toks[i - 1];
+      if (owner.kind !== "word" || !this.isKw(i - 1, owner.upper!)) continue;
+      if (!EMPTY_LIST_OWNERS.has(owner.upper!)) continue;
+      report(this.ctx, "empty-list", "error", toks[i],
+        `\`${owner.text} ()\` is empty: this list needs at least one entry`);
     }
   }
 

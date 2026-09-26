@@ -38,6 +38,15 @@ const PREFIX_OF_ERROR = new Set([...BINARY_ONLY, "+", "-", "~", "!"]);
 const NEEDS_RIGHT = new Set([...BINARY_ONLY, "+", "-", "~", "!", "<"]);
 const GENERIC_TYPES = new Set(["ARRAY", "MAP", "STRUCT"]);
 
+// Clause keywords, which can never be the type in `a::type` nor the field in
+// `v:field`. Most keywords can (`a::date`, `v:interval`), so this is the
+// blocklist the rest of the checker uses, not an allowlist of type names.
+const NOT_A_TYPE = new Set([
+  "FROM", "WHERE", "GROUP", "ORDER", "HAVING", "QUALIFY", "LIMIT", "OFFSET", "UNION", "INTERSECT",
+  "EXCEPT", "MINUS", "JOIN", "ON", "SELECT", "INTO", "VALUES", "SET", "AND", "OR", "THEN", "ELSE",
+  "END", "WHEN", "BY", "USING", "WINDOW", "PIVOT", "UNPIVOT",
+]);
+
 // Statements whose tail is raw text rather than SQL: `SET k = v,w`,
 // `ADD JAR /tmp/x.jar`, `REFRESH /path/`. Spark tokenizes the tail and then
 // ignores its structure (`SET foo = (1, 3` is valid), so only the lexical
@@ -235,6 +244,19 @@ function checkOperator(t: Token, p: Token | undefined, n: Token | undefined, ctx
       if (!ctx.openEnded) report(ctx, "missing-operand", "error", t, `\`${op}\` has nothing on its right before the statement ends`);
     } else if (isPunct(n, ")") || isPunct(n, "]") || isPunct(n, ",")) {
       report(ctx, "missing-operand", "error", t, `\`${op}\` has nothing on its right`);
+    }
+  }
+  // `SELECT a:: FROM t` / `SELECT v:` -- a cast or JSON path with nothing to
+  // name. `:` is not in NEEDS_RIGHT because `STRUCT<a: INT>` and `:param` are
+  // valid, so it is judged only against a clause keyword or the statement end.
+  if (op === "::" || op === ":") {
+    if (!n) {
+      if (!ctx.openEnded && op === ":") {
+        report(ctx, "missing-operand", "error", t, "`:` has nothing after it before the statement ends");
+      }
+    } else if (n.kind === "word" && NOT_A_TYPE.has(n.upper!)) {
+      const what = op === "::" ? "type" : "field name";
+      report(ctx, "missing-operand", "error", t, `\`${op}\` has no ${what} after it: \`${n.text}\` starts a new clause`);
     }
   }
 }
