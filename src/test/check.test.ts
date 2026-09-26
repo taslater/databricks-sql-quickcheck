@@ -544,6 +544,17 @@ describe("exclusive alternatives that are not adjacent", () => {
     clean("CREATE FUNCTION f() RETURNS INT LANGUAGE PYTHON AS $$ def f(): return 1 $$");
   });
 
+  it("legacy ${x} and $x parameters stay quiet around the #22 checks", () => {
+    // The lexer gives `$$ ... $$` the `dollar` kind and `${x}` / `$x` the
+    // `template` kind, so these never look like quoted function bodies.
+    // Pinned here so a lexer change cannot turn them into false positives.
+    clean("CREATE FUNCTION f() RETURNS TABLE (m INT) RETURN SELECT max(x) AS ${m} FROM t");
+    clean("CREATE FUNCTION f() RETURNS TABLE (m INT) RETURN SELECT max(x) AS $m FROM t");
+    clean("CREATE FUNCTION f() RETURNS INT RETURN ${v}");
+    clean("SELECT * FROM ${catalog}.s.a NATURAL JOIN $tbl");
+    clean("COPY INTO t FROM ${path} FILEFORMAT = CSV PATTERN = ${pat}");
+  });
+
   it("the two conflicts that cannot be told from valid SQL stay quiet", () => {
     // `all` is a legal column name, so `GROUP BY all, a` groups by it.
     clean("SELECT a FROM t GROUP BY ALL, a");
