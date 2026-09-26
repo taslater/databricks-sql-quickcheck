@@ -75,9 +75,9 @@
     "package": "npm run build && mkdir -p dist && vsce package --no-rewrite-relative-links -o dist/databricks-sql-quickcheck.vsix"
   },
   "devDependencies": {
-    "@types/node": "^18.19.0",
+    "@types/node": "^26.6.2",
     "@types/vscode": "^1.80.0",
-    "@vscode/vsce": "^3.0.0",
-    "typescript": "^5.6.0"
+    "@vscode/vsce": "^4.0.0",
+    "typescript": "^7.0.2"
   }
 }
