@@ -9,7 +9,8 @@ allowed to publish, ever, in any file, issue or commit.
 with the current numbers), then the pinned roadmap issue,
 `gh issue view 14`, which tracks the open work against that ladder. Close an
 issue in the commit that finishes it (`Closes #n`), and update the numbers in
-`docs/scope.md` in the same commit when they move.
+`docs/scope.md` and the "Where things stand" line at the top of #14 in the same
+commit when they move, so the file and the dashboard never disagree.
 
 Last updated 2026-09-26 (truncated-statement and empty-list checks; the
 silence-by-default rule; the forbidden-adjacency check; lost `SELECT`/`WHERE`;
