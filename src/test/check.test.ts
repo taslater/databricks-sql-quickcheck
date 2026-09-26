@@ -559,6 +559,29 @@ describe("a query that lost its SELECT", () => {
   });
 });
 
+describe("a WITH list that lost its comma", () => {
+  it("between two CTE bodies", () => {
+    assert.deepEqual(
+      codes("WITH a AS (SELECT 1 AS x) b AS (SELECT 2 AS y) SELECT * FROM a, b"),
+      ["missing-comma"],
+    );
+    // The next CTE may name its own columns.
+    assert.deepEqual(
+      codes("WITH a AS (SELECT 1) b (x, y) AS (SELECT 2, 3) SELECT * FROM a, b"),
+      ["missing-comma"],
+    );
+  });
+
+  it("the comma, a single CTE, and every other CTE list form stay quiet", () => {
+    clean("WITH a AS (SELECT 1 AS x), b AS (SELECT 2 AS y) SELECT * FROM a, b");
+    clean("WITH a AS (SELECT 1) SELECT * FROM a");
+    clean("WITH a (x, y) AS (SELECT 1, 2) SELECT * FROM a");
+    clean("WITH RECURSIVE a AS (SELECT 1) SELECT * FROM a");
+    clean("WITH c AS (SELECT 1) INSERT INTO t SELECT * FROM c");
+    clean("WITH c AS (SELECT 1) FROM c SELECT a");
+  });
+});
+
 describe("a FROM list that lost its WHERE", () => {
   it("a comparison where only table references belong", () => {
     assert.deepEqual(codes("SELECT a FROM t1, t2 t1.id = t2.id AND t1.x > 3"), ["missing-keyword"]);
