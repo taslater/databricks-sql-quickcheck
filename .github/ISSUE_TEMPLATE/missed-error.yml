@@ -6,7 +6,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        Check [docs/scope.md](https://github.com/taslater/databricks-sql-quickcheck/blob/main/docs/scope.md) first. Slot contents, semantics, runtime versions and style are out of scope on purpose.
+        Check [docs/scope.md](https://github.com/taslater/databricks-sql-quickcheck/blob/main/docs/scope.md) first. Semantics (unknown tables or columns, types, argument counts), runtime versions and style are out of scope on purpose.
         **Do not paste SQL you are not allowed to publish.** Reduce it to a small repro written from scratch.
   - type: checkboxes
     id: publishable
@@ -37,6 +37,7 @@ body:
         - "1-4: lexical, brackets, operands, local shape"
         - "5: block structure (SQL scripting)"
         - "6: statement skeleton"
+        - "7: a slot filled with the wrong thing (a closed constraint)"
         - Not sure
     validations:
       required: true

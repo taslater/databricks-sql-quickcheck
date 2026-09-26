@@ -98,7 +98,7 @@ misleading, because most of what it counts is grammar-level and out of remit.
 | `truncated` | stops on a keyword or operator still owing an operand | ours |
 | `empty-list` | a *clause* bracket with nothing in it | ours |
 | `conflict` | two exclusive alternatives both written | ours |
-| `grammar` | well-formed shape, a required clause missing | SQLFluff's |
+| `untriaged` | no shape rule places it; mostly rungs 3 to 6 when read case by case | to triage (#10) |
 
 `conflict` is taken from the case's own `reason: exclusive-alternative`, not
 inferred from tokens: `SELECT ALL DISTINCT` is well formed in every way a
@@ -108,12 +108,20 @@ shallow checker can see, and only the docs say the pair is forbidden.
 from **40/219 (18.3%) to 189/233 (81.1%) on 2026-09-26**, and the overall
 must-reject figure from 71/395 to 241/395, by mining cases the corpus already
 had rather than by generating new ones. The denominator moved from 219 to 233
-in the same session: `conflict` was split out of `grammar`, because two
-exclusive alternatives both written is something a shallow checker can see and
-should be scored for. The `grammar` bucket sits at 18% and
-is not a target: about 90 of the 395 are missing *values* inside a slot
-(`column_comment`, `data_type`, `expr`), which no shallow checker should read.
-The honest ceiling is ~280/395; `docs/design-notes.md` derives it.
+in the same session: `conflict` was split out of what was then called
+`grammar`, because two exclusive alternatives both written is something a
+shallow checker can see and should be scored for.
+
+**That leftover bucket was misnamed, and the mistake mattered.** It was called
+`grammar` and labelled "SQLFluff's tier", and an earlier version of this file
+went on to say about 90 of its cases were slot contents, that no shallow checker
+should read them, and that the ceiling was ~280/395. All three were wrong
+(corrected 2026-09-26). Read case by case, it is mostly empty slots (`CACHE
+SELECT a, FROM t`), missing clause keywords (`CREATE CONNECTION c OPTIONS (...)`
+with no `TYPE`) and unclosed scripting blocks -- rungs 3 to 6 -- because every
+must-reject case is made by deleting something. It is now `untriaged`, and
+issue #10 sorts it rung by rung. A bucket name is a claim; this one claimed
+something nobody had checked.
 
 `empty-list` counts a bracket only when a *keyword* owns it. `CREATE FUNCTION
 f()` and `SELECT uuid()` write an empty pair legitimately, so counting every

@@ -133,20 +133,30 @@ tuned.
 
 ### What it may never do
 
-Fixed at design time, because the boundary is what makes the check safe:
+Fixed at design time for this mechanism, because the boundary is what makes
+the check safe:
 
-- It may check that a slot between two clause keywords is **non-empty**. It may
-  never look at **what is inside** the slot. `MERGE` without `ON` is in scope;
-  "is this expression a valid predicate" is out, permanently.
+- It may check that a slot between two clause keywords is **non-empty**. It
+  never looks at **what is inside** the slot. `MERGE` without `ON` is its job;
+  a slot filled with the wrong thing is not. That is rung 7 of
+  `docs/scope.md`, which needs its own kind of rule: rejecting a closed shape
+  the docs rule out, such as `BETWEEN 1 OR 5`. What stays out on every rung is
+  *validating* a slot -- "is this a valid predicate?" -- because that is a
+  grammar.
 - It may check keyword **adjacency and order**. It may not build a statement
   model, track nesting beyond the depth counter it already has, or resolve names.
 - A pair whose two words could both be identifiers in the position tested is
   refused, not tuned. Spark lets nearly every keyword be a name.
 
-Cases needing more than this -- `column_comment`, `data_type`, `expr`,
-`default_expression` omissions, roughly 90 of the 395 -- stay SQLFluff's, by
-design and forever. The honest ceiling for must-reject is about **280/395
-(~70%)**, from 241 today -- most of the remaining headroom is now spent.
+An earlier version of this note said the reference cases needing more than
+this -- the `column_comment`, `data_type`, `expr` and `default_expression`
+omissions -- were slot contents, SQLFluff's forever, and put the must-reject
+ceiling at about 280/395. **Both claims were wrong** (corrected 2026-09-26).
+The count came from the cases' `omits:` labels, not their SQL. Every
+must-reject case is made by deleting something, so an omitted value leaves an
+*empty* slot, which rungs 3 and 4 can see, and an omitted keyword leaves a
+missing clause, which is rung 6. The real ceiling is unmeasured until those
+cases are triaged one by one.
 
 ## The veto corpus has two kinds of source, and they are not interchangeable
 

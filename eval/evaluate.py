@@ -187,18 +187,22 @@ def shape_of(sql: str, lex, keywords: set[str], reason: str = "omission") -> str
                   empty pair legitimately, so counting every `()` would put
                   cases in this tier that no shallow checker should ever flag,
                   and flatter the miss rate by inflating the denominator.
-    `grammar`     structurally well formed; a required clause is missing.
+    `untriaged`   no shape rule above places it. Not SQLFluff's tier: an
+                  earlier label said so, and it was wrong. Read case by case,
+                  most are empty slots and missing keywords (rungs 3 to 6 of
+                  docs/scope.md), because every must-reject case is made by
+                  deleting something. Triage is issue #10.
     """
     if reason == "exclusive-alternative":
         return "conflict"
     try:
         toks = [t for t in lex(sql) if t.type not in IGNORED]
     except Exception:
-        return "grammar"
+        return "untriaged"
     while toks and toks[-1].type == "semicolon":
         toks.pop()
     if not toks:
-        return "grammar"
+        return "untriaged"
     for i in range(1, len(toks) - 1):
         if (toks[i].type == "start_bracket" and toks[i + 1].type == "end_bracket"
                 and toks[i - 1].type == "word" and toks[i - 1].upper in keywords):
@@ -208,7 +212,7 @@ def shape_of(sql: str, lex, keywords: set[str], reason: str = "omission") -> str
         return "truncated"
     if last.type in _OPERAND_OWED:
         return "truncated"
-    return "grammar"
+    return "untriaged"
 
 
 # Files in the corpus's valid sources that are broken as published. Each is
@@ -336,7 +340,7 @@ def main() -> int:
     struct_err = sum(by_shape[b]["error"] for b in STRUCTURAL_BUCKETS)
     for shape in sorted(by_shape):
         c = by_shape[shape]
-        tier = "OURS" if shape in STRUCTURAL_BUCKETS else "SQLFluff's tier"
+        tier = "OURS" if shape in STRUCTURAL_BUCKETS else "not yet triaged (#10)"
         print(f"    {shape:12s} {c['error']:3d}/{c['total']:3d} "
               f"{c['error'] / c['total'] * 100:5.1f}%   {tier}")
     if struct_total:

@@ -63,8 +63,10 @@ Use an issue template. For a false positive, include the smallest valid SQL
 that triggers it, written from scratch (see rule 1), and why it is valid,
 ideally with a link to the Databricks docs. For a missed error, include the
 smallest invalid SQL and the docs saying why it is invalid. Before filing a
-missed error, check `docs/scope.md`: slot contents, semantics, runtime versions
-and style are out of scope on purpose.
+missed error, check `docs/scope.md`: semantics (unknown tables and columns,
+types, argument counts), runtime versions and style are out of scope on
+purpose. A slot filled with the wrong thing is in scope only as a closed
+constraint the docs rule out, such as `a BETWEEN 1 OR 5`.
 
 ## AI-assisted contributions
 
