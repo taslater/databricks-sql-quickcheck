@@ -5,7 +5,8 @@ Guidance for AI coding agents working in this repo. The workspace index is
 too: no employer SQL, ever, and no work compute.
 
 Last updated 2026-09-26 (truncated-statement and empty-list checks; the
-silence-by-default rule and the forbidden-adjacency design).
+silence-by-default rule and the forbidden-adjacency design; three suppression
+fixes).
 
 ## What this is
 
@@ -86,8 +87,8 @@ misleading, because most of what it counts is grammar-level and out of remit.
 | `grammar` | well-formed shape, a required clause missing | SQLFluff's |
 
 `-> target` is the line to watch: the two structural buckets together. It went
-from **40/219 (18.3%) to 155/219 (70.8%) on 2026-09-26**, and the overall
-must-reject figure from 71/395 to 187/395, by mining cases the corpus already
+from **40/219 (18.3%) to 161/219 (73.5%) on 2026-09-26**, and the overall
+must-reject figure from 71/395 to 193/395, by mining cases the corpus already
 had rather than by generating new ones. The `grammar` bucket sits at 18% and
 is not a target: about 90 of the 395 are missing *values* inside a slot
 (`column_comment`, `data_type`, `expr`), which no shallow checker should read.
@@ -213,27 +214,31 @@ because they depend on bracket depths.
   evaluation excludes those mutants explicitly, with a printed count, rather
   than scoring them. The one-line fix belongs in databricks-sql-corpus.
 
-## Known and unfixed
+## Three suppressions, found and fixed 2026-09-26
 
-Found 2026-09-26 while designing the adjacency check, left for a follow-up.
-All three cost catches; none can cause a false positive, which is why the
-gates are green with them present.
+Recorded because each was a *guard reaching further than it meant to*, which is
+the failure mode to look for when a check that should fire does not. Together
+they were six must-reject cases and no false positive -- the gates were green
+the whole time they were present, which is exactly why they went unnoticed.
 
-- **`GRANT`/`REVOKE`/`DENY` return before the shape checks run.**
-  `checkStatements` bails out early for these leads, because privilege lists
-  (`GRANT SELECT, MODIFY ON ...`) confuse `columnDefinitions` and
-  `clauseOrder`. The return sits above `truncatedStatement()` and
-  `emptyLists()`, so `GRANT SELECT ON TABLE t TO` and
-  `REVOKE SELECT ON TABLE t FROM` stay silent even though `TO` and `FROM` are
-  both in `NEEDS_FOLLOWER`. Move the return below them. Four must-reject cases.
-- **`AS OF` is invisible to `isKw`.** `isNameContext` treats a preceding `AS`
-  as making the next word a name, which is right for aliases and wrong for the
-  fixed pair `AS OF`. `RESTORE TABLE t TO VERSION AS OF` therefore does not
-  fire despite `OF` being in `NEEDS_FOLLOWER`. Two cases.
-- **`ZORDER BY ()` needs a two-word owner.** `emptyLists` looks at the single
-  token before `(`, which is `BY`, and bare `BY` is correctly vetoed. Keying
-  owners on pairs (`ZORDER BY`, `SORTED BY`) fixes it; this folds naturally
-  into the adjacency design below. Three cases.
+- **A bail-out above the checks it was not protecting.** `checkStatements`
+  returned early for `GRANT`/`REVOKE`/`DENY`, because a privilege list
+  (`GRANT SELECT, MODIFY ON ...`) reads as a broken query to the comma and
+  clause-order heuristics. The return sat above `truncatedStatement()` and
+  `emptyLists()` too, so `GRANT SELECT ON TABLE t TO` stayed silent even though
+  `TO` is in `NEEDS_FOLLOWER`. Now only the heuristics that need it are skipped.
+  **`danglingKeywords()` must stay inside the skip** -- moving it out fires on
+  `GRANT SELECT, MODIFY ON TABLE t TO alf`, which was caught by the tests here
+  and is why each of these has a valid-privilege-list twin.
+- **The alias rule swallowing a fixed pair.** `isNameContext` treats a word
+  after `AS` as a name, which is right for `count(*) AS of` and wrong for
+  `VERSION AS OF 3`. `isKw` now excepts `OF` directly after a keyword `AS`.
+- **An owner keyed on one word when it needed two.** `emptyLists` read the
+  single token before `(`, which for `OPTIMIZE e ZORDER BY ()` is `BY` -- and
+  bare `BY` is correctly vetoed, since Spark's own suite writes `group by ()`.
+  `EMPTY_LIST_OWNER_PAIRS` holds the words that own a list only through a
+  following `BY`. This is the adjacency design below in miniature, and the
+  reason to believe it.
 
 ## The next check: forbidden adjacency
 
@@ -246,8 +251,8 @@ special case where the second element is `$`. One mechanism covers five things
 that looked like five checks -- truncation (`TO $`), a missing mid-statement slot
 (`TABLE COMPUTE` in `ANALYZE TABLE COMPUTE STATISTICS`), exclusive alternatives
 (`ALL DISTINCT`, `EXTENDED CODEGEN`), compound-statement shape (`BEGIN LOOP`,
-`ATOMIC END`), and a missing required modifier (`OR VIEW`). Measured yield: **66
-of the 208 currently-missed must-reject cases**, from 65 distinct pairs.
+`ATOMIC END`), and a missing required modifier (`OR VIEW`). Measured yield: **63
+of the 202 currently-missed must-reject cases**, from 63 distinct pairs.
 
 A pair ships only after three gates, in order:
 

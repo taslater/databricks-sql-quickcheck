@@ -91,8 +91,9 @@ One mechanism covers five families that looked like five separate checks:
 | compound-statement shape | `BEGIN LOOP`, `ATOMIC END`, `IF THEN`, `DO END` | `compound-stmt.without-body` |
 | missing required modifier | `OR VIEW`, `GLOBAL VIEW`, `WITH AS` | `create-view.or-without-replace` |
 
-Measured yield: **66 of the 208 currently-missed must-reject cases**, from 65
-distinct pairs. It is a single local check -- two tokens and a depth counter, no
+Measured yield: **63 of the 202 currently-missed must-reject cases**, from 63
+distinct pairs (66 of 208 before the three suppression fixes of 2026-09-26,
+which closed some of the same cases from the other direction). It is a single local check -- two tokens and a depth counter, no
 productions, no recursion, no expression parsing -- so an unrecognised statement
 contributes no pairs and therefore no findings. That is how it satisfies the
 property above.
@@ -133,7 +134,7 @@ Fixed at design time, because the boundary is what makes the check safe:
 Cases needing more than this -- `column_comment`, `data_type`, `expr`,
 `default_expression` omissions, roughly 90 of the 395 -- stay SQLFluff's, by
 design and forever. The honest ceiling for must-reject is about **280/395
-(~70%)**, from 187 today.
+(~70%)**, from 193 today.
 
 ## The veto corpus has two kinds of source, and they are not interchangeable
 

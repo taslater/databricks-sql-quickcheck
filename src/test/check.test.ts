@@ -393,6 +393,46 @@ describe("empty lists", () => {
     clean("SELECT a, count(*) FROM t GROUP BY GROUPING SETS (())");
     clean("SELECT uuid()");
   });
+
+  it("the owner is the word before BY, not BY itself", () => {
+    assert.deepEqual(codes("OPTIMIZE events ZORDER BY ()"), ["empty-list"]);
+    assert.deepEqual(
+      codes("CREATE TABLE t (a INT) CLUSTERED BY (a) SORTED BY () INTO 8 BUCKETS"),
+      ["empty-list"],
+    );
+  });
+
+  it("a BY that owns nothing stays quiet", () => {
+    clean("OPTIMIZE events ZORDER BY (a)");
+    clean("SELECT * FROM t ORDER BY a");
+    clean("SELECT sum(x) OVER (PARTITION BY a) FROM t");
+  });
+});
+
+describe("shape checks reach privilege statements", () => {
+  it("a privilege statement truncated after TO or FROM", () => {
+    assert.deepEqual(codes("GRANT SELECT ON TABLE t TO"), ["dangling-keyword"]);
+    assert.deepEqual(codes("REVOKE SELECT ON TABLE t FROM"), ["dangling-keyword"]);
+  });
+
+  it("a privilege list is still not read as a broken query", () => {
+    clean("GRANT SELECT, MODIFY ON TABLE t TO alf");
+    clean("REVOKE SELECT, MODIFY ON TABLE t FROM alf");
+    clean("GRANT ALL PRIVILEGES ON SCHEMA s TO `a@b.com`");
+  });
+});
+
+describe("AS OF is a pair, not an alias", () => {
+  it("nothing after AS OF", () => {
+    assert.deepEqual(codes("RESTORE TABLE employee TO VERSION AS OF"), ["dangling-keyword"]);
+    assert.deepEqual(codes("RESTORE TABLE employee TO TIMESTAMP AS OF"), ["dangling-keyword"]);
+  });
+
+  it("a real AS OF, and a real alias, stay quiet", () => {
+    clean("RESTORE TABLE t TO VERSION AS OF 3");
+    clean("SELECT * FROM t VERSION AS OF 2");
+    clean("SELECT count(*) AS of FROM t");
+  });
 });
 
 describe("casts and JSON paths with nothing after them", () => {

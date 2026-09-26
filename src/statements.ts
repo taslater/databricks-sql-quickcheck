@@ -320,6 +320,10 @@ const OBJECT_MODIFIER_WORDS = new Set([
 // because `array()`, `map()` and `current_timestamp()` are valid calls.
 // `TABLE`, `AS`, `BY`, `EXCEPT`, `TABLESAMPLE` and `CURRENT_TIMESTAMP` are
 // left out: valid SQL writes each with an empty bracket somewhere.
+// Words that own a bracketed list only through a following `BY`. Kept apart
+// from EMPTY_LIST_OWNERS because the token adjacent to `(` is `BY`, and `BY`
+// by itself is not evidence of anything.
+const EMPTY_LIST_OWNER_PAIRS = ["ZORDER", "SORTED", "CLUSTERED", "DISTRIBUTE"];
 const EMPTY_LIST_OWNERS = new Set([
   "APPLY", "COLUMNS", "COPY_OPTIONS", "DBPROPERTIES", "ENCRYPTION", "ENVIRONMENT",
   "FORMAT_OPTIONS", "IDENTIFIER", "IN", "OPTIONS", "PARTITION", "PIVOT", "PROPERTIES",
@@ -347,15 +351,22 @@ export function checkStatements(toks: Token[], depth: number[], ctx: Ctx): void 
   s.statementStart();
   s.keywordTypos();
   s.missingSemicolons();
-  // Privilege lists (`GRANT SELECT, MODIFY ON ...`) look like broken queries.
-  if (s.lead === "GRANT" || s.lead === "REVOKE" || s.lead === "DENY") return;
-  s.columnDefinitions();
-  s.clauseOrder();
-  s.caseStructure();
-  s.danglingKeywords();
+  // Privilege lists (`GRANT SELECT, MODIFY ON ...`) read as broken queries to
+  // the comma and clause-order heuristics, so those are skipped. The shape
+  // checks below are safe on them and are what catches `GRANT ... ON TABLE t TO`.
+  const privilege = s.lead === "GRANT" || s.lead === "REVOKE" || s.lead === "DENY";
+  if (!privilege) {
+    s.columnDefinitions();
+    s.clauseOrder();
+    s.caseStructure();
+    s.danglingKeywords();
+    s.namedArgumentArrows();
+  }
+  // These two are safe on a privilege list -- they look at the last token and
+  // at empty brackets, neither of which a comma-separated privilege list has --
+  // and they are what catches `GRANT SELECT ON TABLE t TO`.
   s.truncatedStatement();
   s.emptyLists();
-  s.namedArgumentArrows();
 }
 
 export class Stmt {
@@ -377,7 +388,11 @@ export class Stmt {
   /** toks[i] is one of these keywords, used as a keyword. */
   isKw(i: number, ...words: string[]): boolean {
     const t = this.toks[i];
-    return t?.kind === "word" && words.includes(t.upper!) && !isNameContext(this.toks[i - 1]);
+    if (t?.kind !== "word" || !words.includes(t.upper!)) return false;
+    // `AS OF` is a fixed pair (`VERSION AS OF 3`), not `AS` introducing an
+    // alias, so the name-context rule must not swallow the `OF`.
+    if (t.upper === "OF" && this.isKw(i - 1, "AS")) return true;
+    return !isNameContext(this.toks[i - 1]);
   }
 
   isPunctAt(i: number, ch: string): boolean {
@@ -787,9 +802,20 @@ export class Stmt {
       if (!isPunct(toks[i], "(") || !isPunct(toks[i + 1], ")")) continue;
       const owner = toks[i - 1];
       if (owner.kind !== "word" || !this.isKw(i - 1, owner.upper!)) continue;
-      if (!EMPTY_LIST_OWNERS.has(owner.upper!)) continue;
+      let name = owner.text;
+      let known = EMPTY_LIST_OWNERS.has(owner.upper!);
+      // `BY` alone owns far too much (`GROUP BY`, `PARTITION BY`, and Spark's
+      // own suite writes `group by ()`), so it is not an owner on its own. The
+      // pair is: `OPTIMIZE e ZORDER BY ()` and `SORTED BY ()` are both empty
+      // lists, and the word before `BY` is what says so.
+      if (!known && owner.upper === "BY" && toks[i - 2]?.kind === "word" &&
+          this.isKw(i - 2, ...EMPTY_LIST_OWNER_PAIRS)) {
+        known = true;
+        name = `${toks[i - 2].text} ${owner.text}`;
+      }
+      if (!known) continue;
       report(this.ctx, "empty-list", "error", toks[i],
-        `\`${owner.text} ()\` is empty: this list needs at least one entry`);
+        `\`${name} ()\` is empty: this list needs at least one entry`);
     }
   }
 
