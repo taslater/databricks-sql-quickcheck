@@ -441,6 +441,50 @@ const NEEDS_FOLLOWER_PAIRS = new Set([
   "MANAGED LOCATION", "ADD TABLE", "FOR TABLE", "INTO TABLE", "IN PROVIDER", "TO RECIPIENT",
 ]);
 
+/**
+ * Keywords whose bracket must hold a query: `FROM (`, `JOIN (`, `EXISTS (`,
+ * `IN (`, a CTE's `AS (`, a set operand. A `FROM` inside one, not first and
+ * with no `SELECT` before it, means the `SELECT` was lost -- `FROM (a, b FROM
+ * t)`. A word that is not one of these owns a function call, where `FROM` is
+ * ordinary syntax: `extract(YEAR FROM d)`, `substring(s FROM 2)`.
+ */
+const QUERY_BRACKET_OWNERS = new Set([
+  "FROM", "JOIN", "EXISTS", "IN", "AS", "LATERAL", "UNION", "INTERSECT", "EXCEPT", "MINUS",
+  "ALL", "DISTINCT", "WHERE", "HAVING", "ON", "AND", "OR", "NOT", "THEN", "ELSE", "WHEN",
+  "SELECT", "RETURN",
+]);
+/** Set operators: what follows one is a query. `EXCEPT` after `*` is not one. */
+const SET_OPERATORS = new Set(["UNION", "INTERSECT", "EXCEPT", "MINUS"]);
+/**
+ * Statement verbs that can follow a CTE list or open a set operand without a
+ * `SELECT`: `WITH c AS (...) INSERT INTO t ...`. The segment scan stops at one,
+ * because a `FROM` after it belongs to that statement, not to a lost `SELECT`.
+ */
+const NOT_A_SELECT_LIST = new Set([
+  "INSERT", "DELETE", "UPDATE", "MERGE", "VALUES", "TABLE", "COPY", "APPLY", "AUTO", "CACHE",
+  "CREATE", "REFRESH", "OPTIMIZE",
+]);
+
+/**
+ * What a FROM clause may contain at its own depth, besides names, dots and
+ * commas. The scan for a stray comparison stops at the first keyword not
+ * listed, which is how it knows the clause has ended -- so leaving a word out
+ * only ever makes the check quieter. `TIMESTAMP` and `VERSION` are left out on
+ * purpose: `TIMESTAMP AS OF <expr>` takes an expression, and that is the one
+ * place a table reference can hold an operator.
+ */
+const IN_FROM_CLAUSE = new Set([
+  "AS", "LATERAL", "VIEW", "OUTER", "TABLESAMPLE", "REPEATABLE", "STREAM", "TABLE", "VALUES",
+  "PIVOT", "UNPIVOT", "INCLUDE", "EXCLUDE", "NULLS", "JOIN", "ON", "USING", "NATURAL", "CROSS",
+  "INNER", "LEFT", "RIGHT", "FULL", "ANTI", "SEMI",
+]);
+/** Once any of these appears, a comparison may be a join condition. */
+const FROM_JOINS = new Set([
+  "JOIN", "ON", "USING", "NATURAL", "CROSS", "INNER", "LEFT", "RIGHT", "FULL", "ANTI", "SEMI",
+  "LATERAL", "PIVOT", "UNPIVOT", "TABLESAMPLE",
+]);
+const COMPARISONS = new Set(["=", "==", "<", ">", "<=", ">=", "<>", "!=", "<=>"]);
+
 // Words that own a bracketed list only through a following `BY`. Kept apart
 // from EMPTY_LIST_OWNERS because the token adjacent to `(` is `BY`, and `BY`
 // by itself is not evidence of anything.
@@ -483,6 +527,8 @@ export function checkStatements(toks: Token[], depth: number[], ctx: Ctx): void 
     s.caseStructure();
     s.danglingKeywords();
     s.namedArgumentArrows();
+    s.queryWithoutSelect();
+    s.comparisonInFromList();
   }
   // These two are safe on a privilege list -- they look at the last token and
   // at empty brackets, neither of which a comma-separated privilege list has --
@@ -936,6 +982,111 @@ export class Stmt {
       if (ctx.flagged?.has(a.start) || ctx.flagged?.has(b.start)) continue;
       report(ctx, "statement-shape", "error", b, `${rule.why}: \`${a.text} ${b.text}\``);
       return; // one shape complaint per statement is enough
+    }
+  }
+
+  /**
+   * `FROM (a, b FROM t)`: a query that has lost its `SELECT`. Checked only where
+   * something says a query must begin -- a positive signal, never an unknown
+   * statement lead:
+   *
+   *  - inside a bracket whose owner says so: `FROM (`, `EXISTS (`, `IN (`, a
+   *    CTE's `AS (`, `= (`, `> (`. A word not in QUERY_BRACKET_OWNERS owns a
+   *    function call, where `FROM` is ordinary syntax: `extract(YEAR FROM d)`;
+   *  - after a set operator: `UNION ALL a, b FROM t`;
+   *  - after a `WITH` statement's CTE list: `WITH c AS (...) a, b FROM c`.
+   *
+   * A `FROM` that opens the segment is a FROM-first query -- Hive's
+   * `(FROM t SELECT a)`, or pipe syntax `(FROM t |> WHERE x)` -- and is fine.
+   *
+   * Not done after `CREATE ... AS`: `CREATE FLOW f AS AUTO CDC INTO t FROM s`
+   * is valid, and nothing at this depth tells it from a lost `SELECT`. Not done
+   * at statement level either: `a, b FROM t` already warns as an unknown
+   * statement, and an unknown lead is not evidence of anything.
+   */
+  queryWithoutSelect(): void {
+    const { toks, depth } = this;
+    const open: number[] = [];
+    let cteHeader = this.lead === "WITH";
+    for (let i = 0; i < toks.length; i++) {
+      const t = toks[i];
+      if (isPunct(t, "(")) {
+        open.push(i);
+        if (this.ownsQuery(i - 1)) this.querySegment(i + 1, depth[i] + 1);
+      } else if (isPunct(t, ")")) {
+        const o = open.pop();
+        // The end of a CTE body, while still in the WITH clause's header.
+        if (cteHeader && o !== undefined && depth[i] === 0 && this.isKw(o - 1, "AS")) {
+          this.querySegment(i + 1, 0);
+        }
+      } else if (t.kind === "word" && this.isKw(i, t.upper!)) {
+        if (depth[i] === 0 && t.upper === "SELECT") cteHeader = false;
+        if (SET_OPERATORS.has(t.upper!) && !(t.upper === "EXCEPT" && toks[i - 1]?.text === "*")) {
+          let k = i + 1;
+          while (toks[k]?.kind === "word" && ["ALL", "DISTINCT", "BY", "NAME"].includes(toks[k].upper!)) k++;
+          this.querySegment(k, depth[i]);
+        }
+      }
+    }
+  }
+
+  /** Does the token at `j` say the bracket after it holds a query? */
+  private ownsQuery(j: number): boolean {
+    const owner = this.toks[j];
+    if (owner === undefined) return true;
+    if (isPunct(owner, "(") || isPunct(owner, ",")) return true;
+    if (owner.kind === "op") return owner.text !== "|>";
+    return owner.kind === "word" && QUERY_BRACKET_OWNERS.has(owner.upper!) && this.isKw(j, owner.upper!);
+  }
+
+  /** From `s` at depth `d`: a `FROM` that does not open the query and has no `SELECT` before it. */
+  private querySegment(s: number, d: number): void {
+    const { toks, depth, ctx } = this;
+    for (let k = s; k < toks.length && depth[k] >= d; k++) {
+      if (depth[k] > d) continue;
+      const t = toks[k];
+      if (t.kind !== "word" || !KEYWORDS.has(t.upper!) || !this.isKw(k, t.upper!)) continue;
+      const u = t.upper!;
+      if (u === "SELECT" || u === "WITH" || SET_OPERATORS.has(u) || NOT_A_SELECT_LIST.has(u)) return;
+      if (u !== "FROM") continue;
+      if (k > s && !ctx.flagged?.has(t.start)) {
+        report(ctx, "missing-keyword", "error", t,
+          "`FROM` with nothing selected: a query starts here, and no `SELECT` comes before its `FROM`");
+      }
+      return;
+    }
+  }
+
+  /**
+   * `FROM a, b x = y`: a comparison in a FROM list that has no join. A table
+   * reference never holds a bare comparison at the clause's own depth, so one
+   * here means the `WHERE` in front of it is gone. Any join keyword turns the
+   * check off for the rest of the clause, because from there `=` may be an
+   * `ON` condition.
+   */
+  comparisonInFromList(): void {
+    const { toks, depth, ctx } = this;
+    for (let f = 0; f < toks.length; f++) {
+      if (!this.isKw(f, "FROM")) continue;
+      const d = depth[f];
+      let joined = false;
+      for (let k = f + 1; k < toks.length && depth[k] >= d; k++) {
+        if (depth[k] > d) continue;
+        const t = toks[k];
+        if (t.kind === "op") {
+          if (t.text === "|>") break; // a pipe operator starts a new clause
+          if (!COMPARISONS.has(t.text)) continue;
+          if (!joined && !ctx.flagged?.has(t.start)) {
+            report(ctx, "missing-keyword", "error", t,
+              `\`${t.text}\` inside the FROM list: is a \`WHERE\` missing before this comparison?`);
+          }
+          break;
+        }
+        // A table name or alias is not a keyword and does not end the clause.
+        if (t.kind !== "word" || !KEYWORDS.has(t.upper!) || !this.isKw(k, t.upper!)) continue;
+        if (FROM_JOINS.has(t.upper!)) joined = true;
+        if (!IN_FROM_CLAUSE.has(t.upper!)) break; // the FROM clause has ended
+      }
     }
   }
 

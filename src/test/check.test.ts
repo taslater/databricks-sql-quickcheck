@@ -520,6 +520,71 @@ describe("two-word tails that owe a follower", () => {
   });
 });
 
+describe("a query that lost its SELECT", () => {
+  it("inside a bracket whose owner says a query goes there", () => {
+    assert.deepEqual(codes("SELECT * FROM (a, b FROM t) x"), ["missing-keyword"]);
+    assert.deepEqual(codes("SELECT * FROM t WHERE EXISTS (* FROM u WHERE u.id = t.id)"), ["missing-keyword"]);
+    assert.deepEqual(codes("WITH c AS (a, sum(b) FROM t GROUP BY a) SELECT * FROM c"), ["missing-keyword"]);
+    assert.deepEqual(codes("SELECT * FROM t WHERE a > (avg(b) * 1.2 FROM u)"), ["missing-keyword"]);
+  });
+
+  it("after a set operator, and after a CTE list", () => {
+    assert.deepEqual(codes("SELECT a FROM x UNION ALL b, c FROM y"), ["missing-keyword"]);
+    assert.deepEqual(codes("WITH c AS (SELECT 1 AS a) a, b FROM c"), ["missing-keyword"]);
+  });
+
+  it("a function call's FROM is ordinary syntax", () => {
+    clean("SELECT extract(YEAR FROM d), substring(s FROM 2 FOR 3), trim(BOTH ' ' FROM s) FROM t");
+    clean("SELECT a FROM t WHERE a > (extract(YEAR FROM d) + 1)");
+  });
+
+  it("a FROM-first query is not a lost SELECT", () => {
+    clean("SELECT * FROM (FROM t SELECT a)");
+    clean("SELECT * FROM (FROM t |> WHERE a > 1)");
+    clean("WITH c AS (SELECT 1 AS a) FROM c SELECT a");
+    clean("FROM src INSERT OVERWRITE TABLE t1 SELECT a WHERE a > 1");
+  });
+
+  it("star EXCEPT is not a set operator, and a CTE may feed any statement", () => {
+    clean("SELECT * EXCEPT (a) FROM t");
+    clean("SELECT a, t.* EXCEPT (b) FROM t");
+    clean("MERGE INTO t USING s ON t.k = s.k WHEN MATCHED THEN UPDATE SET * EXCEPT (b)");
+    clean("WITH c AS (SELECT 1) INSERT INTO t SELECT * FROM c");
+    clean("SELECT a FROM x UNION ALL BY NAME SELECT a FROM y");
+    clean("SELECT a FROM x UNION VALUES (1)");
+  });
+
+  it("a query after CREATE ... AS is not checked: AUTO CDC has a FROM and no SELECT", () => {
+    clean("CREATE FLOW f AS AUTO CDC INTO t FROM stream(s) KEYS (id) SEQUENCE BY ts");
+  });
+});
+
+describe("a FROM list that lost its WHERE", () => {
+  it("a comparison where only table references belong", () => {
+    assert.deepEqual(codes("SELECT a FROM t1, t2 t1.id = t2.id AND t1.x > 3"), ["missing-keyword"]);
+    assert.deepEqual(codes("SELECT a FROM store_sales, item i ss_item_sk = i.i_item_sk"), ["missing-keyword"]);
+  });
+
+  it("the same comparisons in their proper place stay quiet", () => {
+    clean("SELECT a FROM t1, t2 WHERE t1.id = t2.id AND t1.x > 3");
+    clean("SELECT * FROM a JOIN b ON a.id = b.id");
+    clean("SELECT a FROM t QUALIFY row_number() OVER (PARTITION BY a ORDER BY b) = 1");
+    clean("SELECT * FROM t PIVOT (sum(v) FOR k IN ('a', 'b')) WHERE a = 1");
+  });
+
+  it("a FROM that is not a query's FROM ends at its first unknown keyword", () => {
+    clean("COPY INTO t FROM 's3://b/p' FILEFORMAT = CSV");
+    clean("APPLY CHANGES INTO t FROM stream(s) KEYS (id) APPLY AS DELETE WHEN op = 'DELETE' SEQUENCE BY ts");
+    clean("SELECT * FROM t TIMESTAMP AS OF current_timestamp() - INTERVAL 1 DAY");
+    clean("FROM t |> WHERE a = 1 |> SELECT a");
+  });
+
+  it("SELECT ... WHERE with no FROM at all is valid", () => {
+    // The SELECT production makes FROM optional and WHERE independent of it.
+    clean("SELECT 1 WHERE true");
+  });
+});
+
 describe("AS OF is a pair, not an alias", () => {
   it("nothing after AS OF", () => {
     assert.deepEqual(codes("RESTORE TABLE employee TO VERSION AS OF"), ["dangling-keyword"]);
