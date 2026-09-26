@@ -1,0 +1,38 @@
+name: False positive
+description: quickcheck reports an error or warning on valid Databricks SQL.
+title: "False positive: "
+labels: [false-positive]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        False positives are the most serious bug this project can have, and they are always worked first.
+        **Do not paste SQL you are not allowed to publish.** Reduce it to a small repro written from scratch, using names like `t`, `a` and `b`. Everything here is permanent public history.
+  - type: checkboxes
+    id: publishable
+    attributes:
+      label: Publishable
+      options:
+        - label: The SQL below is written from scratch or taken from a public source, and contains nothing from an employer, client or private codebase.
+          required: true
+  - type: textarea
+    id: sql
+    attributes:
+      label: The smallest valid SQL that triggers it
+      render: sql
+    validations:
+      required: true
+  - type: textarea
+    id: finding
+    attributes:
+      label: What quickcheck reports
+      description: 'The code and message, e.g. `missing-keyword: ...`'
+    validations:
+      required: true
+  - type: textarea
+    id: why-valid
+    attributes:
+      label: Why it is valid
+      description: A link to the Databricks SQL reference page is ideal. "It runs on my cluster" is fine too, but say which runtime.
+    validations:
+      required: true

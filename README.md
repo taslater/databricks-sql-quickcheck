@@ -114,7 +114,7 @@ SQL:
 
 `eval/evaluate.py` measures quickcheck against
 [databricks-sql-corpus](https://github.com/taslater/databricks-sql-corpus), in
-both directions. These figures are from 2026-09-25:
+both directions. These figures are from 2026-09-26:
 
 | | result |
 | --- | --- |
@@ -124,10 +124,11 @@ both directions. These figures are from 2026-09-25:
 | Everyday mistakes: one `;` deleted between statements | **224 / 239 flagged (94%)** |
 | Everyday mistakes: one comma deleted between column definitions | **50 / 52 flagged (96%)** |
 | Guaranteed-invalid mutants from the corpus's `mutate.py` (brackets, quotes, commas, operators) | **2596 / 2597 errors (100.0%)**; the last one is caught as a `string-swallows-code` warning |
-| `mutate.py` weak mutants (deleted comma or keyword, dangling `AND`/`OR`) | 44% / 30% / 100% flagged; many are still valid SQL |
-| Reference must-reject cases (grammar-level omissions) | 71 / 395, not a target |
-| Spark's own SQL test suite, 304 files of unusual syntax | 2 statement-level findings, both real: a case Spark labels an error, and a doubled `FROM from` |
-| Speed over the valid corpus (1.1M characters) | 103 ms total; median 0.11 ms per file, p95 0.6 ms, max 1.9 ms |
+| `mutate.py` weak mutants (deleted comma or keyword, dangling `AND`/`OR`) | 44% / 54% / 100% flagged (4% / 24% / 100% as errors); many deleted commas leave valid SQL |
+| Reference must-reject cases, all | 241 / 395; about 110 need a full grammar and are out of scope ([scope](docs/scope.md)) |
+| Reference must-reject cases a shallow checker can reach | **189 / 233 (81%)** |
+| Spark's own SQL test suite, 304 files of unusual syntax | 7 errors, each checked by hand: all real, and most sit under the file's own negative-test heading |
+| Speed over the valid corpus (1.1M characters) | 115 ms total; median 0.12 ms per file, p95 0.7 ms, max 2.0 ms |
 
 The everyday mistakes aren't all guaranteed to be invalid. For example,
 `LFET JOIN` reads as a table alias. So they are reported rather than scored.
@@ -204,6 +205,12 @@ check("SELECT a,, b FROM t");
   function call. Spawning a process costs 30 ms even for Node, and about a
   second for SQLFluff.
 
+## Scope
+
+[`docs/scope.md`](docs/scope.md) sorts SQL mistakes by how much information it
+takes to know they are wrong, and says which ones a shallow checker can ever
+flag. Work in progress is tracked in the issues against that ladder.
+
 ## Development
 
 ```bash
@@ -215,3 +222,9 @@ npm run keywords                           # regenerate src/keywords.ts from ../
 Every check has a case that must fire and a near-miss that must not. The
 near-miss is the valid Databricks construct that looks most like the mistake.
 Any change to a check has to leave the evaluation at zero errors on valid SQL.
+
+## Contributing
+
+See [`CONTRIBUTING.md`](CONTRIBUTING.md). The first rule is the one that
+matters most: never paste SQL you are not allowed to publish. Reduce it to a
+repro written from scratch first.

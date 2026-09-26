@@ -1,8 +1,13 @@
 # databricks-sql-quickcheck
 
-Guidance for AI coding agents working in this repo. The workspace index is
-`../AGENTS.md`. Read that first for the standing constraints, which apply here
-too: no employer SQL, ever, and no work compute.
+Guidance for AI coding agents working in this repo. If the private workspace
+index at `../AGENTS.md` exists, read it first. It is not part of this repo. The
+rule that binds everyone is `CONTRIBUTING.md` rule 1: no SQL you are not
+allowed to publish, ever, in any file, issue or commit.
+
+**Starting a session:** read `docs/scope.md` (what is possible, rung by rung,
+with the current numbers), then the open issues, which track the work against
+that ladder.
 
 Last updated 2026-09-26 (truncated-statement and empty-list checks; the
 silence-by-default rule; the forbidden-adjacency check; lost `SELECT`/`WHERE`).
@@ -32,12 +37,17 @@ src/cli.ts        dbsql-quickcheck: files, --stdin, --json, --jsonl batch mode
 src/extension.ts  VS Code: diagnostics on open/change (40 ms debounce), in-process
 src/test/         node:test unit tests
 eval/evaluate.py  the corpus evaluation (run with ../databricks-sql-corpus/.venv)
+docs/scope.md     what a shallow checker can and cannot flag, rung by rung, with the
+                  measured ceilings -- the reference for scoping any new work
 docs/design-notes.md  why the rules below are the rules: the silence-by-default
                   property, the two designs that fail it, the forbidden-adjacency
                   skeleton and its admission gates
 scripts/derive_shape_sets.py  re-derives and safety-checks NEEDS_FOLLOWER and
                   EMPTY_LIST_OWNERS against every valid source
 examples/         mistakes.sql: one mistake per statement, the README's sample output
+CONTRIBUTING.md   the rules for contributors, human or agent
+.github/          CI (unit tests + the corpus false-positive gate, corpus pinned by SHA),
+                  issue forms, dependabot
 ```
 
 ## The invariant, and the rule that follows from it
@@ -113,8 +123,9 @@ statements). It is where the `EXPLAIN FORMATTED` newline and
 pipe-`AGGREGATE` alias false positives were found, and no other set had them --
 and on 2026-09-26 it earned its keep again, catching three false positives in
 the first cut of the truncated-statement check (see below). It now reports
-five errors, all real; the only one from the new checks is `cast.sql:178`,
-which sits under that file's own "negative tests" heading.
+seven errors, each checked by hand and all real. The newest three --
+`cast.sql:178`, `selectExcept.sql:44` and `pipe-operators.sql:727` -- sit under
+their files' own negative-test headings.
 
 The first version was tuned only against `mutate.py` and scored 100% there,
 but it caught 7 of 30 everyday mistakes when Tom typed into a real file. The

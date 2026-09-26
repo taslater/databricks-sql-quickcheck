@@ -1,0 +1,42 @@
+name: Missed error
+description: invalid Databricks SQL that quickcheck does not flag.
+title: "Missed: "
+labels: [missed-error]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Check [docs/scope.md](https://github.com/taslater/databricks-sql-quickcheck/blob/main/docs/scope.md) first. Slot contents, semantics, runtime versions and style are out of scope on purpose.
+        **Do not paste SQL you are not allowed to publish.** Reduce it to a small repro written from scratch.
+  - type: checkboxes
+    id: publishable
+    attributes:
+      label: Publishable
+      options:
+        - label: The SQL below is written from scratch or taken from a public source, and contains nothing from an employer, client or private codebase.
+          required: true
+  - type: textarea
+    id: sql
+    attributes:
+      label: The smallest invalid SQL
+      render: sql
+    validations:
+      required: true
+  - type: textarea
+    id: why-invalid
+    attributes:
+      label: Why it is invalid
+      description: Link the Databricks SQL reference page whose syntax rules it out.
+    validations:
+      required: true
+  - type: dropdown
+    id: rung
+    attributes:
+      label: Which rung of docs/scope.md
+      options:
+        - "1-4: lexical, brackets, operands, local shape"
+        - "5: block structure (SQL scripting)"
+        - "6: statement skeleton"
+        - Not sure
+    validations:
+      required: true

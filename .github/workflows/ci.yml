@@ -1,0 +1,79 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    - cron: "17 6 * * 1" # weekly, so a drifted corpus source shows up without a PR
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: typecheck and unit tests (node ${{ matrix.node }})
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node: [20, 22]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+      - run: npm ci
+      - run: npm test
+
+  corpus-gate:
+    # The false-positive gate: no error or warning on any valid corpus file,
+    # and every must-parse reference case clean. evaluate.py exits 1 on either,
+    # and 2 if its known-bad control stops firing.
+    name: corpus false-positive gate
+    runs-on: ubuntu-latest
+    env:
+      # Bump deliberately, in its own PR, so a corpus change is never mixed
+      # with a checker change.
+      CORPUS_REF: 9b403eb2762cffdb37dda94edcf4e2f81d9cf79a
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          path: quickcheck
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: taslater/databricks-sql-corpus
+          ref: ${{ env.CORPUS_REF }}
+          path: corpus
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: quickcheck/package-lock.json
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: corpus/pyproject.toml
+      - name: build quickcheck
+        working-directory: quickcheck
+        run: npm ci && npm run build
+      - name: install the corpus harness
+        run: python -m pip install -e ./corpus
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: corpus/corpus/cache
+          key: corpus-cache-${{ hashFiles('corpus/src/dbsqlparse/corpus/sources.py') }}
+      - name: fetch the pinned public corpus
+        working-directory: corpus
+        run: python -m dbsqlparse.corpus fetch
+      - name: evaluate
+        working-directory: quickcheck
+        run: python eval/evaluate.py --corpus ../corpus
+      - name: re-check the shipped shape sets against every valid source
+        working-directory: quickcheck
+        run: python scripts/derive_shape_sets.py --corpus ../corpus

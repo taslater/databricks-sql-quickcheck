@@ -5,6 +5,14 @@
   "version": "0.2.0",
   "publisher": "local",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/taslater/databricks-sql-quickcheck"
+  },
+  "bugs": {
+    "url": "https://github.com/taslater/databricks-sql-quickcheck/issues"
+  },
+  "homepage": "https://github.com/taslater/databricks-sql-quickcheck#readme",
   "private": true,
   "engines": {
     "vscode": "^1.80.0",
@@ -64,7 +72,7 @@
     "watch": "tsc -watch -p .",
     "test": "tsc -p . && node --test out/test/*.test.js",
     "keywords": "python3 scripts/gen_keywords.py ../sqlfluff",
-    "package": "npm run build && mkdir -p dist && vsce package --allow-missing-repository --no-rewrite-relative-links -o dist/databricks-sql-quickcheck.vsix"
+    "package": "npm run build && mkdir -p dist && vsce package --no-rewrite-relative-links -o dist/databricks-sql-quickcheck.vsix"
   },
   "devDependencies": {
     "@types/node": "^18.19.0",

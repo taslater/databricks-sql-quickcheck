@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: What is in and out of scope
+    url: https://github.com/taslater/databricks-sql-quickcheck/blob/main/docs/scope.md
+    about: Slot contents, semantics, runtime versions and style are out of scope on purpose. Check here first.
