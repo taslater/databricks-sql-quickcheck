@@ -13,7 +13,8 @@
 //   missing-semicolon  a line that starts a new statement while the last one
 //                      is still open: `CREATE CATALOG c` then `CREATE SCHEMA s`.
 //   missing-comma      between column definitions: `a STRING COMMENT 'x'` then
-//                      `b INT` on the next line.
+//                      `b INT` on the next line; and between CTEs:
+//                      `WITH a AS (...) b AS (...)`.
 //   clause-order       `GROUP BY a WHERE b`, or a second WHERE.
 //   case-structure     THEN without WHEN, WHEN without THEN, a second ELSE.
 //   dangling-keyword   `WHERE a > 1 AND`, `WHERE GROUP BY`, `SELECT FROM t`,
@@ -1018,6 +1019,7 @@ export class Stmt {
         // The end of a CTE body, while still in the WITH clause's header.
         if (cteHeader && o !== undefined && depth[i] === 0 && this.isKw(o - 1, "AS")) {
           this.querySegment(i + 1, 0);
+          this.missingCteComma(i);
         }
       } else if (t.kind === "word" && this.isKw(i, t.upper!)) {
         if (depth[i] === 0 && t.upper === "SELECT") cteHeader = false;
@@ -1028,6 +1030,31 @@ export class Stmt {
         }
       }
     }
+  }
+
+  /**
+   * `WITH a AS (...) b AS (...)`: a CTE body's closing `)` followed by a name
+   * and another `AS (` can only be a sibling CTE whose comma went missing --
+   * the main statement starts on a keyword, never a bare name. The caller has
+   * already established this `)` closes an `AS (...)` body in the header, so
+   * the only thing that can sit between two CTEs is the comma.
+   */
+  private missingCteComma(close: number): void {
+    const { toks, depth } = this;
+    const name = toks[close + 1];
+    if (name?.kind !== "word" || !this.isName(close + 1)) return;
+    let k = close + 2;
+    // A CTE may name its columns: `b (x, y) AS (...)`.
+    if (isPunct(toks[k], "(")) {
+      const d = depth[k];
+      k++;
+      while (k < toks.length && depth[k] > d) k++;
+      if (!isPunct(toks[k], ")")) return;
+      k++;
+    }
+    if (!this.isKw(k, "AS") || !isPunct(toks[k + 1], "(")) return;
+    report(this.ctx, "missing-comma", "error", name,
+      `Missing comma before \`${name.text}\`? Each CTE in a WITH list is separated by a comma.`);
   }
 
   /** Does the token at `j` say the bracket after it holds a query? */

@@ -109,7 +109,7 @@ As of 2026-09-26, against `databricks-sql-corpus`:
 | Reference must-reject cases, all | 241/395 | **not yet known** | 154 missed; most are rungs 3 to 6, not rung 7 (see below) |
 | Reference must-reject, structural target | 189/233 (81.1%) | most of the rest | rung 6 and the refusals above |
 | `delete-keyword` mutants, errors | 107/451 | not yet estimated | most of what is left loses its `SELECT` at the start of a statement, which warns by design |
-| `delete-comma` mutants | 18 errors, 123 warnings of 272 genuinely invalid | not yet estimated | 143 of the 433 are still valid SQL; some silent ones are catchable, and tracked |
+| `delete-comma` mutants | 24 errors, 128 warnings of 294 genuinely invalid | not yet estimated | 118 of the 433 are still valid SQL; the missing comma between CTEs is caught, and more silent ones are catchable and tracked |
 | Scripting blocks | 0 | most block-structure mistakes | rung 5, not started |
 | False positives on 562 valid files and 823 must-parse cases | 0 | 0 | this is a gate, not a goal |
 | Check time per file | median about 120 µs, max 2 ms | stay under a keystroke | also a gate |

@@ -12,7 +12,8 @@ issue in the commit that finishes it (`Closes #n`), and update the numbers in
 `docs/scope.md` in the same commit when they move.
 
 Last updated 2026-09-26 (truncated-statement and empty-list checks; the
-silence-by-default rule; the forbidden-adjacency check; lost `SELECT`/`WHERE`).
+silence-by-default rule; the forbidden-adjacency check; lost `SELECT`/`WHERE`;
+the missing comma between CTEs).
 
 ## What this is
 
@@ -28,7 +29,8 @@ src/lexer.ts      token boundaries: strings, quoted identifiers, comments, $$ bo
 src/check.ts      token-level checks (brackets, commas, operators, lists), run per fragment
                   (tokens between `;` / cell separators)
 src/statements.ts statement-shape checks: keyword typos, missing `;`, column-definition
-                  commas, clause order, CASE structure, dangling keywords,
+                  commas, missing commas between CTEs (`WITH a AS (...) b AS (...)`),
+                  clause order, CASE structure, dangling keywords,
                   truncated statements (`ALTER VIEW v RENAME TO`, `DROP SCHEMA`),
                   empty clause lists (`SET DBPROPERTIES ()`), forbidden keyword
                   pairs (`SELECT ALL DISTINCT`), a query that lost its `SELECT`
