@@ -6,8 +6,10 @@ rule that binds everyone is `CONTRIBUTING.md` rule 1: no SQL you are not
 allowed to publish, ever, in any file, issue or commit.
 
 **Starting a session:** read `docs/scope.md` (what is possible, rung by rung,
-with the current numbers), then the open issues, which track the work against
-that ladder.
+with the current numbers), then the pinned roadmap issue,
+`gh issue view 14`, which tracks the open work against that ladder. Close an
+issue in the commit that finishes it (`Closes #n`), and update the numbers in
+`docs/scope.md` in the same commit when they move.
 
 Last updated 2026-09-26 (truncated-statement and empty-list checks; the
 silence-by-default rule; the forbidden-adjacency check; lost `SELECT`/`WHERE`).
@@ -381,5 +383,11 @@ mutants hit one of the deliberate stops above.
 
 `npm run package` builds `dist/databricks-sql-quickcheck.vsix`, and
 `code --install-extension` installs it. Nothing is published to the
-Marketplace or npm. Publishing, and pushing this repo to GitHub, are Tom's
-calls: ask first.
+Marketplace or npm, and publishing is Tom's call: ask first.
+
+The repo is on GitHub at `taslater/databricks-sql-quickcheck`, created
+**private** on 2026-09-26, with going public tracked on the roadmap issue.
+Before the first push, `examples/mistakes.sql` was given a neutral schema and
+rewritten out of history with same-length names, so the README's sample output
+stayed true. Commit SHAs before that date, quoted in older notes, no longer
+exist. **Everything pushed here is permanent once the repo is public.**
