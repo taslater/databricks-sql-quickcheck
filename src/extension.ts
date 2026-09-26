@@ -30,7 +30,11 @@ export function activate(context: vscode.ExtensionContext): void {
       return;
     }
     const text = doc.getText();
-    const found = check(text, { warnings: settings().get<boolean>("warnings", true) });
+    const cfg = settings();
+    const found = check(text, {
+      warnings: cfg.get<boolean>("warnings", true),
+      explicitAliases: cfg.get<boolean>("explicitAliases", false),
+    });
     diagnostics.set(
       doc.uri,
       found.map((d) => {

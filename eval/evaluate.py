@@ -90,6 +90,84 @@ def in_raw_set(original: str, mutant: str) -> bool:
     )
 
 
+KEYWORDS = set(re.findall(r'"([A-Z_0-9]+)",', (ROOT / "src" / "keywords.ts").read_text()))
+TYPO_TARGETS = [
+    "SELECT", "FROM", "WHERE", "GROUP", "ORDER", "HAVING", "JOIN", "CREATE", "TABLE", "INSERT",
+    "INTO", "VALUES", "UPDATE", "DELETE", "MERGE", "UNION", "LIMIT", "CASE", "WHEN", "THEN", "ELSE",
+    "NULL", "EXISTS", "PARTITIONED", "COMMENT", "TBLPROPERTIES", "LOCATION", "REPLACE", "DISTINCT",
+    "BETWEEN", "LIKE", "INNER", "LEFT", "OUTER", "VIEW", "SCHEMA", "CATALOG", "DROP", "ALTER",
+]
+COLUMN_TYPES = {"STRING", "BIGINT", "INT", "INTEGER", "DOUBLE", "FLOAT", "BOOLEAN", "DATE",
+                "TIMESTAMP", "DECIMAL", "LONG", "SMALLINT", "TINYINT", "BINARY", "ARRAY", "MAP",
+                "STRUCT", "VARIANT", "TIMESTAMP_NTZ"}
+IGNORED = ("whitespace", "newline", "inline_comment", "block_comment")
+
+
+def typo_of(word: str, rng) -> str | None:
+    """One realistic slip: two adjacent letters swapped, one dropped, or one doubled."""
+    for _ in range(10):
+        i = rng.randrange(len(word) - 1)
+        kind = rng.choice(("swap", "drop", "double"))
+        if kind == "swap" and word[i] != word[i + 1]:
+            out = word[:i] + word[i + 1] + word[i] + word[i + 2:]
+        elif kind == "drop" and len(word) > 4:
+            out = word[:i] + word[i + 1:]
+        elif kind == "double":
+            out = word[:i + 1] + word[i] + word[i + 1:]
+        else:
+            continue
+        if out.upper() not in KEYWORDS:
+            return out
+    return None
+
+
+def everyday_mutants(seeds: list[tuple[str, str]], lex, seed: int) -> list[tuple[str, str, str]]:
+    """Mistakes people make while typing, one of each kind per file.
+
+    Unlike mutate.py's guaranteed tier these are not all certain to be invalid
+    (`LEFT JOIN` typed as `LFET JOIN` reads as a table alias), so they are
+    reported, not scored.
+    """
+    import random
+
+    rng = random.Random(seed)
+    out: list[tuple[str, str, str]] = []
+    for text, origin in seeds:
+        try:
+            toks = lex(text)
+        except Exception:
+            continue
+        sig = [t for t in toks if t.type not in IGNORED]
+        words = [t for t in sig if t.type == "word" and t.upper in TYPO_TARGETS]
+        if words:
+            victim = rng.choice(words)
+            typo = typo_of(victim.raw, rng)
+            if typo:
+                out.append(("keyword-typo", origin, text[: victim.start] + typo + text[victim.stop + 1:]))
+        semis = [t for k, t in enumerate(sig[:-1]) if t.type == "semicolon" and sig[k + 1].type == "word"]
+        if semis:
+            victim = rng.choice(semis)
+            out.append(("deleted-semicolon", origin, text[: victim.start] + text[victim.stop + 1:]))
+        commas = [
+            t for k, t in enumerate(sig[:-2])
+            if t.type == "comma" and sig[k + 1].type == "word" and sig[k + 2].upper in COLUMN_TYPES
+        ]
+        if commas:
+            victim = rng.choice(commas)
+            out.append(("deleted-column-comma", origin, text[: victim.start] + text[victim.stop + 1:]))
+    return out
+
+
+# Files in the corpus's valid sources that are broken as published. Each is
+# recorded in databricks-sql-corpus/docs/gaps.md as a source-side error, not a
+# parser gap. A finding on one is a true positive, so they are scored the
+# other way round: the checker should flag them.
+KNOWN_BROKEN = {
+    "dbx-packt-cookbook/Chapter08/Clean Up.sql":
+        "USE CATALOG ${catalog} left unterminated before the next statement (gaps.md)",
+}
+
+
 def show(d: dict) -> str:
     return f"{d['line']}:{d['column']} {d['severity']} [{d['code']}] {d['message'][:110]}"
 
@@ -102,17 +180,29 @@ def main() -> int:
     ap.add_argument("--sqlfluff-sample", type=int, default=0,
                     help="also time SQLFluff on this many corpus files, for comparison")
     ap.add_argument("--list", type=int, default=15, help="how many findings to print per section")
+    ap.add_argument("--show-missed", action="store_true", help="print everyday mistakes that went unflagged")
     args = ap.parse_args()
 
     corpus = pathlib.Path(args.corpus).resolve()
     sys.path.insert(0, str(corpus / "src"))
     from dbsqlparse.corpus.harness import CACHE_DIR, iter_sql_files, looks_like_json
-    from dbsqlparse.corpus.mutate import GUARANTEED, mutate_corpus
+    from dbsqlparse.corpus.mutate import GUARANTEED, _tokens, mutate_corpus
     from dbsqlparse.corpus.reference import load_reference
     from dbsqlparse.corpus.sources import REMOTE_SOURCES
 
     qc = Quickcheck()
     results: dict = {"sources": {}, "reference": {}, "mutation": {}}
+
+    # A known-bad control first. If the checker, or this harness, has stopped
+    # seeing anything, every number below would read as a success.
+    control, _ = qc.check(
+        "CRATE VIEW v AS SELECT 1;\nCREATE TABLE t (a INT\n  b STRING);\n"
+        "SELECT a,, b FROM t;\nSELECT a FORM t;\nSELECT (x;\n"
+    )
+    expected = {"keyword-typo", "missing-comma", "double-comma", "unclosed-bracket"}
+    if missing := expected - {d["code"] for d in control}:
+        print(f"CONTROL FAILED: expected {sorted(missing)}; got {[d['code'] for d in control]}")
+        return 2
 
     # --- 1. false positives on valid SQL ---------------------------------------
     print("== valid corpus: any error is a false positive ==")
@@ -121,6 +211,7 @@ def main() -> int:
     fp_files: list[tuple[str, list[dict]]] = []
     warn_files: list[tuple[str, list[dict]]] = []
     timings: list[tuple[float, int]] = []
+    known: list[tuple[str, bool]] = []
     for source in REMOTE_SOURCES:
         root = CACHE_DIR / source.name
         if source.expectation != "valid" or not root.exists():
@@ -132,8 +223,11 @@ def main() -> int:
                 continue
             diags, micros = qc.check(text, str(path))
             timings.append((micros, len(text)))
-            n += 1
             rel = str(path.relative_to(CACHE_DIR))
+            if rel in KNOWN_BROKEN:
+                known.append((rel, bool(errors_of(diags))))
+                continue
+            n += 1
             if errors_of(diags):
                 err += 1
                 fp_files.append((rel, errors_of(diags)))
@@ -148,6 +242,8 @@ def main() -> int:
     print(f"{'TOTAL':26s} {total:6d} {len(fp_files):10d} {len(warn_files):11d}")
     for rel, diags in fp_files[: args.list]:
         print(f"  FP  {rel}: " + "; ".join(show(d) for d in diags[:2]))
+    for rel, caught in known:
+        print(f"  known broken as published, {'flagged' if caught else 'MISSED'}: {rel} ({KNOWN_BROKEN[rel]})")
     if warn_files:
         print(f"  warnings ({sum(len(d) for _, d in warn_files)} in {len(warn_files)} files):")
         by_code = collections.Counter(d["code"] for _, ds in warn_files for d in ds)
@@ -218,6 +314,31 @@ def main() -> int:
         print(f"  ESCAPE {kind} {origin}")
     results["mutation"] = {k: dict(v, tier=tiers[k]) for k, v in by_kind.items()}
     results["mutation_excluded_raw_set"] = raw_set
+
+    # --- 3b. everyday mistakes -------------------------------------------------
+    print("\n== everyday mistakes in clean corpus files (reported, not scored) ==")
+    daily: dict[str, collections.Counter] = collections.defaultdict(collections.Counter)
+    missed: dict[str, list] = collections.defaultdict(list)
+    for kind, origin, sql in everyday_mutants(seeds, _tokens, args.seed):
+        diags, _ = qc.check(sql, origin)
+        c = daily[kind]
+        c["total"] += 1
+        c["error"] += bool(errors_of(diags))
+        c["any"] += bool(diags)
+        if not diags:
+            missed[kind].append((origin, sql))
+    print(f"{'kind':28s} {'total':>6s} {'errors':>7s} {'rate':>7s} {'+warn':>7s}")
+    for kind, c in sorted(daily.items()):
+        print(f"{kind:28s} {c['total']:6d} {c['error']:7d} {c['error'] / c['total'] * 100:6.1f}% "
+              f"{c['any'] / c['total'] * 100:6.1f}%")
+    results["everyday"] = {k: dict(v) for k, v in daily.items()}
+    if args.show_missed:
+        originals = {origin: text for text, origin in seeds}
+        for kind, rows in missed.items():
+            for origin, sql in rows[: args.list]:
+                orig = originals[origin]
+                pos = next((i for i, (a, b) in enumerate(zip(orig, sql)) if a != b), len(sql))
+                print(f"  MISSED {kind} {origin}: {orig[max(0, pos - 60):pos + 40]!r} -> {sql[max(0, pos - 60):pos + 40]!r}")
 
     # --- 4. speed ------------------------------------------------------------------
     print("\n== speed (in-process check time per file, valid corpus) ==")

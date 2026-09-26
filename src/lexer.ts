@@ -45,6 +45,8 @@ const WORD_RE = /[\p{L}\p{M}\p{N}_]+/uy;
 const NUMBER_RE = /(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?[\p{L}\p{N}_]*/uy;
 const WIDGET_RE = /\$[A-Za-z_][A-Za-z0-9_]*/y;
 const SEPARATOR_RE = /^--\s*COMMAND\s*-{2,}\s*$/;
+// Leading blank lines, then `%lang` at the start of a line.
+const MAGIC_RE = /\s*%([A-Za-z]+)\b/y;
 
 const OPS3 = ["<=>"];
 const OPS2 = ["<>", "<=", ">=", "!=", "==", "=>", "->", "||", "|>", "::"];
@@ -149,7 +151,24 @@ export function lex(text: string): LexResult {
     errors.push({ code, message, start, end });
   };
 
+  // A cell that opens with a non-SQL magic (`%python`, `%md`, `%run ./x`) is
+  // not SQL at all: lex it as one opaque comment. `%sql` cells are checked.
+  let cellStart = true;
+  const skipMagicCell = (): boolean => {
+    MAGIC_RE.lastIndex = i;
+    const m = MAGIC_RE.exec(text);
+    if (!m || m[1].toLowerCase() === "sql") return false;
+    const limit = limitAt(i);
+    push("comment", i + m[0].length - m[1].length - 1, limit);
+    i = limit;
+    return true;
+  };
+
   while (i < n) {
+    if (cellStart) {
+      cellStart = false;
+      if (skipMagicCell()) continue;
+    }
     const c = text.charCodeAt(i);
     const ch = text[i];
 
@@ -164,8 +183,10 @@ export function lex(text: string): LexResult {
       let j = text.indexOf("\n", i);
       if (j < 0) j = n;
       const body = text.slice(i, j);
-      push(SEPARATOR_RE.test(body) ? "separator" : "comment", i, j);
+      const separator = SEPARATOR_RE.test(body);
+      push(separator ? "separator" : "comment", i, j);
       i = j;
+      cellStart = separator || (tokens.length === 1 && body.startsWith("-- Databricks notebook source"));
       continue;
     }
 

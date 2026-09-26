@@ -16,41 +16,15 @@
 // separators. Brackets never legitimately span a `;`, so resetting there
 // keeps one missing `)` from turning the rest of the file red.
 
+import {
+  CheckOptions, Ctx, Diagnostic, Raw, Severity, VALUE_WORDS,
+  isNameContext, isPunct, isWild, lineCol, lineStarts, report, where,
+} from "./common";
 import { KEYWORDS } from "./keywords";
 import { lex, Token } from "./lexer";
+import { checkRawTail, checkStatements } from "./statements";
 
-export type Severity = "error" | "warning";
-
-export interface Diagnostic {
-  code: string;
-  severity: Severity;
-  message: string;
-  start: number; // offset
-  end: number; // offset, exclusive
-  line: number; // 1-based
-  column: number; // 1-based, UTF-16 code units
-  endLine: number;
-  endColumn: number;
-}
-
-export interface CheckOptions {
-  /** Report heuristic warnings as well as errors. Default true. */
-  warnings?: boolean;
-}
-
-type Raw = Omit<Diagnostic, "line" | "column" | "endLine" | "endColumn">;
-
-interface Ctx {
-  text: string;
-  /** This fragment writes a generic type, so a `>` may be closing one. */
-  generics?: boolean;
-  /** The file has a BEGIN block, so a `;` may sit inside a scripting CASE. */
-  scripting: boolean;
-  /** The lexer stopped early (unterminated token), so this fragment has no real end. */
-  openEnded: boolean;
-  warnings: boolean;
-  out: Raw[];
-}
+export type { CheckOptions, Diagnostic, Severity };
 
 // Operators that need something on both sides.
 const BINARY_ONLY = new Set([
@@ -76,11 +50,6 @@ const SCRIPT_END_WORDS = new Set(["IF", "LOOP", "WHILE", "FOR", "REPEAT"]);
 const BY_CLAUSES = new Set(["GROUP", "ORDER", "PARTITION", "CLUSTER", "SORT", "DISTRIBUTE"]);
 const SOLO_CLAUSES = new Set(["FROM", "WHERE", "HAVING", "LIMIT", "QUALIFY", "UNION", "INTERSECT"]);
 
-// Keywords that are values, so they end an operand: `NULL x` aliases NULL.
-const VALUE_WORDS = new Set([
-  "NULL", "TRUE", "FALSE", "CURRENT_DATE", "CURRENT_TIMESTAMP", "CURRENT_TIME", "CURRENT_USER",
-]);
-
 const OPENERS: Record<string, string> = { ")": "(", "]": "[", "}": "{" };
 
 export function check(text: string, options: CheckOptions = {}): Diagnostic[] {
@@ -93,7 +62,8 @@ export function check(text: string, options: CheckOptions = {}): Diagnostic[] {
   for (const e of errors) if (e.code === "unterminated-string") explainUnterminated(text, tokens, e.start, out);
   const unterminated = new Set(errors.map((e) => e.start));
   checkHintsAndStrings(tokens, unterminated, options.warnings ?? true, out);
-  const base = { text, scripting, warnings: options.warnings ?? true, out };
+  const swallowed = new Set(out.filter((r) => r.code === "string-swallows-code").map((r) => r.start));
+  const base = { text, scripting, warnings: options.warnings ?? true, explicitAliases: options.explicitAliases ?? false, out, swallowed };
 
   let start = 0;
   for (let i = 0; i <= sig.length; i++) {
@@ -113,7 +83,10 @@ function checkFragment(all: Token[], ctx: Ctx): void {
   const raw =
     lead.kind === "word" && RAW_STATEMENTS.has(lead.upper!) &&
     !(lead.upper === "SET" && toks[1]?.kind === "word" && (toks[1].upper === "VAR" || toks[1].upper === "VARIABLE"));
-  if (raw) return;
+  if (raw) {
+    checkRawTail(toks, ctx);
+    return;
+  }
   const reportedBefore = ctx.out.length;
   ctx = {
     ...ctx,
@@ -197,10 +170,14 @@ function checkFragment(all: Token[], ctx: Ctx): void {
     }
   }
 
-  // Heuristics only run on fragments that are otherwise clean: after a real
-  // error the bracket depths they rely on cannot be trusted.
-  if (ctx.warnings && ctx.out.length === reportedBefore) {
-    checkLists(toks, depth, ctx);
+  // Statement-level checks and the list heuristics need trustworthy bracket
+  // depths, so they only run on fragments with no bracket or token errors --
+  // and not where a string has swallowed code, since every token after it is
+  // then read inside out.
+  const swallowed = toks.some((t) => t.kind === "string" && ctx.swallowed?.has(t.start));
+  if (ctx.out.length === reportedBefore && !swallowed) {
+    checkStatements(toks, depth, ctx);
+    if (ctx.warnings) checkLists(toks, depth, ctx);
   }
 }
 
@@ -320,10 +297,19 @@ function checkLists(toks: Token[], depth: number[], ctx: Ctx): void {
       const first = toks[j];
       if (first?.kind === "word" && (first.upper === "DISTINCT" || first.upper === "ALL")) j++;
       for (const item of listItems(w, j, depth[s], endsSelectList)) checkItem(item, "select", w);
-    } else if (t.upper === "BY" && toks[s - 1]?.kind === "word" && BY_LISTS.has(toks[s - 1].upper!)) {
+    } else if (t.upper === "BY" && toks[s - 1]?.kind === "word" && BY_LISTS.has(toks[s - 1].upper!) && !inPipeAggregate(toks, depth, s)) {
       for (const item of listItems(w, s + 1, depth[s], endsByList)) checkItem(item, "list", w);
     }
   }
+}
+
+/** `|> AGGREGATE ... GROUP BY a x`: pipe syntax lets its grouping expressions take aliases. */
+function inPipeAggregate(toks: Token[], depth: number[], by: number): boolean {
+  for (let k = by - 1; k >= 0; k--) {
+    if (depth[k] !== depth[by]) continue;
+    if (toks[k].kind === "op" && toks[k].text === "|>") return toks[k + 1]?.upper === "AGGREGATE";
+  }
+  return false;
 }
 
 /** Split the tokens from `from` at bracket depth d into comma-separated items. */
@@ -426,6 +412,7 @@ function checkArgs(g: El, w: Walk): void {
  */
 function checkItem(els: El[], mode: Mode, w: Walk): void {
   const { ctx } = w;
+  if (ctx.flagged && els.some((e) => ctx.flagged!.has(e.tok.start))) return; // already explained
   let lastEnd = false; // the previous element ended an operand
   let afterJoin = false; // the previous element was `.`, `:` or `::`
   let aliased = false;
@@ -511,6 +498,12 @@ function checkItem(els: El[], mode: Mode, w: Walk): void {
         aliasAt = k;
       }
     }
+  }
+
+  if (ctx.explicitAliases && mode === "select" && aliasAt > 0 && aliasAt === els.length - 1) {
+    const alias = els[aliasAt].tok;
+    report(ctx, "implicit-alias", "warning", alias, `\`${alias.text}\` is an alias without AS. Missing comma? (Write \`AS ${alias.text}\` if the alias is intended.)`);
+    return;
   }
 
   // Only after a bare column or literal. An alias on its own line after a long
@@ -618,23 +611,6 @@ function explainUnterminated(text: string, tokens: Token[], at: number, out: Raw
   });
 }
 
-/** After `.`, `:`, `::` or AS a word is a name, never a keyword. */
-function isNameContext(p: Token | undefined): boolean {
-  if (!p) return false;
-  if (p.kind === "punct") return p.text === ".";
-  if (p.kind === "op") return p.text === ":" || p.text === "::";
-  return p.kind === "word" && p.upper === "AS";
-}
-
-function isPunct(t: Token, ch: string): boolean {
-  return t.kind === "punct" && t.text === ch;
-}
-
-/** Templates and unknown characters could stand for anything: never judge next to them. */
-function isWild(t: Token): boolean {
-  return t.kind === "template" || t.kind === "other";
-}
-
 /** `%sql` / `%python` at the top of a notebook cell is a magic command, not SQL. */
 function dropMagicLine(toks: Token[], text: string): Token[] {
   const first = toks[0];
@@ -646,35 +622,6 @@ function dropMagicLine(toks: Token[], text: string): Token[] {
   let k = 0;
   while (k < toks.length && toks[k].start < eol) k++;
   return toks.slice(k);
-}
-
-function report(ctx: Ctx, code: string, severity: Severity, t: Token, message: string): void {
-  // Diagnostics are anchored on the offending token; a token swallowed to the
-  // end of the input by the lexer is anchored on its first character only.
-  const end = Math.min(t.end, t.start + Math.max(1, Math.min(t.text.length, 80)));
-  ctx.out.push({ code, severity, message, start: t.start, end });
-}
-
-function where(text: string, offset: number): string {
-  const [line, col] = lineCol(offset, lineStarts(text));
-  return `line ${line}:${col}`;
-}
-
-function lineStarts(text: string): number[] {
-  const starts = [0];
-  for (let i = text.indexOf("\n"); i >= 0; i = text.indexOf("\n", i + 1)) starts.push(i + 1);
-  return starts;
-}
-
-function lineCol(offset: number, starts: number[]): [number, number] {
-  let lo = 0;
-  let hi = starts.length - 1;
-  while (lo < hi) {
-    const mid = (lo + hi + 1) >> 1;
-    if (starts[mid] <= offset) lo = mid;
-    else hi = mid - 1;
-  }
-  return [lo + 1, offset - starts[lo] + 1];
 }
 
 function finalize(text: string, raw: Raw[]): Diagnostic[] {

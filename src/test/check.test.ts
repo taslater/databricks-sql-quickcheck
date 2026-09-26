@@ -192,6 +192,172 @@ describe("missing commas", () => {
   });
 });
 
+describe("keyword typos", () => {
+  it("fire where only a keyword can go", () => {
+    const cases: [string, string][] = [
+      ["CRATE TABLE t (a INT)", "CREATE"],
+      ["SELEC a FROM t", "SELECT"],
+      ["SELECT a, b FORM t WHERE x = 1", "FROM"],
+      ["SELECT * FORM t", "FROM"],
+      ["SELECT a FROM t WHRE x = 1", "WHERE"],
+      ["SELECT a, count(*) FROM t GROPU BY a", "GROUP"],
+      ["SELECT rank() OVER (ORDRE BY a) FROM t", "ORDER"],
+      ["SELECT * FROM a LEFT JION b ON a.id = b.id", "JOIN"],
+      ["SELECT * FROM a JION b ON a.id = b.id", "JOIN"],
+      ["CREATE TABLE t (a INT NOT NUL)", "NULL"],
+      ["SELECT a FROM t WHERE b IS NUL", "NULL"],
+      ["CREATE TABLE t (a INT COMENT 'x')", "COMMENT"],
+      ["ALTER TABLE t SET TBLPROPERITES ('a' = 'b')", "TBLPROPERTIES"],
+      ["SELECT CASE WEHN a = 1 THEN 'x' END FROM t", "WHEN"],
+      ["SELECT sum(CAES WHEN a THEN 1 ELSE 0 END) FROM t", "CASE"],
+      ["CREATE VIEW v AS SELCT a FROM t", "SELECT"],
+      ["CREATE TABLE IF NOT EXIST t (a INT)", "EXISTS"],
+      ["INSERT INOT t VALUES (1)", "INTO"],
+      ["SHOW TABELS", "TABLES"],
+      ["USE CATAOG main", "CATALOG"],
+      ["MERGE INTO t USING s ON t.id = s.id WHEEN MATCHED THEN DELETE", "WHEN"],
+      ["CREATE STREAMING TABLE t (CONSTRAINT c EXPECT (a > 0) ON VIOLATION RDOP ROW) AS SELECT 1", "DROP"],
+      ["ALTER TABLE t ATLER COLUMN c COMMENT 'x'", "ALTER"],
+      ["SELECT a FROM t WHERE EXSITS (SELECT 1)", "EXISTS"],
+    ];
+    for (const [sql, kw] of cases) {
+      const d = check(sql).find((x) => x.code === "keyword-typo");
+      assert.ok(d, `no keyword-typo for: ${sql}`);
+      assert.match(d.message, new RegExp(`Did you mean ${kw}\\?`), sql);
+    }
+  });
+
+  it("names that happen to be one letter off a keyword stay quiet", () => {
+    clean("SELECT form, pull, wher FROM forms f JOIN joint j ON f.id = j.id");
+    clean("SELECT a form, b limt FROM t");
+    clean("SELECT x AS selct, y AS frm FROM t");
+    clean("SELECT CASE status WHEN 1 THEN 'a' END FROM t");
+    clean("DESCRIBE t col_name");
+    clean("SELECT left(s, 2), right FROM t");
+    clean("SELECT * FROM tabel");
+  });
+});
+
+describe("missing semicolons", () => {
+  it("fire when a line starts a new statement", () => {
+    assert.deepEqual(found("CREATE CATALOG IF NOT EXISTS c\nCREATE SCHEMA IF NOT EXISTS c.s;"), ["missing-semicolon@2:1"]);
+    assert.deepEqual(codes("DROP VIEW IF EXISTS v\nDROP TABLE IF EXISTS t;"), ["missing-semicolon"]);
+    assert.deepEqual(codes("SELECT 1 AS a\nSELECT 2 AS b;"), ["missing-semicolon"]);
+    assert.deepEqual(codes("USE CATALOG ${catalog}\nUSE SCHEMA s;"), ["missing-semicolon"]);
+    assert.deepEqual(codes("CREATE TABLE t (a INT) USING DELTA\nCREATE TABLE u (b INT);"), ["missing-semicolon"]);
+    assert.deepEqual(codes("MERGE INTO t USING s ON t.id = s.id WHEN NOT MATCHED THEN INSERT *\nMERGE INTO u USING s ON u.id = s.id WHEN MATCHED THEN DELETE"), ["missing-semicolon"]);
+    // SET takes the rest as raw text: Spark would read the SELECT as part of the value.
+    assert.deepEqual(codes("SET spark.sql.shuffle.partitions = 8\nSELECT 1"), ["missing-semicolon"]);
+  });
+
+  it("statements that continue on the next line stay quiet", () => {
+    clean("INSERT INTO t\nSELECT * FROM s");
+    clean("CREATE TABLE t AS\nSELECT * FROM s");
+    clean("ALTER TABLE t\n  DROP COLUMN c");
+    clean("ALTER TABLE t\n  ALTER COLUMN c COMMENT 'x'");
+    clean("WITH x AS (SELECT 1 AS a)\nINSERT INTO t SELECT * FROM x");
+    clean("SELECT 1 AS a\nUNION ALL\nSELECT 2 AS a");
+    clean("EXPLAIN FORMATTED\n  CREATE VIEW v AS SELECT 1");
+    clean("SELECT a FROM t ORDER BY a\nDESC");
+    clean("FROM src\nINSERT INTO a SELECT x\nINSERT INTO b SELECT y");
+    clean("CREATE SCHEMA s\nWITH DBPROPERTIES ('a' = 'b')");
+    clean("MERGE INTO t USING s ON t.id = s.id\nWHEN MATCHED THEN\n  DELETE\nWHEN NOT MATCHED THEN\n  INSERT *");
+    clean("BEGIN\n  CREATE TABLE t (a INT);\n  INSERT INTO t VALUES (1);\nEND");
+  });
+});
+
+describe("column definitions", () => {
+  it("a missing comma between two columns", () => {
+    assert.deepEqual(found("CREATE TABLE t (\n  id STRING NOT NULL COMMENT 'id'\n  ts BIGINT,\n  x INT\n)"), ["missing-comma@3:3"]);
+    assert.deepEqual(codes("CREATE TABLE t (id STRING ts BIGINT)"), ["missing-comma"]);
+    assert.deepEqual(codes("CREATE FUNCTION f(a INT b STRING) RETURNS INT RETURN 1"), ["missing-comma"]);
+  });
+
+  it("valid column definitions stay quiet", () => {
+    clean("CREATE TABLE t (a STRUCT<x INT, y STRING>, b MAP<STRING, ARRAY<INT>> COMMENT 'm', c DECIMAL(10, 2) NOT NULL)");
+    clean("CREATE TABLE t (a INT GENERATED ALWAYS AS (b + 1), b INT DEFAULT 0, CONSTRAINT pk PRIMARY KEY (a))");
+    clean("CREATE TABLE t (a STRING COLLATE UTF8_LCASE, b TIMESTAMP_NTZ, c VARIANT)");
+  });
+});
+
+describe("clause order", () => {
+  it("out of order, and twice", () => {
+    assert.deepEqual(found("SELECT a, count(*) FROM t GROUP BY a WHERE a > 1"), ["clause-order@1:38"]);
+    assert.deepEqual(codes("SELECT a FROM t WHERE a > 1 WHERE b < 2"), ["clause-order"]);
+    assert.deepEqual(codes("SELECT a FROM t LIMIT 10 ORDER BY a"), ["clause-order"]);
+  });
+
+  it("each query block has its own clauses", () => {
+    clean("SELECT a FROM t WHERE a IN (SELECT b FROM u WHERE b > 1) GROUP BY a HAVING count(*) > 1 QUALIFY 1 = 1 ORDER BY a LIMIT 5 OFFSET 1");
+    clean("SELECT a FROM t WHERE a > 1 UNION ALL SELECT a FROM u WHERE a < 1 ORDER BY a");
+    clean("INSERT INTO t REPLACE WHERE d > '2024' SELECT * FROM s WHERE d > '2024'");
+    clean("FROM t |> WHERE a > 1 |> WHERE b > 1");
+    clean("SELECT a FROM t DISTRIBUTE BY a SORT BY a");
+  });
+});
+
+describe("CASE structure", () => {
+  it("THEN, WHEN and ELSE out of place", () => {
+    assert.deepEqual(codes("SELECT CASE WHEN a = 1 'x' ELSE 'y' END FROM t"), ["case-structure"]);
+    assert.deepEqual(codes("SELECT CASE a THEN 1 END FROM t"), ["case-structure"]);
+    assert.deepEqual(codes("SELECT CASE ELSE 1 END FROM t"), ["case-structure"]);
+    assert.deepEqual(codes("SELECT CASE WHEN a THEN 1 ELSE 2 ELSE 3 END FROM t"), ["case-structure"]);
+    assert.deepEqual(codes("SELECT CASE WHEN a THEN 1 ELSE 2 WHEN b THEN 3 END FROM t"), ["case-structure"]);
+  });
+
+  it("nested and simple CASE, and scripting CASE statements", () => {
+    clean("SELECT CASE WHEN a THEN CASE b WHEN 1 THEN 'x' ELSE 'y' END ELSE 'z' END FROM t");
+    clean("BEGIN\n  CASE x\n    WHEN 1 THEN SELECT 1;\n    ELSE SELECT 2;\n  END CASE;\nEND;");
+  });
+});
+
+describe("dangling keywords", () => {
+  it("a keyword with nothing after it", () => {
+    assert.deepEqual(found("SELECT a FROM t WHERE a > 1 AND;"), ["dangling-keyword@1:29"]);
+    assert.deepEqual(codes("SELECT a FROM t WHERE a > 1 AND GROUP BY a"), ["dangling-keyword"]);
+    assert.deepEqual(codes("SELECT a FROM t WHERE GROUP BY a"), ["dangling-keyword"]);
+    assert.deepEqual(codes("SELECT FROM t"), ["dangling-keyword"]);
+    assert.deepEqual(codes("SELECT * FROM a JOIN ON a.id = 1"), ["dangling-keyword"]);
+    assert.deepEqual(codes("SELECT * FROM t ORDER BY;"), ["dangling-keyword"]);
+  });
+
+  it("keywords that are followed by what they need stay quiet", () => {
+    clean("SELECT a IS NOT DISTINCT FROM b FROM t WHERE c BETWEEN 1 AND 2 GROUP BY ALL");
+    clean("MERGE INTO t USING s ON t.id = s.id WHEN NOT MATCHED BY SOURCE THEN DELETE");
+    clean("CREATE OR REPLACE TABLE IF NOT EXISTS t (a INT)");
+    clean("SELECT a, from, where FROM t");
+  });
+});
+
+describe("operator typos", () => {
+  it("=< and a stray =>", () => {
+    assert.deepEqual(codes("SELECT * FROM t WHERE a =< 1"), ["operator-typo"]);
+    assert.deepEqual(codes("SELECT * FROM t WHERE a => 1"), ["operator-typo"]);
+    clean("SELECT read_files('/p', format => 'csv'), transform(arr, x -> x + 1) FROM t WHERE a <= 1");
+  });
+});
+
+describe("statement starts", () => {
+  it("an unknown first word is a warning; a typo of a real one is an error", () => {
+    assert.deepEqual(check("foo bar;").map((d) => [d.code, d.severity]), [["unknown-statement", "warning"]]);
+    assert.deepEqual(check("DELTE FROM t;").map((d) => [d.code, d.severity]), [["keyword-typo", "error"]]);
+    clean("lbl: BEGIN\n  SELECT 1;\nEND lbl;");
+  });
+
+  it("non-SQL magic cells are skipped whole", () => {
+    clean("-- Databricks notebook source\n%python\nprint(\"it's\"); x = {1: 2}\n\n-- COMMAND ----------\n\n%run ./other\n\n-- COMMAND ----------\n\n%sql\nSELECT 1");
+    assert.deepEqual(codes("-- Databricks notebook source\n%sql\nSELECT a,, b FROM t"), ["double-comma"]);
+  });
+});
+
+describe("explicit aliases (opt-in)", () => {
+  it("reports every implicit column alias when asked", () => {
+    assert.deepEqual(codes("SELECT a b, c FROM t"), []);
+    assert.deepEqual(check("SELECT a b, c FROM t", { explicitAliases: true }).map((d) => d.code), ["implicit-alias"]);
+    assert.deepEqual(check("SELECT a AS b, count(*) AS n FROM t", { explicitAliases: true }), []);
+  });
+});
+
 describe("positions", () => {
   it("are 1-based and survive CRLF line endings", () => {
     const [d] = check("SELECT a\r\nFROM t\r\nWHERE (b = 1");

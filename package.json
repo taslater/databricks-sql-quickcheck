@@ -2,7 +2,7 @@
   "name": "databricks-sql-quickcheck",
   "displayName": "Databricks SQL Quickcheck",
   "description": "Instant, as-you-type structural syntax checks for Databricks SQL: brackets, quotes, commas, operators, CASE/END.",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "publisher": "local",
   "license": "MIT",
   "private": true,
@@ -49,7 +49,12 @@
         "databricksSqlQuickcheck.warnings": {
           "type": "boolean",
           "default": true,
-          "description": "Also report likely mistakes that Databricks may technically accept (missing comma in a select list, trailing comma before FROM)."
+          "description": "Also report likely mistakes that Databricks may technically accept: a missing comma in a select list, a trailing comma before FROM, an unknown statement keyword."
+        },
+        "databricksSqlQuickcheck.explicitAliases": {
+          "type": "boolean",
+          "default": false,
+          "description": "Warn on every implicit column alias (SELECT a b). Off by default because about one real file in ten aliases this way on purpose; turn it on if your team already requires AS, and every lost comma in a select list is reported."
         }
       }
     }
@@ -59,7 +64,7 @@
     "watch": "tsc -watch -p .",
     "test": "tsc -p . && node --test out/test/*.test.js",
     "keywords": "python3 scripts/gen_keywords.py ../sqlfluff",
-    "package": "npm run build && mkdir -p dist && vsce package --allow-missing-repository -o dist/databricks-sql-quickcheck.vsix"
+    "package": "npm run build && mkdir -p dist && vsce package --allow-missing-repository --no-rewrite-relative-links -o dist/databricks-sql-quickcheck.vsix"
   },
   "devDependencies": {
     "@types/node": "^18.19.0",

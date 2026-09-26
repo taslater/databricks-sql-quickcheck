@@ -13,6 +13,7 @@ import { check, Diagnostic } from "./check";
 const USAGE = `usage: dbsql-quickcheck [options] <file|dir>...
 
   --no-warnings   report errors only
+  --explicit-aliases  warn on every implicit column alias (SELECT a b)
   --strict        exit 1 on warnings as well as errors
   --json          print results as JSON
   --stdin         check standard input (name it with --stdin-filename)
@@ -28,14 +29,16 @@ interface Args {
   stdin: boolean;
   stdinName: string;
   jsonl: boolean;
+  explicitAliases: boolean;
 }
 
 function parseArgs(argv: string[]): Args {
-  const args: Args = { paths: [], warnings: true, strict: false, json: false, stdin: false, stdinName: "<stdin>", jsonl: false };
+  const args: Args = { paths: [], warnings: true, strict: false, json: false, stdin: false, stdinName: "<stdin>", jsonl: false, explicitAliases: false };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     if (a === "--no-warnings") args.warnings = false;
     else if (a === "--strict") args.strict = true;
+    else if (a === "--explicit-aliases") args.explicitAliases = true;
     else if (a === "--json") args.json = true;
     else if (a === "--stdin") args.stdin = true;
     else if (a === "--stdin-filename") args.stdinName = argv[++i] ?? args.stdinName;
@@ -68,13 +71,13 @@ function format(file: string, d: Diagnostic): string {
   return `${file}:${d.line}:${d.column}: ${d.severity} [${d.code}] ${d.message}`;
 }
 
-async function runJsonl(warnings: boolean): Promise<void> {
+async function runJsonl(warnings: boolean, explicitAliases: boolean): Promise<void> {
   const rl = readline.createInterface({ input: process.stdin, crlfDelay: Infinity });
   for await (const line of rl) {
     if (!line.trim()) continue;
     const { id, text } = JSON.parse(line) as { id: string; text: string };
     const t0 = process.hrtime.bigint();
-    const diagnostics = check(text, { warnings });
+    const diagnostics = check(text, { warnings, explicitAliases });
     const micros = Number(process.hrtime.bigint() - t0) / 1000;
     process.stdout.write(JSON.stringify({ id, diagnostics, micros }) + "\n");
   }
@@ -82,7 +85,7 @@ async function runJsonl(warnings: boolean): Promise<void> {
 
 async function main(): Promise<void> {
   const args = parseArgs(process.argv.slice(2));
-  if (args.jsonl) return runJsonl(args.warnings);
+  if (args.jsonl) return runJsonl(args.warnings, args.explicitAliases);
 
   const inputs: { name: string; text: string }[] = [];
   if (args.stdin) {
@@ -101,7 +104,7 @@ async function main(): Promise<void> {
   let warnings = 0;
   const results: { path: string; diagnostics: Diagnostic[] }[] = [];
   for (const { name, text } of inputs) {
-    const diagnostics = check(text, { warnings: args.warnings });
+    const diagnostics = check(text, { warnings: args.warnings, explicitAliases: args.explicitAliases });
     errors += diagnostics.filter((d) => d.severity === "error").length;
     warnings += diagnostics.filter((d) => d.severity === "warning").length;
     if (args.json) results.push({ path: name, diagnostics });
