@@ -5,8 +5,18 @@ updates:
     schedule:
       interval: monthly
     groups:
+      # Minor and patch updates together; each major arrives on its own, so a
+      # compiler or packager major can be judged by itself.
       dev-dependencies:
         patterns: ["*"]
+        update-types: [minor, patch]
+    ignore:
+      # These two are held to what package.json's `engines` promises. Newer
+      # Node types would let code use APIs Node 18 lacks, and @types/vscode
+      # newer than engines.vscode makes vsce refuse to package.
+      - dependency-name: "@types/node"
+        update-types: [version-update:semver-major]
+      - dependency-name: "@types/vscode"
   - package-ecosystem: github-actions
     directory: /
     schedule:
