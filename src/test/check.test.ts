@@ -394,6 +394,18 @@ describe("empty lists", () => {
     clean("SELECT uuid()");
   });
 
+  it("EXCEPT and TABLESAMPLE own their lists too", () => {
+    assert.deepEqual(codes("SELECT * EXCEPT () FROM t"), ["empty-list"]);
+    assert.deepEqual(codes("SELECT * FROM test TABLESAMPLE ()"), ["empty-list"]);
+  });
+
+  it("a filled EXCEPT list and a set operation stay quiet", () => {
+    clean("SELECT * EXCEPT (b) FROM t");
+    clean("SELECT * FROM t TABLESAMPLE (10 PERCENT)");
+    clean("SELECT a FROM x EXCEPT SELECT a FROM y");
+    clean("SELECT a FROM x EXCEPT (SELECT a FROM y)");
+  });
+
   it("the owner is the word before BY, not BY itself", () => {
     assert.deepEqual(codes("OPTIMIZE events ZORDER BY ()"), ["empty-list"]);
     assert.deepEqual(
@@ -419,6 +431,92 @@ describe("shape checks reach privilege statements", () => {
     clean("GRANT SELECT, MODIFY ON TABLE t TO alf");
     clean("REVOKE SELECT, MODIFY ON TABLE t FROM alf");
     clean("GRANT ALL PRIVILEGES ON SCHEMA s TO `a@b.com`");
+  });
+});
+
+describe("forbidden adjacency", () => {
+  it("two exclusive alternatives both written", () => {
+    assert.deepEqual(codes("SELECT ALL DISTINCT a FROM t"), ["statement-shape"]);
+    assert.deepEqual(codes("EXPLAIN EXTENDED CODEGEN SELECT 1"), ["statement-shape"]);
+    assert.deepEqual(codes("VACUUM t FULL LITE"), ["statement-shape"]);
+    assert.deepEqual(codes("VACUUM t DRY RUN FULL"), ["statement-shape"]);
+    assert.deepEqual(codes("CREATE TEMP EXTERNAL TABLE t (a INT)"), ["statement-shape"]);
+  });
+
+  it("each alternative on its own is fine", () => {
+    clean("SELECT DISTINCT a FROM t");
+    clean("SELECT ALL a FROM t");
+    clean("EXPLAIN CODEGEN SELECT 1");
+    clean("VACUUM t FULL");
+    clean("VACUUM t LITE");
+    clean("VACUUM t DRY RUN");
+    clean("CREATE TEMP TABLE t (a INT)");
+    clean("CREATE EXTERNAL TABLE t (a INT) LOCATION 's3://b/p'");
+  });
+
+  it("a mandatory slot with nothing in it", () => {
+    assert.deepEqual(codes("ANALYZE TABLE t COMPUTE STATISTICS"), []);
+    assert.deepEqual(codes("GRANT ON TABLE t TO p"), ["statement-shape"]);
+    assert.deepEqual(codes("REVOKE ON TABLE t FROM p"), ["statement-shape"]);
+    assert.deepEqual(codes("COPY INTO t FROM FILEFORMAT = CSV"), ["statement-shape"]);
+    assert.deepEqual(codes("LOAD DATA INPATH INTO TABLE t"), ["statement-shape"]);
+    assert.deepEqual(codes("ALTER TABLE RENAME TO t2"), ["statement-shape"]);
+    assert.deepEqual(codes("CREATE TABLE t (a INT) CLUSTERED BY INTO 8 BUCKETS"), ["statement-shape"]);
+  });
+
+  it("the same statements with the slot filled stay quiet", () => {
+    clean("GRANT SELECT ON TABLE t TO p");
+    clean("REVOKE SELECT ON TABLE t FROM p");
+    clean("COPY INTO t FROM 's3://b/p' FILEFORMAT = CSV");
+    clean("LOAD DATA INPATH '/p' INTO TABLE t");
+    clean("ALTER TABLE t1 RENAME TO t2");
+    clean("CREATE TABLE t (a INT) CLUSTERED BY (a) INTO 8 BUCKETS");
+  });
+
+  it("a required modifier missing", () => {
+    assert.deepEqual(codes("CREATE OR VIEW v AS SELECT a FROM t"), ["statement-shape"]);
+    assert.deepEqual(codes("CREATE GLOBAL VIEW v AS SELECT a FROM t"), ["statement-shape"]);
+    assert.deepEqual(codes("CREATE VIEW v WITH AS SELECT a FROM t"), ["statement-shape"]);
+  });
+
+  it("the correct forms of those stay quiet", () => {
+    clean("CREATE OR REPLACE VIEW v AS SELECT a FROM t");
+    clean("CREATE GLOBAL TEMPORARY VIEW v AS SELECT a FROM t");
+    clean("CREATE VIEW v WITH SCHEMA BINDING AS SELECT a FROM t");
+    clean("CREATE OR REFRESH STREAMING TABLE t AS SELECT * FROM STREAM s");
+  });
+
+  it("a pair says nothing outside the statement it belongs to", () => {
+    // `full` and `run` are ordinary words once VACUUM is not the lead.
+    clean("SELECT * FROM a FULL OUTER JOIN b ON a.id = b.id");
+    clean("SELECT * FROM logs run FULL JOIN b ON run.id = b.id");
+    // `view` is a legal column name, so OR VIEW outside CREATE means nothing.
+    clean("SELECT * FROM t WHERE flagged OR view");
+    clean("SELECT a, all, distinct FROM t");
+  });
+
+  it("the pair must be keywords, not names", () => {
+    clean("SELECT t.all AS x FROM t");
+    clean("SELECT count(*) AS full FROM t");
+  });
+});
+
+describe("two-word tails that owe a follower", () => {
+  it("neither word alone would be evidence", () => {
+    assert.deepEqual(codes("CREATE CATALOG c MANAGED LOCATION"), ["dangling-keyword"]);
+    assert.deepEqual(codes("CREATE SCHEMA s MANAGED LOCATION"), ["dangling-keyword"]);
+    assert.deepEqual(codes("ALTER SHARE s ADD TABLE"), ["dangling-keyword"]);
+    assert.deepEqual(codes("LOAD DATA INPATH '/p' INTO TABLE"), ["dangling-keyword"]);
+    assert.deepEqual(codes("SHOW GRANTS TO RECIPIENT"), ["dangling-keyword"]);
+    assert.deepEqual(codes("SHOW SHARES IN PROVIDER"), ["dangling-keyword"]);
+  });
+
+  it("the single word on its own is still not evidence", () => {
+    clean("ALTER TABLE t DROP COLUMN location");
+    clean("SELECT provider FROM t");
+    clean("CREATE CATALOG c MANAGED LOCATION 's3://b/p'");
+    clean("ALTER SHARE s ADD TABLE tbl");
+    clean("SHOW GRANTS TO RECIPIENT r");
   });
 });
 

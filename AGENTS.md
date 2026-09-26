@@ -5,8 +5,7 @@ Guidance for AI coding agents working in this repo. The workspace index is
 too: no employer SQL, ever, and no work compute.
 
 Last updated 2026-09-26 (truncated-statement and empty-list checks; the
-silence-by-default rule and the forbidden-adjacency design; three suppression
-fixes).
+silence-by-default rule; the forbidden-adjacency check).
 
 ## What this is
 
@@ -84,12 +83,20 @@ misleading, because most of what it counts is grammar-level and out of remit.
 | --- | --- | --- |
 | `truncated` | stops on a keyword or operator still owing an operand | ours |
 | `empty-list` | a *clause* bracket with nothing in it | ours |
+| `conflict` | two exclusive alternatives both written | ours |
 | `grammar` | well-formed shape, a required clause missing | SQLFluff's |
 
+`conflict` is taken from the case's own `reason: exclusive-alternative`, not
+inferred from tokens: `SELECT ALL DISTINCT` is well formed in every way a
+shallow checker can see, and only the docs say the pair is forbidden.
+
 `-> target` is the line to watch: the two structural buckets together. It went
-from **40/219 (18.3%) to 161/219 (73.5%) on 2026-09-26**, and the overall
-must-reject figure from 71/395 to 193/395, by mining cases the corpus already
-had rather than by generating new ones. The `grammar` bucket sits at 18% and
+from **40/219 (18.3%) to 189/233 (81.1%) on 2026-09-26**, and the overall
+must-reject figure from 71/395 to 241/395, by mining cases the corpus already
+had rather than by generating new ones. The denominator moved from 219 to 233
+in the same session: `conflict` was split out of `grammar`, because two
+exclusive alternatives both written is something a shallow checker can see and
+should be scored for. The `grammar` bucket sits at 18% and
 is not a target: about 90 of the 395 are missing *values* inside a slot
 (`column_comment`, `data_type`, `expr`), which no shallow checker should read.
 The honest ceiling is ~280/395; `docs/design-notes.md` derives it.
@@ -240,42 +247,48 @@ the whole time they were present, which is exactly why they went unnoticed.
   following `BY`. This is the adjacency design below in miniature, and the
   reason to believe it.
 
-## The next check: forbidden adjacency
+## Forbidden adjacency
 
-Designed and measured but not built, so that the reasoning is not redone.
-Full version in `docs/design-notes.md`; the short form:
+Shipped 2026-09-26. The unit is an **ordered pair of adjacent keywords at
+bracket depth 0**, which is the general form of `NEEDS_FOLLOWER` (the case where
+the second element is the end of the statement). One mechanism covers what
+looked like four checks: exclusive alternatives (`ALL DISTINCT`, `EXTENDED
+CODEGEN`, `FULL LITE`), a mandatory slot with nothing in it (`GRANT ON`,
+`FROM FILEFORMAT`, `TABLE RENAME`), a missing required modifier (`OR VIEW`,
+`GLOBAL VIEW`) and compound-statement shape (`ATOMIC END`, `IF THEN`).
 
-The unit is an **ordered pair of adjacent significant tokens at bracket depth 0
-within a fragment**, with `$` for end of fragment. `NEEDS_FOLLOWER` is the
-special case where the second element is `$`. One mechanism covers five things
-that looked like five checks -- truncation (`TO $`), a missing mid-statement slot
-(`TABLE COMPUTE` in `ANALYZE TABLE COMPUTE STATISTICS`), exclusive alternatives
-(`ALL DISTINCT`, `EXTENDED CODEGEN`), compound-statement shape (`BEGIN LOOP`,
-`ATOMIC END`), and a missing required modifier (`OR VIEW`). Measured yield: **63
-of the 202 currently-missed must-reject cases**, from 63 distinct pairs.
+**`FORBIDDEN_PAIRS` is an explicit deny-list and must stay one.** A table of
+"adjacencies not seen in the corpus" fires on 21.8% of valid statements --
+one valid statement in five contains a keyword pair found nowhere else, measured
+by leave-one-source-out in `docs/design-notes.md`. New Databricks syntax must
+not be able to make this fire; only editing the list can.
 
-A pair ships only after three gates, in order:
+Three gates, in order. `scripts/derive_shape_sets.py` does 1 and 3; **2 is
+yours and cannot be skipped**:
 
-1. **generated** as a candidate by `scripts/derive_shape_sets.py` -- occurs in a
-   missed must-reject case, in no valid SQL;
-2. **confirmed** against the page's verbatim `syntax:` block via the case's
-   `omits:` or `conflicts:` field, which must name a mandatory slot or an
-   exclusive pair. The docs are the oracle; frequency is not;
-3. **vetoed by data** forever -- absent from the 562 valid files and 823
-   must-parse cases, re-checked every run.
+1. **generated** -- the pair occurs in a missed must-reject case and in no valid
+   SQL. The script prints candidates; it never admits one.
+2. **confirmed** -- the page's verbatim `syntax:` block shows the case's
+   `omits:` sitting *between* those two words, or its `conflicts:` naming them
+   both. **Of 63 candidates, 21 failed this gate.** `BEGIN LOOP` is a valid
+   opener that only looked novel because the corpus has few scripting cases --
+   its case omits a `label`, which is nowhere near those two words. `TABLE
+   COMPUTE` was refused for a different reason: `ANALYZE TABLE compute COMPUTE
+   STATISTICS` is a table named `compute`, and nothing at this depth tells them
+   apart. The 16 that remain unshipped are printed on every run.
+3. **vetoed by data** -- absent from the 562 valid files and 823 must-parse
+   cases, re-checked every run, failing loudly.
 
-Gate 2 is the one that cannot be skipped: admitting pairs by statistics alone
-fires on 21.8% of valid statements (measured, `docs/design-notes.md`). The
-shipped artifact is an explicit deny-list with a reason and a case id per entry,
-so new Databricks syntax cannot make it fire.
+`lead` is the positional evidence that keeps a pair off a name, and it is load
+bearing: `FULL LITE` is wrong under `VACUUM` and says nothing anywhere else,
+where `full` is a join type and `run` is a table alias (`FROM logs run FULL
+JOIN b`). Every pair that could read as an identifier carries one.
 
-Boundaries fixed at design time: it may check that a slot between two clause
-keywords is **non-empty**, never what is **inside** it; it may check adjacency
-and order, never build a statement model or resolve names; a pair whose two
-words could both be identifiers in the position tested is refused, not tuned.
-Adding it needs a fourth `shape_of` bucket (`conflict`), since 14 of the
-exclusive-alternative cases currently sit in `grammar` and would otherwise move
-the target denominator silently.
+**The two veto sources are not interchangeable.** `spark-sql-tests` deliberately
+contains invalid SQL, so it is advisory, not binding. Making it so unblocked
+`EXCEPT ()`, `TABLESAMPLE ()` and `SHOW TABLE EXTENDED`, each of which it had
+been vetoing with a statement its own file marks `-- Errors` or `-- negative
+tests`, and each of which the reference corpus labels must-reject.
 
 ## Release and install
 

@@ -167,14 +167,19 @@ def everyday_mutants(seeds: list[tuple[str, str]], lex, seed: int) -> list[tuple
 # buckets are a reporting aid, not an oracle: they describe the shape of the
 # case, so that "quickcheck missed it" can be read as either a real gap or a
 # case it was never meant to see.
-STRUCTURAL_BUCKETS = ("truncated", "empty-list")
+STRUCTURAL_BUCKETS = ("truncated", "empty-list", "conflict")
 _OPERAND_OWED = {"comma", "dot", "colon", "casting_operator", "binary_operator",
                  "comparison_operator", "arithmetic_operator", "equals", "plus", "minus"}
 
 
-def shape_of(sql: str, lex, keywords: set[str]) -> str:
+def shape_of(sql: str, lex, keywords: set[str], reason: str = "omission") -> str:
     """Which bucket a must-reject case falls in.
 
+    `conflict`    two mutually exclusive alternatives both written. The corpus
+                  says so itself, in the case's `reason` -- this is not inferred
+                  from the tokens, because `SELECT ALL DISTINCT` is well formed
+                  in every way a shallow checker can see except that the docs
+                  forbid the pair.
     `truncated`   the statement stops on a keyword or operator that still owes
                   an operand -- reachable by a shallow checker.
     `empty-list`  a *clause* bracket with nothing in it. The owner has to be a
@@ -184,6 +189,8 @@ def shape_of(sql: str, lex, keywords: set[str]) -> str:
                   and flatter the miss rate by inflating the denominator.
     `grammar`     structurally well formed; a required clause is missing.
     """
+    if reason == "exclusive-alternative":
+        return "conflict"
     try:
         toks = [t for t in lex(sql) if t.type not in IGNORED]
     except Exception:
@@ -316,7 +323,7 @@ def main() -> int:
             reject["reject_total"] += 1
             reject["reject_error"] += caught
             reject["reject_any"] += bool(diags)
-            shape = shape_of(case.sql, _tokens, KEYWORDS)
+            shape = shape_of(case.sql, _tokens, KEYWORDS, getattr(case, "reason", "omission") or "omission")
             by_shape[shape]["total"] += 1
             by_shape[shape]["error"] += caught
             if not caught and shape in STRUCTURAL_BUCKETS:

@@ -320,14 +320,136 @@ const OBJECT_MODIFIER_WORDS = new Set([
 // because `array()`, `map()` and `current_timestamp()` are valid calls.
 // `TABLE`, `AS`, `BY`, `EXCEPT`, `TABLESAMPLE` and `CURRENT_TIMESTAMP` are
 // left out: valid SQL writes each with an empty bracket somewhere.
+/**
+ * Keyword pairs that cannot sit next to each other, because the docs put a
+ * mandatory slot between them or make them exclusive alternatives.
+ *
+ * This is the general form of `NEEDS_FOLLOWER`, which is the case where the
+ * second word is the end of the statement. It is an explicit deny-list and
+ * must stay one: a table of "adjacencies not seen in the corpus" would fire on
+ * 21.8% of valid statements, because one valid statement in five contains a
+ * keyword pair found nowhere else (measured; `docs/design-notes.md`). New
+ * Databricks syntax must not be able to make this fire -- only editing the
+ * list can.
+ *
+ * Every entry names the reference case that proves it. A pair was admitted
+ * only after the page's verbatim `syntax:` block confirmed that the case's
+ * `omits:` sits *between* these two words, or its `conflicts:` names them
+ * both. `scripts/derive_shape_sets.py` generates candidates; it never admits
+ * one.
+ *
+ * `lead` is the statement's first keyword, and is the positional evidence that
+ * keeps a pair from firing on a name. `FULL LITE` is wrong in `VACUUM` and
+ * says nothing anywhere else, where `full` could be a column.
+ */
+interface Adjacency {
+  /** The statement lead this holds under. Absent means any statement. */
+  lead?: string;
+  /** What the docs require between the two words. */
+  why: string;
+  /** The reference case that proves it. */
+  case: string;
+}
+
+const FORBIDDEN_PAIRS = new Map<string, Adjacency>([
+  // --- exclusive alternatives: both alternatives written -------------------
+  ["ALL DISTINCT", { lead: "SELECT", case: "select-clause.all-and-distinct",
+    why: "SELECT takes ALL or DISTINCT, not both" }],
+  ["EXTENDED CODEGEN", { lead: "EXPLAIN", case: "explain.extended-and-codegen",
+    why: "EXPLAIN takes one mode, not EXTENDED and CODEGEN both" }],
+  ["FULL LITE", { lead: "VACUUM", case: "vacuum.full-and-lite",
+    why: "VACUUM is FULL or LITE, not both" }],
+  ["RUN FULL", { lead: "VACUUM", case: "vacuum.dry-run-and-full",
+    why: "VACUUM is DRY RUN or FULL, not both" }],
+  ["DELETE UPDATE", { lead: "MERGE", case: "merge-into.mixed-matched-action",
+    why: "a matched action is DELETE or UPDATE, not both" }],
+  ["SQL READS", { lead: "CREATE", case: "create-function.contains-sql-and-reads-sql-data",
+    why: "a function declares CONTAINS SQL or READS SQL DATA, not both" }],
+  ["TEMP EXTERNAL", { lead: "CREATE", case: "create-table.external-temp",
+    why: "a table is TEMPORARY or EXTERNAL, not both" }],
+  ["NULLS EXCLUDE", { lead: "SELECT", case: "unpivot.include-and-exclude",
+    why: "UNPIVOT is INCLUDE NULLS or EXCLUDE NULLS, not both" }],
+
+  // --- a mandatory slot with nothing in it ---------------------------------
+  // No lead: `BETWEEN AND` has no start value in any statement that can write it.
+  ["BETWEEN AND", { case: "fsck-repair-table.between-without-start",
+    why: "BETWEEN has no start value before its AND" }],
+  ["BY INTO", { lead: "CREATE", case: "create-table.clustered-without-columns",
+    why: "CLUSTERED BY needs its column list before INTO" }],
+  ["FROM FILEFORMAT", { lead: "COPY", case: "copy-into.from-without-source",
+    why: "FROM needs a source before FILEFORMAT" }],
+  ["VALIDATE ROWS", { lead: "COPY", case: "copy-into.validate-without-number",
+    why: "VALIDATE needs a number of rows" }],
+  ["FOR DAYS", { lead: "CREATE", case: "create-schema.retain-dropped-without-number",
+    why: "RETAIN DROPPED FOR needs a number of days" }],
+  ["INPATH INTO", { lead: "LOAD", case: "load-data.without-path",
+    why: "INPATH needs a path" }],
+  ["GRANT ON", { lead: "GRANT", case: "grant.without-privilege-types",
+    why: "GRANT needs privileges before ON" }],
+  ["REVOKE ON", { lead: "REVOKE", case: "revoke.without-privilege-types",
+    why: "REVOKE needs privileges before ON" }],
+  ["SHARE FROM", { lead: "REVOKE", case: "revoke-share.without-share",
+    why: "SHARE needs a name" }],
+  ["WHERE SELECT", { lead: "INSERT", case: "insert.replace-where-without-predicate",
+    why: "REPLACE WHERE needs a predicate" }],
+  ["ON SELECT", { lead: "INSERT", case: "insert.replace-on-without-expression",
+    why: "REPLACE ON needs an expression" }],
+  ["FORMAT SELECT", { lead: "INSERT", case: "insert-overwrite-directory-hive.row-format-without-value",
+    why: "ROW FORMAT needs a format" }],
+  ["INSERT SELECT", { lead: "CREATE", case: "create-streaming-table.flow-insert-without-by-name",
+    why: "a FLOW INSERT needs BY NAME before its query" }],
+  ["WHERE APPLY", { lead: "REORG", case: "reorg-table.where-without-predicate",
+    why: "WHERE needs a predicate" }],
+  ["COLLATION RETURN", { lead: "CREATE", case: "create-function.default-collation-without-name",
+    why: "DEFAULT COLLATION needs a collation name" }],
+  ["VIEW AS", { lead: "SELECT", case: "lateral-view.without-generator-function",
+    why: "LATERAL VIEW needs a generator function" }],
+  ["OUTER AS", { lead: "SELECT", case: "lateral-view.outer-without-generator-function",
+    why: "LATERAL VIEW OUTER needs a generator function" }],
+  ["WITH AS", { lead: "CREATE", case: "create-view.with-without-clause",
+    why: "WITH needs a clause: SCHEMA BINDING, SCHEMA EVOLUTION or METRICS" }],
+  ["GENERATE FOR", { lead: "GENERATE", case: "generate.without-mode",
+    why: "GENERATE needs a mode before FOR" }],
+  ["TABLE RENAME", { lead: "ALTER", case: "alter-table.no-table-name",
+    why: "ALTER TABLE needs a table name" }],
+  ["GROUP ADD", { lead: "ALTER", case: "alter-group.without-principal",
+    why: "ALTER GROUP needs a group name" }],
+  ["RESTORE TO", { lead: "RESTORE", case: "restore.without-table-name",
+    why: "RESTORE needs a table name" }],
+
+  // --- a required modifier missing -----------------------------------------
+  ["OR VIEW", { lead: "CREATE", case: "create-view.or-without-replace",
+    why: "CREATE OR needs REPLACE" }],
+  ["REFRESH VIEW", { lead: "CREATE", case: "create-view.or-refresh",
+    why: "a view is CREATE OR REPLACE; OR REFRESH is for streaming tables and materialized views" }],
+  ["GLOBAL VIEW", { lead: "CREATE", case: "create-view.global-without-temporary",
+    why: "GLOBAL needs TEMPORARY" }],
+
+  // --- compound statements --------------------------------------------------
+  ["ATOMIC END", { case: "compound-stmt.without-body",
+    why: "a BEGIN ATOMIC block has no statements in it" }],
+  ["IF THEN", { case: "if-stmt.without-condition",
+    why: "IF needs a condition before THEN" }],
+]);
+
+/**
+ * Two-token tails that owe a follower, where one token is not evidence enough.
+ * `LOCATION` alone cannot go in `NEEDS_FOLLOWER` -- `ALTER TABLE t DROP COLUMN
+ * location` is a column -- but `MANAGED LOCATION` is never a name.
+ */
+const NEEDS_FOLLOWER_PAIRS = new Set([
+  "MANAGED LOCATION", "ADD TABLE", "FOR TABLE", "INTO TABLE", "IN PROVIDER", "TO RECIPIENT",
+]);
+
 // Words that own a bracketed list only through a following `BY`. Kept apart
 // from EMPTY_LIST_OWNERS because the token adjacent to `(` is `BY`, and `BY`
 // by itself is not evidence of anything.
 const EMPTY_LIST_OWNER_PAIRS = ["ZORDER", "SORTED", "CLUSTERED", "DISTRIBUTE"];
 const EMPTY_LIST_OWNERS = new Set([
   "APPLY", "COLUMNS", "COPY_OPTIONS", "DBPROPERTIES", "ENCRYPTION", "ENVIRONMENT",
-  "FORMAT_OPTIONS", "IDENTIFIER", "IN", "OPTIONS", "PARTITION", "PIVOT", "PROPERTIES",
-  "REPEATABLE", "SETS", "TAGS", "TBLPROPERTIES", "UNIFORM", "UNPIVOT", "USING", "VALUES", "ZORDER",
+  "EXCEPT", "FORMAT_OPTIONS", "IDENTIFIER", "IN", "OPTIONS", "PARTITION", "PIVOT", "PROPERTIES",
+  "REPEATABLE", "SETS", "TABLESAMPLE", "TAGS", "TBLPROPERTIES", "UNIFORM", "UNPIVOT", "USING",
+  "VALUES", "ZORDER",
 ]);
 
 /** Optimal string alignment distance of exactly 1 (one edit or one adjacent swap). */
@@ -366,6 +488,7 @@ export function checkStatements(toks: Token[], depth: number[], ctx: Ctx): void 
   // at empty brackets, neither of which a comma-separated privilege list has --
   // and they are what catches `GRANT SELECT ON TABLE t TO`.
   s.truncatedStatement();
+  s.forbiddenAdjacency();
   s.emptyLists();
 }
 
@@ -771,6 +894,13 @@ export class Stmt {
     if (NEEDS_FOLLOWER.has(u)) {
       return say(`${u} has nothing after it: the statement is incomplete`);
     }
+    // A two-word tail, where neither word alone is evidence: `LOCATION` cannot
+    // go in NEEDS_FOLLOWER because a column may be called `location`, but
+    // `MANAGED LOCATION` is never a name.
+    if (p?.kind === "word" && this.isKw(i - 1, p.upper!) &&
+        NEEDS_FOLLOWER_PAIRS.has(`${p.upper} ${u}`)) {
+      return say(`${p.text} ${t.text} has nothing after it: the statement is incomplete`);
+    }
     // A clause keyword directly after the name it applies to.
     if (NEEDS_FOLLOWER_AFTER_NAME.has(u) && this.ddl && p !== undefined &&
         (this.isName(i - 1) || isPunct(p, ")"))) {
@@ -781,6 +911,31 @@ export class Stmt {
         (OBJECT_VERBS.has(p.upper!) || OBJECT_MODIFIER_WORDS.has(p.upper!)) &&
         !this.namesSomething()) {
       return say(`${u} needs a name: nothing in this statement names the ${u.toLowerCase()}`);
+    }
+  }
+
+  /**
+   * `ANALYZE TABLE COMPUTE STATISTICS`: every token is a keyword, the brackets
+   * balance and nothing dangles -- what is missing is the name between two
+   * words. Only pairs in FORBIDDEN_PAIRS fire, and only under their statement
+   * lead, so syntax this does not know produces no finding.
+   */
+  forbiddenAdjacency(): void {
+    const { toks, depth, ctx } = this;
+    for (let i = 1; i < toks.length; i++) {
+      if (depth[i] !== 0 || depth[i - 1] !== 0) continue;
+      const a = toks[i - 1];
+      const b = toks[i];
+      if (a.kind !== "word" || b.kind !== "word") continue;
+      const rule = FORBIDDEN_PAIRS.get(`${a.upper} ${b.upper}`);
+      if (rule === undefined) continue;
+      if (rule.lead !== undefined && rule.lead !== this.lead) continue;
+      // Both must be keywords here, not names: Spark lets almost any keyword be
+      // an identifier, and `AS`/`.` context is what tells them apart.
+      if (!this.isKw(i - 1, a.upper!) || !this.isKw(i, b.upper!)) continue;
+      if (ctx.flagged?.has(a.start) || ctx.flagged?.has(b.start)) continue;
+      report(ctx, "statement-shape", "error", b, `${rule.why}: \`${a.text} ${b.text}\``);
+      return; // one shape complaint per statement is enough
     }
   }
 

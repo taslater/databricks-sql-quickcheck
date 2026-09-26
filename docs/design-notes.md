@@ -91,9 +91,10 @@ One mechanism covers five families that looked like five separate checks:
 | compound-statement shape | `BEGIN LOOP`, `ATOMIC END`, `IF THEN`, `DO END` | `compound-stmt.without-body` |
 | missing required modifier | `OR VIEW`, `GLOBAL VIEW`, `WITH AS` | `create-view.or-without-replace` |
 
-Measured yield: **63 of the 202 currently-missed must-reject cases**, from 63
-distinct pairs (66 of 208 before the three suppression fixes of 2026-09-26,
-which closed some of the same cases from the other direction). It is a single local check -- two tokens and a depth counter, no
+Predicted yield was 63 of the 202 then-missed cases. **Delivered: 48**, because
+gate 2 below rejected 21 of the 63 candidates. That gap is the design working,
+not underperforming -- a mechanism that admitted all 63 would be the learned
+model measured above. It is a single local check -- two tokens and a depth counter, no
 productions, no recursion, no expression parsing -- so an unrecognised statement
 contributes no pairs and therefore no findings. That is how it satisfies the
 property above.
@@ -119,6 +120,17 @@ So the shipped artifact is an explicit deny-list with a reason and a case id per
 entry, not a learned model. Adding syntax to Databricks cannot make it fire;
 only editing the list can.
 
+Gate 2 is not a formality. It rejected **21 of the 63 candidates**, in two
+kinds. `BEGIN LOOP`, `BEGIN IF`, `BEGIN WHILE` and `LOOP ITERATE` are valid
+openers that looked novel only because the corpus holds few scripting cases --
+their `omits:` names a `label` or a `DO` that is nowhere near the two words, so
+the docs refuse them. `TABLE COMPUTE`, `CONNECTION TYPE` and `SHARE COMMENT`
+failed for the other reason: the missing thing is the object's *name*, and the
+following clause keyword is a plausible name for it. `ANALYZE TABLE compute
+COMPUTE STATISTICS` is a table called `compute`, and nothing at this depth can
+tell it from the truncated form. Those cost seven cases and were refused, not
+tuned.
+
 ### What it may never do
 
 Fixed at design time, because the boundary is what makes the check safe:
@@ -134,7 +146,7 @@ Fixed at design time, because the boundary is what makes the check safe:
 Cases needing more than this -- `column_comment`, `data_type`, `expr`,
 `default_expression` omissions, roughly 90 of the 395 -- stay SQLFluff's, by
 design and forever. The honest ceiling for must-reject is about **280/395
-(~70%)**, from 193 today.
+(~70%)**, from 241 today -- most of the remaining headroom is now spent.
 
 ## The veto corpus has two kinds of source, and they are not interchangeable
 
