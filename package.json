@@ -1,0 +1,70 @@
+{
+  "name": "databricks-sql-quickcheck",
+  "displayName": "Databricks SQL Quickcheck",
+  "description": "Instant, as-you-type structural syntax checks for Databricks SQL: brackets, quotes, commas, operators, CASE/END.",
+  "version": "0.1.0",
+  "publisher": "local",
+  "license": "MIT",
+  "private": true,
+  "engines": {
+    "vscode": "^1.80.0",
+    "node": ">=18"
+  },
+  "categories": [
+    "Linters"
+  ],
+  "main": "./out/extension.js",
+  "types": "./out/index.d.ts",
+  "exports": {
+    ".": "./out/index.js",
+    "./package.json": "./package.json"
+  },
+  "bin": {
+    "dbsql-quickcheck": "./out/cli.js"
+  },
+  "activationEvents": [
+    "onLanguage:sql",
+    "onLanguage:databricks-sql"
+  ],
+  "contributes": {
+    "configuration": {
+      "title": "Databricks SQL Quickcheck",
+      "properties": {
+        "databricksSqlQuickcheck.enable": {
+          "type": "boolean",
+          "default": true,
+          "description": "Check SQL files as you type."
+        },
+        "databricksSqlQuickcheck.languages": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [
+            "sql",
+            "databricks-sql"
+          ],
+          "description": "Language ids to check."
+        },
+        "databricksSqlQuickcheck.warnings": {
+          "type": "boolean",
+          "default": true,
+          "description": "Also report likely mistakes that Databricks may technically accept (missing comma in a select list, trailing comma before FROM)."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "build": "tsc -p .",
+    "watch": "tsc -watch -p .",
+    "test": "tsc -p . && node --test out/test/*.test.js",
+    "keywords": "python3 scripts/gen_keywords.py ../sqlfluff",
+    "package": "npm run build && mkdir -p dist && vsce package --allow-missing-repository -o dist/databricks-sql-quickcheck.vsix"
+  },
+  "devDependencies": {
+    "@types/node": "^18.19.0",
+    "@types/vscode": "^1.80.0",
+    "@vscode/vsce": "^3.0.0",
+    "typescript": "^5.6.0"
+  }
+}

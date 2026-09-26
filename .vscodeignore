@@ -1,0 +1,12 @@
+src/**
+eval/**
+scripts/**
+out/test/**
+**/*.map
+**/*.d.ts
+tsconfig.json
+node_modules/**
+dist/**
+.gitignore
+AGENTS.md
+CLAUDE.md
