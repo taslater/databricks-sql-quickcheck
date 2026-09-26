@@ -99,6 +99,18 @@ real case that came up while building the checks:
   ships new statements and the checker must not fire on the next one.
 - **The body after `CREATE … AS`.** `CREATE FLOW f AS AUTO CDC INTO t FROM s`
   has a `FROM` and no `SELECT`, and is valid.
+- **A shortcut whose word is also a name.** `GROUP BY ALL, a` and `ORDER BY
+  ALL, a` are must-reject, but `ALL` is a legal column name:
+  `spark-sql-tests/inputs/group-by-all.sql:21` writes `group by all, city` after
+  aliasing a column to `all`. The shortcut and the column are identical here, so
+  both cases are refused (the pair-table `SELECT ALL DISTINCT` is fine, since
+  nothing can sit between those two words).
+- **A documented conflict the valid corpus writes anyway.** `CREATE OR REPLACE
+  … IF NOT EXISTS` is `conflicts:` in the reference corpus, but
+  `sqlfluff-databricks/create_function.sql:2` and
+  `sqlfluff-sparksql/create_view.sql` both write it as "all optional syntax".
+  Firing would red-flag a valid file and fail the gate, so the two cases are
+  refused.
 
 ## The ceilings, measured
 
@@ -106,8 +118,8 @@ As of 2026-09-26, against `databricks-sql-corpus`:
 
 | Measure | Now | Realistic ceiling | What is between them |
 | --- | --- | --- | --- |
-| Reference must-reject cases, all | 241/395 | **not yet known** | 154 missed; most are rungs 3 to 6, not rung 7 (see below) |
-| Reference must-reject, structural target | 189/233 (81.1%) | most of the rest | rung 6 and the refusals above |
+| Reference must-reject cases, all | 245/395 | **not yet known** | 150 missed; most are rungs 3 to 6, not rung 7 (see below) |
+| Reference must-reject, structural target | 193/233 (82.8%) | most of the rest | rung 6 and the refusals above |
 | `delete-keyword` mutants, errors | 107/451 | not yet estimated | most of what is left loses its `SELECT` at the start of a statement, which warns by design |
 | `delete-comma` mutants | 24 errors, 128 warnings of 294 genuinely invalid | not yet estimated | 118 of the 433 are still valid SQL; the missing comma between CTEs is caught, and more silent ones are catchable and tracked |
 | Scripting blocks | 0 | most block-structure mistakes | rung 5, not started |
