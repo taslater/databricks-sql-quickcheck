@@ -16,7 +16,7 @@
   "private": true,
   "engines": {
     "vscode": "^1.80.0",
-    "node": ">=18"
+    "node": ">=22"
   },
   "categories": [
     "Linters"
