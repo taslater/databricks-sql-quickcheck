@@ -393,8 +393,20 @@ mutants hit one of the deliberate stops above.
 `code --install-extension` installs it. Nothing is published to the
 Marketplace or npm, and publishing is Tom's call: ask first.
 
-The repo is on GitHub at `taslater/databricks-sql-quickcheck`, created
-**private** on 2026-09-26, with going public tracked on the roadmap issue.
+The repo is on GitHub at `taslater/databricks-sql-quickcheck`, **public
+since 2026-09-26** (created private the same day, reviewed, then opened).
+
+**How a change lands.** `main` is protected by a ruleset, so nothing, agent or
+human, pushes to it directly. Branch, push, `gh pr create`, wait for the three
+checks (both unit-test jobs and the corpus false-positive gate) to pass on a
+branch that is up to date with `main`, then `gh pr merge --rebase` (or
+`--squash`). No approval is required, since a sole maintainer cannot approve
+their own PR; the PR exists so that CI runs *before* the change lands. History
+is linear, and force pushes and deletion are blocked outright. An admin can
+bypass only through a PR, which keeps the escape hatch visible. The corpus pin,
+`CORPUS_REF` in `ci.yml`, is bumped in a PR of its own, so a corpus change is
+never mixed with a checker change. Secret scanning with push protection and
+private vulnerability reporting are on.
 Before the first push, `examples/mistakes.sql` was given a neutral schema and
 rewritten out of history with same-length names, so the README's sample output
 stayed true. Commit SHAs before that date, quoted in older notes, no longer
