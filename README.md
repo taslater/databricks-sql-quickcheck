@@ -157,16 +157,56 @@ code --install-extension dist/databricks-sql-quickcheck.vsix
 ```
 
 It checks every document whose language is `sql` or `databricks-sql`. That
-includes `.sql` notebooks and notebook cells, and it covers the `.dbsql` files
-of the `local.databricks-sql` extension. Findings show up in the Problems panel
-with source `quickcheck`.
+includes `.sql` notebooks and notebook cells. Findings show up in the Problems
+panel with source `quickcheck`.
 
 | setting | default | |
 | --- | --- | --- |
 | `databricksSqlQuickcheck.enable` | `true` | |
+| `databricksSqlQuickcheck.detectNotebooks` | `true` | open exported notebooks in the Databricks SQL language mode (below) |
 | `databricksSqlQuickcheck.languages` | `["sql", "databricks-sql"]` | language ids to check |
 | `databricksSqlQuickcheck.warnings` | `true` | `false` reports errors only |
 | `databricksSqlQuickcheck.explicitAliases` | `false` | warn on every implicit column alias, so a comma lost on one line is reported |
+
+### The Databricks SQL language mode
+
+VS Code opens `.sql` files in its built-in SQL mode, whose grammar comes from
+T-SQL (the status bar says "MS SQL"). Databricks reads strings differently, so
+that grammar colours them wrong. It ends `'it\'s'` at the backslash and colours
+the rest of the file inside out, and it lets one unclosed quote run through
+every notebook cell after it.
+
+The extension adds a `databricks-sql` mode, shown as "Databricks SQL". Its
+grammar agrees with the checker's lexer on where every string, quoted
+identifier, comment and `$$` body begins and ends, character for character, on
+all 867 corpus files. In this mode:
+
+- A backslash escapes, so `'it\'s'` and `"say \"hi\""` are one string each.
+  Double quotes delimit strings, not identifiers.
+- Raw strings (`r'C:\'`) take backslash literally.
+- Bracketed comments nest.
+- `$$` bodies are opaque. After `LANGUAGE PYTHON` or `LANGUAGE YAML` they are
+  coloured as Python or YAML.
+- Widget and dashboard parameters (`${x}`, `$x`, `{{ x }}`) and Jinja are
+  marked as templates, and `:name` as a parameter.
+- In a notebook, strings and comments stop at `-- COMMAND ----------`. A magic
+  command (`%python`) makes its cell opaque, but only as the cell's first line.
+  `-- MAGIC %md` and `-- MAGIC %python` cells are coloured as markdown and
+  Python, and stay SQL comments for comment toggling.
+
+A notebook exported as source, whose first line is `-- Databricks notebook
+source`, switches to the mode when it opens. If you pick "SQL" in the language
+picker, it switches back and stays there for the session. Turn the switching
+off with `databricksSqlQuickcheck.detectNotebooks`. A plain script can't be told
+apart from other SQL by its text, so associate scripts per repository, in
+`.vscode/settings.json`:
+
+```json
+{ "files.associations": { "*.sql": "databricks-sql" } }
+```
+
+Extensions that only act on the `sql` language id stop seeing a document once
+it is in this mode, unless they let you add language ids.
 
 ### Command line
 
@@ -216,12 +256,16 @@ flag. Work in progress is tracked in the issues against that ladder.
 ```bash
 npm test                                   # build + unit tests (node:test)
 ../databricks-sql-corpus/.venv/bin/python eval/evaluate.py   # corpus evaluation
+node out/test/grammar-corpus.js ../databricks-sql-corpus/corpus/cache   # grammar agrees with the lexer
 npm run keywords                           # regenerate src/keywords.ts from ../sqlfluff
 ```
 
 Every check has a case that must fire and a near-miss that must not. The
 near-miss is the valid Databricks construct that looks most like the mistake.
 Any change to a check has to leave the evaluation at zero errors on valid SQL.
+A change to where `src/lexer.ts` ends a string, comment or body needs the same
+change in `syntaxes/databricks-sql.tmLanguage.json`, and the reverse: the
+grammar tests and the corpus run above fail when the two disagree.
 
 ## Contributing
 

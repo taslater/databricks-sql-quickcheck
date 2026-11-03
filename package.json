@@ -1,7 +1,7 @@
 {
   "name": "databricks-sql-quickcheck",
   "displayName": "Databricks SQL Quickcheck",
-  "description": "Instant, as-you-type structural syntax checks for Databricks SQL: brackets, quotes, commas, operators, CASE/END.",
+  "description": "A Databricks SQL language mode whose highlighting understands backslash escapes, raw strings and notebook cells, plus instant, as-you-type structural syntax checks: brackets, quotes, commas, operators, CASE/END.",
   "version": "0.2.0",
   "publisher": "local",
   "license": "MIT",
@@ -19,6 +19,7 @@
     "node": ">=22"
   },
   "categories": [
+    "Programming Languages",
     "Linters"
   ],
   "main": "./out/extension.js",
@@ -35,6 +36,32 @@
     "onLanguage:databricks-sql"
   ],
   "contributes": {
+    "languages": [
+      {
+        "id": "databricks-sql",
+        "aliases": [
+          "Databricks SQL",
+          "databricks-sql",
+          "dbsql"
+        ],
+        "extensions": [
+          ".dbsql"
+        ],
+        "firstLine": "^\\uFEFF?-- Databricks notebook source",
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "databricks-sql",
+        "scopeName": "source.databricks-sql",
+        "path": "./syntaxes/databricks-sql.tmLanguage.json",
+        "embeddedLanguages": {
+          "meta.embedded.block.python": "python",
+          "meta.embedded.block.yaml": "yaml"
+        }
+      }
+    ],
     "configuration": {
       "title": "Databricks SQL Quickcheck",
       "properties": {
@@ -42,6 +69,11 @@
           "type": "boolean",
           "default": true,
           "description": "Check SQL files as you type."
+        },
+        "databricksSqlQuickcheck.detectNotebooks": {
+          "type": "boolean",
+          "default": true,
+          "description": "Open `.sql` files that begin with `-- Databricks notebook source` in the Databricks SQL language mode. Plain scripts stay as they are: associate them with `files.associations`, for example `{\"*.sql\": \"databricks-sql\"}` in a repository's .vscode/settings.json."
         },
         "databricksSqlQuickcheck.languages": {
           "type": "array",
@@ -78,6 +110,8 @@
     "@types/node": "^22.0.0",
     "@types/vscode": "^1.80.0",
     "@vscode/vsce": "^4.0.0",
-    "typescript": "^7.0.2"
+    "typescript": "^7.0.2",
+    "vscode-oniguruma": "^2.0.1",
+    "vscode-textmate": "^9.3.2"
   }
 }

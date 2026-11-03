@@ -116,13 +116,18 @@ function scanBlockComment(text: string, i: number, limit: number): number {
 const NOTEBOOK_HEADER_RE = /^\uFEFF?\s*-- Databricks notebook source/;
 const CELL_LINE_RE = /^--\s*COMMAND\s*-{2,}[ \t]*\r?$/gm;
 
+/** A notebook exported as source, rather than a plain script. */
+export function isNotebookSource(text: string): boolean {
+  return NOTEBOOK_HEADER_RE.test(text);
+}
+
 /**
  * Offsets where notebook cells end. Each cell runs on its own, so nothing --
  * no string, comment or bracket -- can span a separator; bounding scans here
  * keeps one missing quote from swallowing every cell after it.
  */
 function cellBoundaries(text: string): number[] {
-  if (!NOTEBOOK_HEADER_RE.test(text)) return [];
+  if (!isNotebookSource(text)) return [];
   const out: number[] = [];
   CELL_LINE_RE.lastIndex = 0;
   for (let m = CELL_LINE_RE.exec(text); m; m = CELL_LINE_RE.exec(text)) out.push(m.index);

@@ -74,6 +74,9 @@ jobs:
       - name: evaluate
         working-directory: quickcheck
         run: python eval/evaluate.py --corpus ../corpus
+      - name: the grammar agrees with the lexer on every corpus file
+        working-directory: quickcheck
+        run: node out/test/grammar-corpus.js ../corpus/corpus/cache
       - name: re-check the shipped shape sets against every valid source
         working-directory: quickcheck
         run: python scripts/derive_shape_sets.py --corpus ../corpus

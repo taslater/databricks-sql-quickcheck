@@ -1,0 +1,386 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "Databricks SQL",
+  "scopeName": "source.databricks-sql",
+  "comment": "Where strings, quoted identifiers, comments, $$ bodies and templates begin and end follows src/lexer.ts, and src/test/grammar.test.ts holds the two to agreement. Every construct that can span lines also ends at a notebook cell separator, because each cell runs on its own: an unclosed quote in one cell must not colour every cell after it.",
+  "patterns": [
+    { "include": "#notebook-header" },
+    { "include": "#first-line-magic" },
+    { "include": "#cell-separator" },
+    { "include": "#magic-lines" },
+    { "include": "#comments" },
+    { "include": "#strings" },
+    { "include": "#quoted-identifier" },
+    { "include": "#language-bodies" },
+    { "include": "#dollar-body" },
+    { "include": "#templates" },
+    { "include": "#numbers" },
+    { "include": "#parameters" },
+    { "include": "#constants" },
+    { "include": "#types" },
+    { "include": "#keywords" },
+    { "include": "#function-calls" },
+    { "include": "#operators" },
+    { "include": "#punctuation" }
+  ],
+  "repository": {
+    "notebook-header": {
+      "comment": "The first line of a notebook exported as source. The first non-blank text after it starts the first cell, which may be a magic command.",
+      "begin": "\\A\\x{FEFF}?(-- Databricks notebook source.*)$",
+      "beginCaptures": {
+        "1": { "name": "comment.line.double-dash.notebook-header.databricks-sql" }
+      },
+      "end": "(?=[^\\s%])",
+      "patterns": [{ "include": "#cell-magic" }]
+    },
+    "cell-separator": {
+      "comment": "A cell boundary. Blank lines after it belong to no cell; the first non-blank text starts the next cell.",
+      "begin": "^(--\\s*COMMAND\\s*-{2,})[ \\t]*$",
+      "beginCaptures": {
+        "1": { "name": "meta.separator.cell.databricks-sql comment.line.double-dash.cell-separator.databricks-sql" }
+      },
+      "end": "(?=[^\\s%])",
+      "patterns": [{ "include": "#cell-magic" }]
+    },
+    "first-line-magic": {
+      "comment": "A file that is not a notebook export can still open with a bare magic command.",
+      "begin": "\\A(?=[ \\t]*%[A-Za-z])",
+      "end": "(?=[^\\s%])",
+      "patterns": [{ "include": "#cell-magic" }]
+    },
+    "cell-magic": {
+      "comment": "A magic command is one only as the first text of a cell; anywhere else `%` is the modulo operator. `%sql` cells are SQL; any other language makes the whole cell opaque.",
+      "patterns": [
+        {
+          "match": "(%)((?i:sql))\\b",
+          "captures": {
+            "1": { "name": "punctuation.definition.magic.databricks-sql" },
+            "2": { "name": "keyword.other.magic.databricks-sql" }
+          }
+        },
+        {
+          "begin": "(%)([A-Za-z]+)\\b",
+          "beginCaptures": {
+            "1": { "name": "punctuation.definition.magic.databricks-sql" },
+            "2": { "name": "keyword.other.magic.databricks-sql" }
+          },
+          "end": "(?=^--\\s*COMMAND\\s*-{2,}[ \\t]*$)",
+          "name": "meta.magic-cell.databricks-sql comment.block.magic-cell.databricks-sql"
+        }
+      ]
+    },
+    "magic-lines": {
+      "comment": "Non-SQL cells in an exported SQL notebook are `-- MAGIC` comment lines. The markdown and Python ones are coloured as what they are. They stay SQL comments to the editor: no embeddedLanguages entry, so comment toggling still writes `--`.",
+      "patterns": [
+        {
+          "begin": "^(--\\s*MAGIC)[ \\t]+(%md(?:-sandbox)?)\\b",
+          "beginCaptures": {
+            "1": { "name": "comment.line.double-dash.magic.databricks-sql" },
+            "2": { "name": "keyword.other.magic.databricks-sql" }
+          },
+          "while": "^(--\\s*MAGIC)(?=\\s|$)",
+          "whileCaptures": {
+            "1": { "name": "comment.line.double-dash.magic.databricks-sql" }
+          },
+          "name": "meta.magic-cell.markdown.databricks-sql",
+          "patterns": [{ "include": "text.html.markdown" }, { "include": "#embedded-fallback" }]
+        },
+        {
+          "begin": "^(--\\s*MAGIC)[ \\t]+(%python)\\b",
+          "beginCaptures": {
+            "1": { "name": "comment.line.double-dash.magic.databricks-sql" },
+            "2": { "name": "keyword.other.magic.databricks-sql" }
+          },
+          "while": "^(--\\s*MAGIC)(?=\\s|$)",
+          "whileCaptures": {
+            "1": { "name": "comment.line.double-dash.magic.databricks-sql" }
+          },
+          "name": "meta.magic-cell.python.databricks-sql",
+          "patterns": [{ "include": "source.python" }, { "include": "#embedded-fallback" }]
+        },
+        {
+          "match": "^(--\\s*MAGIC)(.*)$",
+          "captures": {
+            "1": { "name": "comment.line.double-dash.magic.databricks-sql" },
+            "2": { "name": "meta.magic-cell.databricks-sql comment.line.double-dash.databricks-sql" }
+          }
+        }
+      ]
+    },
+    "comments": {
+      "patterns": [
+        {
+          "match": "^(--\\s*DBTITLE\\s+\\d+\\s*,)(.*)$",
+          "captures": {
+            "1": { "name": "comment.line.double-dash.databricks-sql" },
+            "2": { "name": "comment.line.double-dash.databricks-sql markup.heading.cell-title.databricks-sql" }
+          }
+        },
+        {
+          "match": "(--).*$",
+          "name": "comment.line.double-dash.databricks-sql",
+          "captures": {
+            "1": { "name": "punctuation.definition.comment.databricks-sql" }
+          }
+        },
+        { "include": "#block-comment" }
+      ]
+    },
+    "block-comment": {
+      "comment": "Spark nests bracketed comments: `/* a /* b */ c */` is one comment.",
+      "begin": "/\\*",
+      "end": "\\*/|(?=^--\\s*COMMAND\\s*-{2,}[ \\t]*$)",
+      "captures": {
+        "0": { "name": "punctuation.definition.comment.databricks-sql" }
+      },
+      "name": "comment.block.databricks-sql",
+      "patterns": [{ "include": "#block-comment" }]
+    },
+    "strings": {
+      "comment": "A backslash escapes the next character, so `'it\\'s'` is one string. A doubled quote is consumed too: Spark reads `'a''b'` as two adjacent literals, which concatenate, so either reading ends the token in the same place. Raw strings (`r'...'`) take backslash literally. Double quotes delimit a string in Databricks, not an identifier.",
+      "patterns": [
+        {
+          "begin": "(?<!\\w)([rR])(')",
+          "beginCaptures": {
+            "1": { "name": "storage.type.string.raw.databricks-sql" },
+            "2": { "name": "punctuation.definition.string.begin.databricks-sql" }
+          },
+          "end": "'(?!')|(?=^--\\s*COMMAND\\s*-{2,}[ \\t]*$)",
+          "endCaptures": {
+            "0": { "name": "punctuation.definition.string.end.databricks-sql" }
+          },
+          "name": "string.quoted.single.raw.databricks-sql",
+          "patterns": [{ "match": "''", "name": "constant.character.escape.quote.databricks-sql" }]
+        },
+        {
+          "begin": "(?<!\\w)([rR])(\")",
+          "beginCaptures": {
+            "1": { "name": "storage.type.string.raw.databricks-sql" },
+            "2": { "name": "punctuation.definition.string.begin.databricks-sql" }
+          },
+          "end": "\"(?!\")|(?=^--\\s*COMMAND\\s*-{2,}[ \\t]*$)",
+          "endCaptures": {
+            "0": { "name": "punctuation.definition.string.end.databricks-sql" }
+          },
+          "name": "string.quoted.double.raw.databricks-sql",
+          "patterns": [{ "match": "\"\"", "name": "constant.character.escape.quote.databricks-sql" }]
+        },
+        {
+          "begin": "'",
+          "beginCaptures": {
+            "0": { "name": "punctuation.definition.string.begin.databricks-sql" }
+          },
+          "end": "'(?!')|(?=^--\\s*COMMAND\\s*-{2,}[ \\t]*$)",
+          "endCaptures": {
+            "0": { "name": "punctuation.definition.string.end.databricks-sql" }
+          },
+          "name": "string.quoted.single.databricks-sql",
+          "patterns": [
+            { "include": "#string-escape" },
+            { "match": "''", "name": "constant.character.escape.quote.databricks-sql" }
+          ]
+        },
+        {
+          "begin": "\"",
+          "beginCaptures": {
+            "0": { "name": "punctuation.definition.string.begin.databricks-sql" }
+          },
+          "end": "\"(?!\")|(?=^--\\s*COMMAND\\s*-{2,}[ \\t]*$)",
+          "endCaptures": {
+            "0": { "name": "punctuation.definition.string.end.databricks-sql" }
+          },
+          "name": "string.quoted.double.databricks-sql",
+          "patterns": [
+            { "include": "#string-escape" },
+            { "match": "\"\"", "name": "constant.character.escape.quote.databricks-sql" }
+          ]
+        }
+      ]
+    },
+    "string-escape": {
+      "match": "\\\\.",
+      "name": "constant.character.escape.databricks-sql"
+    },
+    "quoted-identifier": {
+      "comment": "A doubled backtick is an escaped backtick; backslash is literal.",
+      "begin": "`",
+      "end": "`(?!`)|(?=^--\\s*COMMAND\\s*-{2,}[ \\t]*$)",
+      "captures": {
+        "0": { "name": "punctuation.definition.identifier.databricks-sql" }
+      },
+      "name": "variable.other.quoted.backtick.databricks-sql",
+      "patterns": [{ "match": "``", "name": "constant.character.escape.backtick.databricks-sql" }]
+    },
+    "dollar-body": {
+      "comment": "A `$$ ... $$` body in a language this grammar does not know.",
+      "begin": "\\$\\$",
+      "end": "\\$\\$|(?=^--\\s*COMMAND\\s*-{2,}[ \\t]*$)",
+      "captures": {
+        "0": { "name": "punctuation.definition.string.databricks-sql" }
+      },
+      "name": "meta.dollar-body.databricks-sql",
+      "contentName": "string.unquoted.dollar-body.databricks-sql"
+    },
+    "language-bodies": {
+      "comment": "`LANGUAGE PYTHON` (a function) and `LANGUAGE YAML` (a metric view) come before `AS $$`, so they open a region that colours the next body as that language. It closes after the body, or at the `;` or cell boundary of a statement that has none, and holds everything the top level does.",
+      "patterns": [
+        {
+          "begin": "(?i)(?<![.\\w])(LANGUAGE)\\s+(PYTHON)\\b",
+          "beginCaptures": {
+            "1": { "name": "keyword.other.databricks-sql" },
+            "2": { "name": "keyword.other.language.databricks-sql" }
+          },
+          "end": "(?<=\\$\\$)|(?=;)|(?=^--\\s*COMMAND\\s*-{2,}[ \\t]*$)",
+          "patterns": [{ "include": "#python-body" }, { "include": "$self" }]
+        },
+        {
+          "begin": "(?i)(?<![.\\w])(LANGUAGE)\\s+(YAML)\\b",
+          "beginCaptures": {
+            "1": { "name": "keyword.other.databricks-sql" },
+            "2": { "name": "keyword.other.language.databricks-sql" }
+          },
+          "end": "(?<=\\$\\$)|(?=;)|(?=^--\\s*COMMAND\\s*-{2,}[ \\t]*$)",
+          "patterns": [{ "include": "#yaml-body" }, { "include": "$self" }]
+        }
+      ]
+    },
+    "python-body": {
+      "begin": "\\$\\$",
+      "end": "\\$\\$|(?=^--\\s*COMMAND\\s*-{2,}[ \\t]*$)",
+      "captures": {
+        "0": { "name": "punctuation.definition.string.databricks-sql" }
+      },
+      "name": "meta.dollar-body.databricks-sql",
+      "contentName": "meta.embedded.block.python",
+      "patterns": [{ "include": "source.python" }, { "include": "#embedded-fallback" }]
+    },
+    "yaml-body": {
+      "begin": "\\$\\$",
+      "end": "\\$\\$|(?=^--\\s*COMMAND\\s*-{2,}[ \\t]*$)",
+      "captures": {
+        "0": { "name": "punctuation.definition.string.databricks-sql" }
+      },
+      "name": "meta.dollar-body.databricks-sql",
+      "contentName": "meta.embedded.block.yaml",
+      "patterns": [{ "include": "source.yaml" }, { "include": "#embedded-fallback" }]
+    },
+    "embedded-fallback": {
+      "comment": "Never matches. A rule whose only pattern is a grammar that is not installed is dropped whole by vscode-textmate, which would take the body's boundaries with it; this keeps the rule when Python, YAML or markdown support is disabled.",
+      "match": "(?!)"
+    },
+    "templates": {
+      "comment": "Widget parameters (`${x}`, `$x`), dashboard parameters (`{{ x }}`) and Jinja (`{% ... %}`, `{# ... #}`): not SQL, so not coloured as SQL.",
+      "patterns": [
+        {
+          "match": "(\\$\\{)([^}\\n]*)(\\})",
+          "captures": {
+            "1": { "name": "punctuation.definition.template.begin.databricks-sql" },
+            "2": { "name": "variable.parameter.template.databricks-sql" },
+            "3": { "name": "punctuation.definition.template.end.databricks-sql" }
+          },
+          "name": "meta.template.parameter.databricks-sql"
+        },
+        {
+          "match": "\\$\\{",
+          "name": "meta.template.parameter.databricks-sql invalid.illegal.unterminated-template.databricks-sql"
+        },
+        {
+          "match": "\\$[A-Za-z_][A-Za-z0-9_]*",
+          "name": "meta.template.widget.databricks-sql variable.parameter.template.databricks-sql"
+        },
+        {
+          "begin": "\\{\\{",
+          "end": "\\}\\}|(?=^--\\s*COMMAND\\s*-{2,}[ \\t]*$)",
+          "captures": {
+            "0": { "name": "punctuation.definition.template.databricks-sql" }
+          },
+          "name": "meta.template.expression.databricks-sql",
+          "contentName": "variable.parameter.template.databricks-sql"
+        },
+        {
+          "begin": "\\{%",
+          "end": "%\\}|(?=^--\\s*COMMAND\\s*-{2,}[ \\t]*$)",
+          "captures": {
+            "0": { "name": "punctuation.definition.template.databricks-sql" }
+          },
+          "name": "meta.template.statement.databricks-sql",
+          "contentName": "keyword.other.template.databricks-sql"
+        },
+        {
+          "begin": "\\{#",
+          "end": "#\\}|(?=^--\\s*COMMAND\\s*-{2,}[ \\t]*$)",
+          "name": "meta.template.comment.databricks-sql comment.block.template.databricks-sql"
+        }
+      ]
+    },
+    "numbers": {
+      "comment": "Includes the type suffixes: `10L`, `1.5BD`, `1e3D`.",
+      "match": "(?<!\\w)(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?\\w*",
+      "name": "constant.numeric.databricks-sql"
+    },
+    "parameters": {
+      "comment": "Named parameter markers (`:name`) and positional ones (`?`). A colon straight after a name or bracket is a JSON path (`raw:owner`) and a doubled one is a cast, so neither is a parameter.",
+      "patterns": [
+        {
+          "match": "(?<![\\w)\\]`:])(:)([A-Za-z_][A-Za-z0-9_]*)",
+          "captures": {
+            "1": { "name": "punctuation.definition.parameter.databricks-sql" },
+            "2": { "name": "variable.parameter.named.databricks-sql" }
+          }
+        },
+        {
+          "match": "\\?",
+          "name": "variable.parameter.positional.databricks-sql"
+        }
+      ]
+    },
+    "constants": {
+      "match": "(?i)(?<![.\\w])(?:NULL|TRUE|FALSE)\\b",
+      "name": "constant.language.databricks-sql"
+    },
+    "types": {
+      "match": "(?i)(?<![.\\w])(?:BIGINT|BINARY|BOOLEAN|BYTE|CHAR|CHARACTER|DATE|DEC|DECIMAL|DOUBLE|FLOAT|GEOGRAPHY|GEOMETRY|INT|INTEGER|INTERVAL|LONG|NUMERIC|REAL|SHORT|SMALLINT|STRING|TIMESTAMP|TIMESTAMP_LTZ|TIMESTAMP_NTZ|TINYINT|VARCHAR|VARIANT|VOID|ARRAY|MAP|STRUCT|OBJECT)\\b",
+      "name": "storage.type.databricks-sql"
+    },
+    "keywords": {
+      "comment": "Almost every Databricks keyword is also a legal name, so the list leaves out the words most often used as column names (NAME, TYPE, KEY, VALUE, DATA, YEAR, ...). A word after a `.` is always a name.",
+      "patterns": [
+        {
+          "match": "(?i)(?<![.\\w])(?:AND|OR|NOT|IN|IS|LIKE|ILIKE|RLIKE|REGEXP|BETWEEN|EXISTS|ANY|SOME|ALL|DIV|ESCAPE)\\b",
+          "name": "keyword.operator.word.databricks-sql"
+        },
+        {
+          "match": "(?i)(?<![.\\w])(?:CASE|WHEN|THEN|ELSE|END|IF|ELSEIF|BEGIN|LOOP|WHILE|REPEAT|UNTIL|FOR|DO|ITERATE|LEAVE|RETURN|DECLARE|SIGNAL|RESIGNAL|HANDLER|CONTINUE|EXIT|CALL)\\b",
+          "name": "keyword.control.databricks-sql"
+        },
+        {
+          "match": "(?i)(?<![.\\w])(?:SELECT|FROM|WHERE|GROUP|BY|HAVING|ORDER|LIMIT|OFFSET|QUALIFY|WINDOW|UNION|INTERSECT|EXCEPT|MINUS|DISTINCT|AS|ON|USING|JOIN|INNER|LEFT|RIGHT|FULL|OUTER|CROSS|SEMI|ANTI|NATURAL|LATERAL|VIEW|WITH|RECURSIVE|VALUES|INSERT|INTO|OVERWRITE|UPDATE|SET|DELETE|MERGE|MATCHED|CREATE|REPLACE|TEMPORARY|TEMP|GLOBAL|EXTERNAL|TABLE|TABLES|MATERIALIZED|STREAMING|LIVE|SCHEMA|SCHEMAS|DATABASE|CATALOG|VOLUME|FUNCTION|PROCEDURE|FLOW|ALTER|DROP|TRUNCATE|RENAME|ADD|COLUMN|COLUMNS|CONSTRAINT|PRIMARY|FOREIGN|REFERENCES|CHECK|PARTITIONED|PARTITION|CLUSTER|DISTRIBUTE|SORT|ZORDER|LOCATION|COMMENT|TBLPROPERTIES|DBPROPERTIES|OPTIONS|USE|SHOW|DESCRIBE|DESC|ASC|EXPLAIN|ANALYZE|COMPUTE|STATISTICS|REFRESH|CACHE|UNCACHE|LAZY|OPTIMIZE|VACUUM|RESTORE|CLONE|SHALLOW|DEEP|HISTORY|DETAIL|VERSION|OF|GRANT|REVOKE|DENY|PRIVILEGES|TO|COPY|FILEFORMAT|FORMAT_OPTIONS|COPY_OPTIONS|CONVERT|OVER|ROWS|RANGE|UNBOUNDED|PRECEDING|FOLLOWING|CURRENT|ROW|FILTER|WITHIN|RESPECT|IGNORE|NULLS|FIRST|LAST|PIVOT|UNPIVOT|TABLESAMPLE|EXPECT|VIOLATION|FAIL|APPLY|CHANGES|AUTO|CDC|SEQUENCE|STORED|TRACK|GENERATED|ALWAYS|IDENTITY|DEFAULT|COLLATE|EXECUTE|IMMEDIATE|VARIABLE|VAR|LANGUAGE|RETURNS|DETERMINISTIC|SECURITY|DEFINER|INVOKER|ATOMIC|SCHEDULE|EVERY|INCREMENTAL|WATERMARK|DELAY|PRIVATE|ONCE|SYNC|UNDROP)\\b",
+          "name": "keyword.other.databricks-sql"
+        }
+      ]
+    },
+    "function-calls": {
+      "match": "(?<![\\w$])([A-Za-z_][A-Za-z0-9_]*)(?=\\s*\\()",
+      "captures": {
+        "1": { "name": "support.function.databricks-sql" }
+      }
+    },
+    "operators": {
+      "patterns": [
+        { "match": "::", "name": "keyword.operator.cast.databricks-sql" },
+        { "match": "\\|>", "name": "keyword.operator.pipe.databricks-sql" },
+        {
+          "match": "<=>|<>|!=|<=|>=|==|=>|->|\\|\\||[-+*/%&|^~!=<>:@]",
+          "name": "keyword.operator.databricks-sql"
+        }
+      ]
+    },
+    "punctuation": {
+      "patterns": [
+        { "match": ";", "name": "punctuation.terminator.statement.databricks-sql" },
+        { "match": ",", "name": "punctuation.separator.comma.databricks-sql" },
+        { "match": "\\.", "name": "punctuation.accessor.databricks-sql" }
+      ]
+    }
+  }
+}
