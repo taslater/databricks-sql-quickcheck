@@ -21,3 +21,10 @@ updates:
     directory: /
     schedule:
       interval: monthly
+    groups:
+      # One PR for every minor and patch bump, as for npm above. Separate PRs
+      # for actions that must move together (codeql-action's init and
+      # analyze, for one) each fail CI on their own.
+      actions:
+        patterns: ["*"]
+        update-types: [minor, patch]
