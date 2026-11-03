@@ -1,9 +1,11 @@
 {
   "name": "databricks-sql-quickcheck",
-  "displayName": "Databricks SQL Quickcheck",
+  "displayName": "Quickcheck for Databricks SQL",
   "description": "A Databricks SQL language mode whose highlighting understands backslash escapes, raw strings and notebook cells, plus instant, as-you-type structural syntax checks: brackets, quotes, commas, operators, CASE/END.",
-  "version": "0.2.0",
-  "publisher": "local",
+  "version": "0.3.0",
+  "publisher": "ThomasAndrewSlater",
+  "icon": "images/icon.png",
+  "pricing": "Free",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -21,6 +23,21 @@
   "categories": [
     "Programming Languages",
     "Linters"
+  ],
+  "keywords": [
+    "databricks",
+    "sql",
+    "databricks sql",
+    "spark sql",
+    "spark",
+    "notebook",
+    "syntax highlighting",
+    "lint",
+    "linter",
+    "syntax check",
+    "delta lake",
+    "unity catalog",
+    "lakeflow"
   ],
   "main": "./out/extension.js",
   "types": "./out/index.d.ts",
@@ -104,12 +121,12 @@
     "watch": "tsc -watch -p .",
     "test": "tsc -p . && node --test out/test/*.test.js",
     "keywords": "python3 scripts/gen_keywords.py ../sqlfluff",
-    "package": "npm run build && mkdir -p dist && vsce package --no-rewrite-relative-links -o dist/databricks-sql-quickcheck.vsix"
+    "package": "npm run build && mkdir -p dist && vsce package -o dist/databricks-sql-quickcheck.vsix"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
     "@types/vscode": "^1.80.0",
-    "@vscode/vsce": "^4.0.0",
+    "@vscode/vsce": "^4.1.0",
     "typescript": "^7.0.2",
     "vscode-oniguruma": "^2.0.1",
     "vscode-textmate": "^9.3.2"

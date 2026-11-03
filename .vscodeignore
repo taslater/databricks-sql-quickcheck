@@ -12,3 +12,6 @@ AGENTS.md
 CLAUDE.md
 examples/**
 docs/**
+images/*.svg
+.github/**
+SECURITY.md

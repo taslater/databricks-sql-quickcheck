@@ -1,0 +1,87 @@
+name: release
+
+# Publishes the extension to the Visual Studio Marketplace when a version tag
+# is pushed. No token is stored anywhere: the Marketplace trusts this workflow
+# file, in this repository, running in the `marketplace` environment
+# (trusted publishing over OIDC, set up on the publisher's page). The
+# environment waits for a maintainer's approval before anything is published.
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: test and package
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write # build provenance
+      attestations: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0 # to see origin/main
+          persist-credentials: false
+      - name: the tag is on main and matches package.json
+        run: |
+          git merge-base --is-ancestor "$GITHUB_SHA" origin/main \
+            || { echo "::error::$GITHUB_REF_NAME is not on main"; exit 1; }
+          want="v$(node -p 'require("./package.json").version')"
+          [ "$GITHUB_REF_NAME" = "$want" ] \
+            || { echo "::error::tag $GITHUB_REF_NAME does not match package.json ($want)"; exit 1; }
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - run: npm run package
+      - uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-path: dist/databricks-sql-quickcheck.vsix
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: vsix
+          path: dist/databricks-sql-quickcheck.vsix
+          if-no-files-found: error
+
+  publish:
+    name: publish to the Marketplace
+    needs: build
+    runs-on: ubuntu-latest
+    environment: marketplace
+    permissions:
+      contents: write # the GitHub release
+      id-token: write # trusted publishing
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+          cache: npm
+      - name: install vsce, pinned by the lockfile
+        run: npm ci --ignore-scripts
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: vsix
+          path: dist
+      - name: publish
+        run: npx vsce publish --oidc --packagePath dist/databricks-sql-quickcheck.vsix
+      - name: GitHub release, with this version's changelog
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          awk -v v="$version" 'index($0, "## " v " ") == 1 || $0 == "## " v { f = 1; next } /^## / { f = 0 } f' CHANGELOG.md > notes.md
+          gh release create "$GITHUB_REF_NAME" dist/databricks-sql-quickcheck.vsix \
+            --verify-tag --title "$GITHUB_REF_NAME" --notes-file notes.md

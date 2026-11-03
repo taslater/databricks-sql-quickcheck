@@ -1,6 +1,11 @@
-# databricks-sql-quickcheck
+# Quickcheck for Databricks SQL
 
-Instant, as-you-type syntax checks for Databricks SQL.
+Instant, as-you-type syntax checks for Databricks SQL, and a VS Code language
+mode that colours it the way Databricks reads it: `'it\'s'` is one string, and
+an unclosed quote stays in its notebook cell. See
+[the language mode](#the-databricks-sql-language-mode).
+
+*An independent project, not affiliated with or endorsed by Databricks, Inc.*
 
 This is the fast, shallow tier of checking, the SQL equivalent of what
 pyflakes is to pylint. It does not parse your SQL against the full Databricks
@@ -149,6 +154,15 @@ parses the same kind of file in about 14 ms.
 ## Install
 
 ### VS Code
+
+Install **Quickcheck for Databricks SQL** from the Visual Studio Marketplace,
+or from a terminal:
+
+```bash
+code --install-extension ThomasAndrewSlater.databricks-sql-quickcheck
+```
+
+To build it from source instead:
 
 ```bash
 npm install

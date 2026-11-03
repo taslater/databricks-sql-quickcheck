@@ -480,9 +480,33 @@ quote running through every later notebook cell).
 
 ## Release and install
 
-`npm run package` builds `dist/databricks-sql-quickcheck.vsix`, and
-`code --install-extension` installs it. Nothing is published to the
-Marketplace or npm, and publishing is Tom's call: ask first.
+**On the Visual Studio Marketplace from 0.3.0** (decided 2026-11-02), as
+`ThomasAndrewSlater.databricks-sql-quickcheck`, displayed as "Quickcheck for
+Databricks SQL". It is free and must stay free: no `sponsor` field and no paid
+tier, under the no-profit condition in the workspace notes. It is not on npm or
+Open VSX. The publisher ID and the extension name are permanent, and a removed
+extension's name stays reserved.
+
+A release takes these steps:
+
+1. In a PR, bump `version` in `package.json` and add that version's section to
+   `CHANGELOG.md`.
+2. Once it is merged, tag that commit on `main` as `vX.Y.Z` and push the tag.
+3. `.github/workflows/release.yml` checks that the tag is on `main` and matches
+   `package.json`, tests, packages and attests the VSIX.
+4. It then waits in the `marketplace` environment for approval, publishes with
+   `vsce publish --oidc`, and makes a GitHub release with the VSIX and the
+   changelog section.
+
+**Pushing a release tag and approving the deployment are Tom's.** No token is
+stored: the Marketplace's trusted publishing policy names this repository,
+`release.yml` and the `marketplace` environment, so renaming any of them stops
+publishing. Azure DevOps global PATs retire on 2026-12-01, which is why there
+is no PAT route. `--oidc` needs vsce 4.1.0 or later.
+
+`npm run package` builds `dist/databricks-sql-quickcheck.vsix` locally, and
+`code --install-extension dist/databricks-sql-quickcheck.vsix --force` puts a
+branch build over the published one.
 
 The repo is on GitHub at `taslater/databricks-sql-quickcheck`, **public
 since 2026-09-26** (created private the same day, reviewed, then opened).
