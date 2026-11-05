@@ -1224,13 +1224,19 @@ export class Stmt {
       if (t.kind !== "word" || !KEYWORDS.has(t.upper!) || !this.isKw(k, t.upper!)) continue;
       const u = t.upper!;
       if (u === "SELECT" || u === "WITH" || SET_OPERATORS.has(u) || NOT_A_SELECT_LIST.has(u)) return;
-      if (u !== "FROM") continue;
+      if (u !== "FROM" || this.isDistinctFromOperator(k)) continue;
       if (k > s && !ctx.flagged?.has(t.start)) {
         report(ctx, "missing-keyword", "error", t,
           "`FROM` with nothing selected: a query starts here, and no `SELECT` comes before its `FROM`");
       }
       return;
     }
+  }
+
+  /** Does a FROM token belong to `IS [NOT] DISTINCT FROM`, not a query clause? */
+  private isDistinctFromOperator(k: number): boolean {
+    return this.isKw(k - 1, "DISTINCT") &&
+      (this.isKw(k - 2, "IS") || (this.isKw(k - 2, "NOT") && this.isKw(k - 3, "IS")));
   }
 
   /**
