@@ -601,6 +601,24 @@ describe("a query that lost its SELECT", () => {
     clean("SELECT a FROM t WHERE a > (extract(YEAR FROM d) + 1)");
   });
 
+  it("IS DISTINCT FROM in a MERGE condition is not a lost SELECT", () => {
+    clean(
+      "MERGE INTO target USING source ON target.id = source.id " +
+      "WHEN MATCHED AND (target.a IS DISTINCT FROM source.b) THEN " +
+      "UPDATE SET target.a = source.b",
+    );
+    clean(
+      "MERGE INTO target USING source ON target.id = source.id " +
+      "WHEN MATCHED AND (target.a IS NOT DISTINCT FROM source.b) THEN " +
+      "UPDATE SET target.a = source.b",
+    );
+  });
+
+  it("IS [NOT] DISTINCT FROM inside WHERE parentheses is not a lost SELECT", () => {
+    clean("SELECT * FROM target WHERE (target.a IS DISTINCT FROM target.b)");
+    clean("SELECT * FROM target WHERE (target.a IS NOT DISTINCT FROM target.b)");
+  });
+
   it("a FROM-first query is not a lost SELECT", () => {
     clean("SELECT * FROM (FROM t SELECT a)");
     clean("SELECT * FROM (FROM t |> WHERE a > 1)");
