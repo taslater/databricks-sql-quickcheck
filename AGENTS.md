@@ -445,6 +445,37 @@ warning applies; 69 deleted-`FROM` mutants become `SELECT a b, c d WHERE`,
 which is missing-comma territory and warns where it can; and 25 deleted-`WHERE`
 mutants hit one of the deliberate stops above.
 
+## SQL scripting blocks
+
+`src/blocks.ts`, design and traps in [docs/scripting.md](docs/scripting.md). Shipped
+2026-11-06 (#11). A stack over the fragments of each notebook cell; openers are read
+only at statement starts; anything it does not understand makes it give up for the rest
+of the cell. Errors only, because a warehouse rejects each shape it reports.
+
+**The published corpus has no scripting, so the engine is the test oracle.** Every
+script in `eval/scripting/` was run on a Databricks SQL warehouse. `valid.json` (557
+scripts the engine runs) must produce no findings; `invalid.json` (278 refused scripts,
+each with a repaired twin) must produce an error on the mistake and none on the twin,
+with a two-way ratchet in `checker_misses`. To add a case, run it on the warehouse
+first and record what the engine said; never write the verdict from memory.
+
+**Running scripts on a warehouse** needs the `dbx-friend` profile, which Tom authorised
+for syntax testing (never pick a profile yourself): `databricks experimental aitools
+tools query "<sql>" --profile dbx-friend`. Keep every script side-effect free (no DDL,
+DML, table access) and **every loop terminating**: the counter changes first in the
+body, never `WHILE true` without a `LEAVE` on the first pass. A runaway loop keeps
+running on the warehouse after its CLI process is killed; find it with
+`databricks api get "/api/2.0/sql/history/queries?filter_by.statuses=RUNNING"` and stop it
+with `databricks api post /api/2.0/sql/statements/<query_id>/cancel`. A stopped
+serverless starter warehouse sometimes refuses to start from the CLI ("Cannot create
+the resource"); starting it from the UI works.
+
+**What a stronger model found when asked to break it** (94 false positives out of 364
+valid scripts, all fixed): the lesson is that `then`, `do`, `end`, `case`, `begin` and
+any keyword can be a label, a variable, an alias or a JSON key, and a hand-written test
+set misses all of it. Run any change to a block rule against every fixture before
+opening a PR, and treat a new false positive as a missing fixture first.
+
 ## The language mode
 
 The extension contributes a `databricks-sql` language: a TextMate grammar
