@@ -14,6 +14,8 @@ seen open, and matches each closer against the top of the stack.
 | `unclosed-block` | error | a block still open when the cell ends: `BEGIN SELECT 1;` |
 | `mismatched-block` | error | a closer that is not the open block's: `IF ... THEN ...; END`, `WHILE ... DO ...; END IF`, `REPEAT ...; END REPEAT` with no `UNTIL`, `END LOOP other` after `lbl: LOOP` |
 | `unmatched-block` | error | a closer with no open block: `BEGIN SELECT 1; END; END` |
+| `incomplete-block` | error | a required word is missing: `IF` / `ELSEIF` / `WHEN` with no `THEN`, `WHILE` / `FOR` with no `DO`, a `CASE` with no `WHEN`, `UNTIL cond` with no `END REPEAT`; or a `WHILE`, `FOR`, `LOOP` or `REPEAT` with no statement in its body (`WHILE c DO END WHILE`; an empty `BEGIN END` is valid) |
+| `misplaced-block-word` | error | an `ELSE` or `ELSEIF` outside an `IF`, a `WHEN` outside a `CASE` statement, an `UNTIL` outside a `REPEAT`, a second `ELSE`, or an `ELSEIF` / `WHEN` after the `ELSE` |
 
 Every one is an error because the engine rejects each of them (below). After
 the first one in a cell the pass stops: a stack that has already disagreed with
@@ -51,11 +53,10 @@ reports from a half-understood stack. It gives up on:
   it, but a transaction form could look like it), and any `BEGIN`, `LOOP`,
   `WHILE` or `REPEAT` in a position where no statement starts;
 - an `IF`, `WHILE`, `FOR` or `CASE` at a statement start whose `THEN` or `DO`
-  it cannot find;
+  is missing **and** whose fragment has an unbalanced bracket (the user is
+  still typing it); a balanced fragment with no `THEN` is `incomplete-block`;
 - `REPEAT (`, which is the string function and cannot open a block, but could
   be anything the user is typing;
-- an `ELSE`, `ELSEIF` or `WHEN` outside the block it belongs to (those are
-  mistakes too, but not ones this pass reports yet);
 - anything after a closer on the same fragment other than its label;
 - `DECLARE ... HANDLER` whose action is a block statement other than `BEGIN`;
 - a lexical error anywhere in the file (an unterminated string or comment): the
@@ -84,13 +85,44 @@ Every one of these is valid SQL and has a fixture that must stay quiet.
 
 The published corpus holds no scripting at all (the only `END IF` text in its
 867 files is commented-out PL/pgSQL in three of Spark's PostgreSQL-flavoured
-tests), so the corpus false-positive gate guards this pass very little.
-The oracle is the engine instead: every script in `eval/scripting/` was run on
-a Databricks SQL warehouse (channel Current, v2026.43) on 2026-11-06.
+tests), so the corpus false-positive gate guards this pass very little. The
+oracle is the engine instead: every script in `eval/scripting/` was run on a
+Databricks SQL warehouse (channel Current, v2026.43) on 2026-11-06, by agents
+that were not told what the checker does.
 
-- `eval/scripting/valid.json`: scripts the engine ran successfully. The checker
-  must say nothing about any of them (`src/test/scripting-fixtures.test.ts`).
-- The `rejected` list in the same file: scripts the engine refused.
+- `eval/scripting/valid.json`: 256 scripts the engine ran, covering every
+  statement kind, labels, handlers, nesting, CASE expressions, `if()` and
+  `repeat()` as functions, keywords as names, comments, strings and layout.
+  The checker says nothing about any of them
+  (`src/test/scripting-fixtures.test.ts`). Writing them found two false
+  positives before release: a block labelled `if` closed by `END if`, and a
+  variable named `case`.
+- `eval/scripting/invalid.json`: 278 scripts with one block-structure mistake
+  each, with the engine's error class, plus the repaired twin of each. The
+  checker says nothing about any of the 278 twins, and flags 260 of the 278
+  mistakes (`src/test/scripting-invalid.test.ts`). The 18 it misses are listed
+  in the file as `checker_misses`, and the test fails if one of them starts
+  being caught without the list being updated, so the number only goes up.
+  Engine error classes: 243 `PARSE_SYNTAX_ERROR`, 19
+  `END_LABEL_WITHOUT_BEGIN_LABEL`, 16 `LABELS_MISMATCH`.
+
+Things the engine taught, some of which the docs do not say:
+
+- `BEGIN END` and `BEGIN ATOMIC END` are valid (the statement list is optional).
+  A forbidden-pair check that called `ATOMIC END` an error was wrong and is gone.
+- `END IF` after a bare `BEGIN` is parsed as an end *label* named `IF`, so the
+  engine reports `END_LABEL_WITHOUT_BEGIN_LABEL`, not a syntax error. Still
+  an error either way.
+- An end label on a block with no begin label is an error; a nested block may
+  not reuse an enclosing block's label; sibling blocks may; labels compare
+  case-insensitively; `LEAVE` and `ITERATE` need a label.
+- The outermost statement cannot be a labelled `BEGIN` (`lbl: BEGIN ... END lbl`
+  is a syntax error; the same text nested in a block is fine). Not checked.
+- `IF` and `WHILE` are not accepted as an unwrapped handler action, and `;;`,
+  `BEGIN ;` and `SET VAR` inside a block are refused.
+- `loop`, `end`, `repeat`, `until`, `then`, `do`, `begin`, `else` and `if` are
+  all accepted as names and labels; `BEGIN TRANSACTION` and `BEGIN WORK` are
+  statements, `BEGIN`, `BEGIN;` and `START TRANSACTION` are not.
 
 The four cases in the issue, and the other mistakes, as the engine rejects
 them:
@@ -107,13 +139,14 @@ them:
 
 ## Not checked yet
 
-Known gaps, each recorded so a later change can take it on:
+Known gaps, each recorded so a later change can take it on. The 18 scripts in
+`checker_misses` are the measured edge:
 
-- an `ELSE` after an `ELSE`, an `ELSEIF` or `WHEN` outside its block (the pass
-  gives up silently on these);
-- a missing `THEN`, `DO` or `UNTIL`-less `END REPEAT` shapes other than the one
-  reported;
-- an end label on an unlabelled block, a label on the outermost `BEGIN` (the
-  engine refuses it), `LEAVE`/`ITERATE` naming no label in scope, and a nested
-  block reusing an enclosing label (`LABEL_OR_FOR_VARIABLE_ALREADY_EXISTS`);
+- a `THEN` or `DO` at a statement start with nothing before it, and a
+  `DECLARE ... HANDLER` with no action;
+- a `CASE` with no `WHEN` where the fragment also holds the `END CASE`;
+- a second `UNTIL` inside the condition of the first;
+- the label rules that need scope: a label on the outermost `BEGIN`,
+  `LEAVE` / `ITERATE` naming no label in scope, a nested block reusing an
+  enclosing label (`LABEL_OR_FOR_VARIABLE_ALREADY_EXISTS`);
 - anything that needs knowing what a name is.

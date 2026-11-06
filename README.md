@@ -54,6 +54,8 @@ There are two severities, and the line between them is deliberate.
 | `missing-semicolon` | error | `CREATE CATALOG c` then `CREATE SCHEMA s` on the next line; `SET k = v` then a `SELECT` that Spark would read as part of the value |
 | `missing-comma` | error | between column definitions: `id STRING COMMENT 'x'` then `ts BIGINT`; a query bracket right after a subquery's alias: `(SELECT a FROM t) x (SELECT b FROM u) y` |
 | `adjacent-numbers` | error | `IN (2, 3, 5 7)`, `SELECT 1 2`, `1.2.3` |
+| `unclosed-block` / `mismatched-block` / `unmatched-block` | error | SQL scripting: `BEGIN SELECT 1;` with no `END`, `IF ... THEN ...; END` (no `END IF`), `WHILE ... DO ...; END IF`, `REPEAT` with no `UNTIL`, `END LOOP other` after `lbl: LOOP`, a stray `END` |
+| `incomplete-block` / `misplaced-block-word` | error | an `IF`, `WHILE`, `FOR` or `CASE` branch with no `THEN` or `DO`, a loop with an empty body, a second `ELSE`, an `ELSE`, `ELSEIF`, `WHEN` or `UNTIL` outside its block |
 | `clause-order` | error | `GROUP BY a WHERE b`, `LIMIT 10 ORDER BY a`, a second `WHERE` |
 | `case-structure` | error | `CASE WHEN a 'x' END` (no THEN), `ELSE` before `WHEN`, a second `ELSE` |
 | `dangling-keyword` | error | `WHERE a > 1 AND;`, `WHERE GROUP BY`, `SELECT FROM t`, `JOIN ON` |

@@ -34,7 +34,7 @@ for them is in `docs/design-notes.md`:
 | 2 | **Brackets and pairs**: unbalanced or mismatched brackets, `CASE` without `END` | a depth counter | in scope | done: 100% of mutants |
 | 3 | **Operands owed**: `a,,b`, `x =`, `WHERE` with nothing after it, `a::` | the next token | in scope | done: dangling operators 100%; truncated statements 142/174 |
 | 4 | **Local shape**: exclusive alternatives, an empty mandatory slot between two keywords, an empty required list, keyword typos, a missing `;`, a query that lost its `SELECT` or `WHERE` | neighbours, the statement lead, and deny-lists confirmed against the docs | in scope, with the admission gates | mostly done; the long tail is tracked |
-| 5 | **Block structure across statements**: SQL scripting `BEGIN`/`END`, `IF`/`END IF`, `WHILE … DO`/`END WHILE`, `REPEAT … UNTIL` | keyword matching across `;` boundaries | **difficult, possible** | not started: 0 detected |
+| 5 | **Block structure across statements**: SQL scripting `BEGIN`/`END`, `IF`/`END IF`, `WHILE … DO`/`END WHILE`, `REPEAT … UNTIL` | keyword matching across `;` boundaries | **difficult, possible** | built: [scripting.md](scripting.md). 260 of 278 engine-refused scripts flagged, 0 findings on 256 engine-accepted ones |
 | 6 | **Statement skeletons**: `MERGE` without `ON`, `COPY INTO t FROM FILEFORMAT = CSV`, `ANALYZE TABLE` without a table | each statement's required clause keywords, derived from the docs | **difficult, possible**, with a hard limit below | not started |
 | 7 | **Slot contents**: a filled slot holding the wrong thing -- `a BETWEEN 1 OR 5`, `a IS 5`, `MAP<STRING>`, `DECIMAL(10, 2, 3)` | a constraint the docs close off, and a way to find the construct inside an expression | **difficult, possible for closed constraints only**; a general validator stays out | not started; needs an evidence source first |
 | 8 | **Semantics**: unknown table or column, wrong argument count, type mismatch, ambiguous reference | the catalog and the type system | **out of scope** | not a syntax question |
@@ -122,7 +122,7 @@ As of 2026-09-26, against `databricks-sql-corpus`:
 | Reference must-reject, structural target | 194/234 (82.9%) | most of the rest | rung 6 and the refusals above |
 | `delete-keyword` mutants, errors | 107/451 | not yet estimated | most of what is left loses its `SELECT` at the start of a statement, which warns by design |
 | `delete-comma` mutants | 24 errors, 128 warnings of 294 genuinely invalid | not yet estimated | 118 of the 433 are still valid SQL; the missing comma between CTEs is caught, and more silent ones are catchable and tracked |
-| Scripting blocks | 0 | most block-structure mistakes | rung 5, not started |
+| Scripting blocks, 278 scripts a warehouse refuses | 260 flagged as errors | the rest are rare shapes | rung 5, built; `eval/scripting/invalid.json` lists the 18 missed |
 | False positives on 562 valid files and 847 must-parse cases | 0 | 0 | this is a gate, not a goal |
 | Check time per file | median about 120 µs, max 2 ms | stay under a keystroke | also a gate |
 

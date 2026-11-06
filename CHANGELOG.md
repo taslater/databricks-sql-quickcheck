@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+- **SQL scripting block structure** (#11). A new pass matches block openers and
+  closers across statements: a missing `END`, `END IF`, `END WHILE` or `UNTIL`,
+  a closer for the wrong block, a stray `END`, a label that does not match, a
+  missing `THEN` or `DO`, an `ELSE`/`ELSEIF`/`WHEN`/`UNTIL` out of place, and a
+  block left open when a notebook cell ends. Every one is an error because a
+  Databricks SQL warehouse rejects each; the design and the traps it must stay
+  quiet on are in `docs/scripting.md`.
+- **Fixed a false positive on `BEGIN ATOMIC END`.** It was reported as a block
+  with no statements; the engine accepts it, and `BEGIN END`.
+- **Fixed a false positive on a variable named `case`**, as in `VALUES (case)`.
+
 Three missed errors found in the `delete-comma` mutants (#5, #6, #7).
 
 - **A query bracket right after a subquery's alias** is an error:
