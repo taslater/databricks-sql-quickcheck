@@ -545,6 +545,7 @@ export function checkStatements(toks: Token[], depth: number[], ctx: Ctx): void 
     s.namedArgumentArrows();
     s.queryWithoutSelect();
     s.comparisonInFromList();
+    s.adjacentNumbers();
   }
   // These two are safe on a privilege list -- they look at the last token and
   // at empty brackets, neither of which a comma-separated privilege list has --
@@ -1319,6 +1320,28 @@ export class Stmt {
       if (t.kind === "word" && k < this.toks.length - 1 && this.isName(k)) return true;
     }
     return false;
+  }
+
+  /**
+   * Two numeric literals with nothing between them: `IN (2, 3, 5 7)`. Only
+   * pure literals count. `2012_s` is an identifier (`SELECT 2012_s, 2013_s`
+   * is valid, in spark-sql-tests/inputs/pivot.sql) and `200b` is not a literal
+   * form at all, so both stay silent. No production puts one literal straight
+   * after another, at any depth: an alias needs an identifier, and Spark's
+   * identifiers are never all digits (`SELECT 1 2` and `SELECT 1 AS 2` do not
+   * parse in SQLFluff's databricks dialect either). Raw statements never get
+   * here, so `SET k = 1 2` is still left alone.
+   */
+  adjacentNumbers(): void {
+    const { toks } = this;
+    const pure = /^(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?(?:[lLsSyYdDfF]|[bB][dD])?$/;
+    for (let i = 1; i < toks.length; i++) {
+      const [a, b] = [toks[i - 1], toks[i]];
+      if (a.kind !== "number" || b.kind !== "number") continue;
+      if (!pure.test(a.text) || !pure.test(b.text)) continue;
+      report(this.ctx, "adjacent-numbers", "error", b,
+        `\`${a.text} ${b.text}\`: two numbers with nothing between them. Is a comma missing?`);
+    }
   }
 
   /** `ALTER SCHEMA s SET DBPROPERTIES ()`: a required list with nothing in it. */
