@@ -488,6 +488,8 @@ const FROM_JOINS = new Set([
   "LATERAL", "PIVOT", "UNPIVOT", "TABLESAMPLE",
 ]);
 const COMPARISONS = new Set(["=", "==", "<", ">", "<=", ">=", "<>", "!=", "<=>"]);
+/** Tokens that make a run of names a qualified name, a time-travel name or a call. */
+const QUALIFIER_TEXT = new Set([".", "@", ":", "::", "("]);
 
 /**
  * Keywords that end the search for a join criterion: the FROM clause has moved
@@ -546,6 +548,7 @@ export function checkStatements(toks: Token[], depth: number[], ctx: Ctx): void 
     s.queryWithoutSelect();
     s.comparisonInFromList();
     s.adjacentNumbers();
+    s.missingCommaInFromList();
   }
   // These two are safe on a privilege list -- they look at the last token and
   // at empty brackets, neither of which a comma-separated privilege list has --
@@ -1309,6 +1312,76 @@ export class Stmt {
       report(ctx, "missing-comma", "error", toks[l],
         `A bracket starting \`${toks[l + 1].upper}\` cannot follow the alias \`${alias.text}\`. Is a comma missing before this subquery?`);
     }
+  }
+
+  /**
+   * `FROM store_returns, date_dim d1, date_dim d2 date_dim d3, store`: three
+   * bare names in a row at a FROM clause's own depth. A table reference is
+   * `name [AS] alias`, so no valid FROM list holds three names together, and a
+   * comma went missing. Positive evidence only:
+   *
+   *  - a name is a bare word that KEYWORDS does not hold, so a keyword alias
+   *    (`FROM t left`) or a clause keyword breaks the run, and so does any
+   *    bracket, comma or operator;
+   *  - the scan ends at the first keyword not in IN_FROM_CLAUSE, the same bound
+   *    comparisonInFromList() uses, so `VERSION AS OF`, `TIMESTAMP AS OF`, `LIKE`
+   *    and `IN` end the clause before any run after them is read;
+   *  - a run touching `.`, `@`, `:` or `(` is a qualified name, a time-travel
+   *    name or a call, and stays quiet;
+   *  - `extract(YEAR FROM d)` and `IS DISTINCT FROM` are not a FROM clause.
+   *
+   * It leans on KEYWORDS being complete for the words a table reference can be
+   * followed by, so it is a warning, not an error (see AGENTS.md, Severity).
+   */
+  missingCommaInFromList(): void {
+    const { toks, depth } = this;
+    for (let f = 0; f < toks.length; f++) {
+      if (!this.isKw(f, "FROM") || this.isDistinctFromOperator(f) || !this.fromClauseOwned(f)) continue;
+      const d = depth[f];
+      let runStart = -1;
+      let lastName = -1;
+      for (let k = f + 1; k < toks.length && depth[k] >= d; k++) {
+        if (depth[k] > d) continue;
+        const t = toks[k];
+        if (t.kind === "word" && !KEYWORDS.has(t.upper!)) {
+          if (runStart < 0) runStart = k;
+          lastName = k;
+          continue;
+        }
+        if (runStart >= 0 && this.bareRunIsMissingComma(runStart, lastName)) break;
+        runStart = -1;
+        if (t.kind === "op" && t.text === "|>") break; // a pipe operator starts a new clause
+        if (t.kind === "word" && KEYWORDS.has(t.upper!) && !IN_FROM_CLAUSE.has(t.upper!)) break; // the clause has ended
+      }
+      if (runStart >= 0) this.bareRunIsMissingComma(runStart, lastName);
+    }
+  }
+
+  /** Is a FROM at `f` a clause: at the top level, or in a bracket whose owner takes a query. */
+  private fromClauseOwned(f: number): boolean {
+    const d = this.depth[f];
+    if (d === 0) return true;
+    for (let k = f - 1; k >= 0; k--) {
+      if (this.depth[k] < d) return isPunct(this.toks[k], "(") && this.ownsQuery(k - 1);
+    }
+    return false;
+  }
+
+  /** Reports a run of three or more bare names (toks[a..b]) and returns true, unless it touches a qualifier. */
+  private bareRunIsMissingComma(a: number, b: number): boolean {
+    if (!this.ctx.warnings || b - a < 2) return false;
+    const before = this.toks[a - 1];
+    const after = this.toks[b + 1];
+    if (before && QUALIFIER_TEXT.has(before.text)) return false;
+    if (after && QUALIFIER_TEXT.has(after.text)) return false;
+    // `FROM t, u x y = z`: a comparison in a FROM list is a lost WHERE, which
+    // comparisonInFromList() already reports; the run is explained by it.
+    if (after?.kind === "op" && COMPARISONS.has(after.text)) return false;
+    if (this.flaggedBetween(a, b)) return false;
+    const names = this.toks.slice(a, b + 1).map((t) => t.text).join(" ");
+    report(this.ctx, "missing-comma", "warning", this.toks[a + 1],
+      `Missing comma? \`${names}\` has three names in a row in a FROM list. A table reference is \`name [AS] alias\`, so a comma is missing between two of them.`);
+    return true;
   }
 
   /** True when any token could be the object's name, or part of its value. */
