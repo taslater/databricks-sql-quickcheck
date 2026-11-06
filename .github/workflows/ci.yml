@@ -73,20 +73,73 @@ jobs:
       - name: fetch the pinned public corpus
         working-directory: corpus
         run: python -m dbsqlparse.corpus fetch
-      - name: evaluate
+      - name: the corpus checks, run side by side
+        # Four checks, in order of the names in the log groups below:
+        #   evaluate            no false positive on valid corpus SQL (exit 1 or 2)
+        #   no lost catch       compare_baseline: a lost catch fails. It reads the
+        #                       results evaluate writes, so it runs after evaluate,
+        #                       and only if evaluate passed (as before, a failed
+        #                       evaluate stopped the job before it).
+        #   grammar agreement   the grammar agrees with the lexer on every file
+        #   shape sets          the shipped shape sets against every valid source
+        # The last three read the same corpus and write nothing shared, so they
+        # run concurrently with evaluate. Each writes its own log and exit code,
+        # the logs are printed in their own groups, and the step fails if any
+        # check failed, with that check's exit code (evaluate's 1 or 2 first).
         working-directory: quickcheck
-        run: python eval/evaluate.py --corpus ../corpus
-      - name: no lost catch against the committed baseline
-        # Fails on a reference must-reject case that is no longer caught, or a
-        # guaranteed mutation kind whose caught count went down. New catches pass.
-        working-directory: quickcheck
-        run: python eval/compare_baseline.py
-      - name: the grammar agrees with the lexer on every corpus file
-        working-directory: quickcheck
-        run: node out/test/grammar-corpus.js ../corpus/corpus/cache
-      - name: re-check the shipped shape sets against every valid source
-        working-directory: quickcheck
-        run: python scripts/derive_shape_sets.py --corpus ../corpus
+        run: |
+          set +e
+          logs="$RUNNER_TEMP/gate-logs"
+          rm -rf "$logs"
+          mkdir -p "$logs"
+          step() {
+            # step NAME COMMAND...: output to $logs/NAME.log, exit code to NAME.rc
+            local name=$1
+            shift
+            if "$@" >"$logs/$name.log" 2>&1; then
+              echo 0 >"$logs/$name.rc"
+            else
+              echo $? >"$logs/$name.rc"
+            fi
+          }
+          (
+            step evaluate python eval/evaluate.py --corpus ../corpus
+            if [ "$(cat "$logs/evaluate.rc")" = 0 ]; then
+              step baseline python eval/compare_baseline.py
+            fi
+          ) &
+          chain=$!
+          step grammar node out/test/grammar-corpus.js ../corpus/corpus/cache &
+          grammar=$!
+          step shapes python scripts/derive_shape_sets.py --corpus ../corpus &
+          shapes=$!
+          wait "$chain" "$grammar" "$shapes"
+
+          failed=0
+          first=0
+          for pair in "evaluate:evaluate" "baseline:no lost catch against the committed baseline" \
+                      "grammar:the grammar agrees with the lexer on every corpus file" \
+                      "shapes:re-check the shipped shape sets against every valid source"; do
+            name=${pair%%:*}
+            label=${pair#*:}
+            if [ ! -f "$logs/$name.rc" ]; then
+              echo "::group::$label (skipped: evaluate failed)"
+              echo "::endgroup::"
+              continue
+            fi
+            rc=$(cat "$logs/$name.rc")
+            echo "::group::$label (exit $rc)"
+            cat "$logs/$name.log"
+            echo "::endgroup::"
+            if [ "$rc" != 0 ]; then
+              echo "::error::$label exited $rc"
+              failed=1
+              if [ "$first" = 0 ]; then first=$rc; fi
+            fi
+          done
+          if [ "$failed" != 0 ]; then
+            exit "$first"
+          fi
       - name: headline numbers in the job summary
         if: always()
         working-directory: quickcheck
