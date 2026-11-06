@@ -63,6 +63,20 @@ class Quickcheck:
         self.proc.wait()
 
 
+def memoised(fn):
+    """Cache fn(text) by text. Only for pure functions whose results are never mutated."""
+    cache: dict = {}
+
+    def wrapper(text):
+        try:
+            return cache[text]
+        except KeyError:
+            result = cache[text] = fn(text)
+            return result
+
+    return wrapper
+
+
 def errors_of(diags: list[dict]) -> list[dict]:
     return [d for d in diags if d["severity"] == "error"]
 
@@ -243,9 +257,18 @@ def main() -> int:
     corpus = pathlib.Path(args.corpus).resolve()
     sys.path.insert(0, str(corpus / "src"))
     from dbsqlparse.corpus.harness import CACHE_DIR, iter_sql_files, looks_like_json
-    from dbsqlparse.corpus.mutate import GUARANTEED, _tokens, mutate_corpus
+    import dbsqlparse.corpus.mutate as mutate_module
+    from dbsqlparse.corpus.mutate import GUARANTEED, mutate_corpus
     from dbsqlparse.corpus.reference import load_reference
     from dbsqlparse.corpus.sources import REMOTE_SOURCES
+
+    # Lexing with SQLFluff's lexer is the slow part of this run, and each clean
+    # file was lexed twice, once by mutate.py and once by everyday_mutants.
+    # Tokens are a pure function of the text and nothing mutates the list, so
+    # each text is lexed once. Exceptions are not cached, so a text that fails
+    # still fails each time, as before.
+    _tokens = memoised(mutate_module._tokens)
+    mutate_module._tokens = _tokens  # mutate() looks the name up at call time
 
     qc = Quickcheck()
     results: dict = {"sources": {}, "reference": {}, "mutation": {},
