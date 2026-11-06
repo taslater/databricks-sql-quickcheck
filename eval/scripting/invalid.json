@@ -1,0 +1,2825 @@
+{
+ "_about": "Scripts with one block-structure mistake, each refused by a Databricks SQL warehouse (channel Current, v2026.43, 2026-11-06), with the engine error class and the same script repaired (twin_sql), which the engine ran. The checker must say nothing about any twin. checker_misses lists the invalid scripts the checker does not flag: a ratchet, so the list may only shrink. engine_accepts: mistakes the engine accepted after all.",
+ "invalid": [
+  {
+   "id": "i001",
+   "kind": "missing-end-if",
+   "context": "top",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; IF n = 0 THEN SET n = 1; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; IF n = 0 THEN SET n = 1; END IF; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near end of input. SQLSTATE: 42601 (line 1, pos 71)",
+   "engine_line": 1
+  },
+  {
+   "id": "i002",
+   "kind": "missing-end-if",
+   "context": "loop",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE i INT DEFAULT 0; WHILE i < 2 DO SET i = i + 1; IF n = 0 THEN SET n = 1; END WHILE; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE i INT DEFAULT 0; WHILE i < 2 DO SET i = i + 1; IF n = 0 THEN SET n = 1; END IF; END WHILE; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'WHILE'. SQLSTATE: 42601 (line 1, pos 115)",
+   "engine_line": 1
+  },
+  {
+   "id": "i003",
+   "kind": "missing-end-if",
+   "context": "case",
+   "sql": "BEGIN DECLARE n INT DEFAULT 1; CASE n WHEN 1 THEN IF n = 0 THEN SET n = 1; ELSE VALUES (0); END CASE; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 1; CASE n WHEN 1 THEN IF n = 0 THEN SET n = 1; END IF; ELSE VALUES (0); END CASE; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'CASE'. SQLSTATE: 42601 (line 1, pos 96)",
+   "engine_line": 1
+  },
+  {
+   "id": "i004",
+   "kind": "missing-end-while",
+   "context": "nested",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; BEGIN WHILE n < 2 DO SET n = n + 1; END; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; BEGIN WHILE n < 2 DO SET n = n + 1; END WHILE; END; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near ';': missing 'WHILE'. SQLSTATE: 42601 (line 1, pos 70)",
+   "engine_line": 1
+  },
+  {
+   "id": "i005",
+   "kind": "missing-end-while",
+   "context": "handler",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE EXIT HANDLER FOR SQLEXCEPTION BEGIN WHILE n < 2 DO SET n = n + 1; END; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE EXIT HANDLER FOR SQLEXCEPTION BEGIN WHILE n < 2 DO SET n = n + 1; END WHILE; END; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near ';': missing 'WHILE'. SQLSTATE: 42601 (line 1, pos 108)",
+   "engine_line": 1
+  },
+  {
+   "id": "i006",
+   "kind": "missing-end-while",
+   "context": "top",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; WHILE n < 2 DO SET n = n + 1; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; WHILE n < 2 DO SET n = n + 1; END WHILE; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near end of input. SQLSTATE: 42601 (line 1, pos 76)",
+   "engine_line": 1
+  },
+  {
+   "id": "i007",
+   "kind": "missing-end-loop",
+   "context": "loop",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE i INT DEFAULT 0; WHILE i < 2 DO SET i = i + 1; lp: LOOP SET n = n + 1; IF n > 1 THEN LEAVE lp; END IF; END WHILE; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE i INT DEFAULT 0; WHILE i < 2 DO SET i = i + 1; lp: LOOP SET n = n + 1; IF n > 1 THEN LEAVE lp; END IF; END LOOP; END WHILE; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'WHILE': missing 'LOOP'. SQLSTATE: 42601 (line 1, pos 146)",
+   "engine_line": 1
+  },
+  {
+   "id": "i008",
+   "kind": "missing-end-loop",
+   "context": "case",
+   "sql": "BEGIN DECLARE n INT DEFAULT 1; CASE n WHEN 1 THEN lp: LOOP SET n = n + 1; IF n > 1 THEN LEAVE lp; END IF; ELSE VALUES (0); END CASE; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 1; CASE n WHEN 1 THEN lp: LOOP SET n = n + 1; IF n > 1 THEN LEAVE lp; END IF; END LOOP; ELSE VALUES (0); END CASE; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'ELSE'. SQLSTATE: 42601 (line 1, pos 106)",
+   "engine_line": 1
+  },
+  {
+   "id": "i009",
+   "kind": "missing-end-loop",
+   "context": "nested",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; BEGIN lp: LOOP SET n = n + 1; IF n > 1 THEN LEAVE lp; END IF; END; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; BEGIN lp: LOOP SET n = n + 1; IF n > 1 THEN LEAVE lp; END IF; END LOOP; END; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near ';': missing 'LOOP'. SQLSTATE: 42601 (line 1, pos 96)",
+   "engine_line": 1
+  },
+  {
+   "id": "i010",
+   "kind": "missing-end-repeat",
+   "context": "handler",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE EXIT HANDLER FOR SQLEXCEPTION BEGIN REPEAT SET n = n + 1; UNTIL n > 1 END; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE EXIT HANDLER FOR SQLEXCEPTION BEGIN REPEAT SET n = n + 1; UNTIL n > 1 END REPEAT; END; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near ';': missing 'REPEAT'. SQLSTATE: 42601 (line 1, pos 112)",
+   "engine_line": 1
+  },
+  {
+   "id": "i011",
+   "kind": "missing-end-repeat",
+   "context": "top",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; REPEAT SET n = n + 1; UNTIL n > 1 VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; REPEAT SET n = n + 1; UNTIL n > 1 END REPEAT; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'VALUES'. SQLSTATE: 42601 (line 1, pos 65)",
+   "engine_line": 1
+  },
+  {
+   "id": "i012",
+   "kind": "missing-end-repeat",
+   "context": "loop",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE i INT DEFAULT 0; WHILE i < 2 DO SET i = i + 1; REPEAT SET n = n + 1; UNTIL n > 1 END WHILE; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE i INT DEFAULT 0; WHILE i < 2 DO SET i = i + 1; REPEAT SET n = n + 1; UNTIL n > 1 END REPEAT; END WHILE; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'WHILE': missing 'REPEAT'. SQLSTATE: 42601 (line 1, pos 124)",
+   "engine_line": 1
+  },
+  {
+   "id": "i013",
+   "kind": "missing-end-for",
+   "context": "case",
+   "sql": "BEGIN DECLARE n INT DEFAULT 1; CASE n WHEN 1 THEN FOR r AS SELECT 1 AS x DO SET n = n + r.x; ELSE VALUES (0); END CASE; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 1; CASE n WHEN 1 THEN FOR r AS SELECT 1 AS x DO SET n = n + r.x; END FOR; ELSE VALUES (0); END CASE; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'ELSE'. SQLSTATE: 42601 (line 1, pos 93)",
+   "engine_line": 1
+  },
+  {
+   "id": "i014",
+   "kind": "missing-end-for",
+   "context": "nested",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; BEGIN FOR r AS SELECT 1 AS x DO SET n = n + r.x; END; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; BEGIN FOR r AS SELECT 1 AS x DO SET n = n + r.x; END FOR; END; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near ';': missing 'FOR'. SQLSTATE: 42601 (line 1, pos 83)",
+   "engine_line": 1
+  },
+  {
+   "id": "i015",
+   "kind": "missing-end-for",
+   "context": "handler",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE EXIT HANDLER FOR SQLEXCEPTION BEGIN FOR r AS SELECT 1 AS x DO SET n = n + r.x; END; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE EXIT HANDLER FOR SQLEXCEPTION BEGIN FOR r AS SELECT 1 AS x DO SET n = n + r.x; END FOR; END; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near ';': missing 'FOR'. SQLSTATE: 42601 (line 1, pos 121)",
+   "engine_line": 1
+  },
+  {
+   "id": "i016",
+   "kind": "missing-end-case",
+   "context": "top",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; CASE n WHEN 0 THEN SET n = 1; ELSE SET n = 2; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; CASE n WHEN 0 THEN SET n = 1; ELSE SET n = 2; END CASE; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near end of input. SQLSTATE: 42601 (line 1, pos 92)",
+   "engine_line": 1
+  },
+  {
+   "id": "i017",
+   "kind": "missing-end-case",
+   "context": "loop",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE i INT DEFAULT 0; WHILE i < 2 DO SET i = i + 1; CASE n WHEN 0 THEN SET n = 1; ELSE SET n = 2; END WHILE; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE i INT DEFAULT 0; WHILE i < 2 DO SET i = i + 1; CASE n WHEN 0 THEN SET n = 1; ELSE SET n = 2; END CASE; END WHILE; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'WHILE'. SQLSTATE: 42601 (line 1, pos 136)",
+   "engine_line": 1
+  },
+  {
+   "id": "i018",
+   "kind": "missing-end-case",
+   "context": "case",
+   "sql": "BEGIN DECLARE n INT DEFAULT 1; CASE n WHEN 1 THEN CASE n WHEN 0 THEN SET n = 1; ELSE SET n = 2; ELSE VALUES (0); END CASE; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 1; CASE n WHEN 1 THEN CASE n WHEN 0 THEN SET n = 1; ELSE SET n = 2; END CASE; ELSE VALUES (0); END CASE; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'ELSE'. SQLSTATE: 42601 (line 1, pos 96)",
+   "engine_line": 1
+  },
+  {
+   "id": "i019",
+   "kind": "missing-end",
+   "context": "nested",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; BEGIN BEGIN SET n = n + 1; END; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; BEGIN BEGIN SET n = n + 1; END; END; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near end of input. SQLSTATE: 42601 (line 1, pos 78)",
+   "engine_line": 1
+  },
+  {
+   "id": "i020",
+   "kind": "missing-end",
+   "context": "handler",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE EXIT HANDLER FOR SQLEXCEPTION BEGIN BEGIN SET n = n + 1; END; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE EXIT HANDLER FOR SQLEXCEPTION BEGIN BEGIN SET n = n + 1; END; END; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near end of input. SQLSTATE: 42601 (line 1, pos 116)",
+   "engine_line": 1
+  },
+  {
+   "id": "i021",
+   "kind": "missing-end",
+   "context": "top",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; BEGIN SET n = n + 1; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; BEGIN SET n = n + 1; END; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near end of input. SQLSTATE: 42601 (line 1, pos 67)",
+   "engine_line": 1
+  },
+  {
+   "id": "i022",
+   "kind": "missing-end",
+   "context": "top",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; SET n = 1;",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; SET n = 1; END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near end of input: missing 'END'. SQLSTATE: 42601 (line 1, pos 41)",
+   "engine_line": 1
+  },
+  {
+   "id": "i023",
+   "kind": "missing-end",
+   "context": "top",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; VALUES (n);",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near end of input: missing 'END'. SQLSTATE: 42601 (line 1, pos 42)",
+   "engine_line": 1
+  },
+  {
+   "id": "i024",
+   "kind": "missing-end-eof-nested",
+   "context": "top",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; BEGIN SET n = 1; END; VALUES (n);",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; BEGIN SET n = 1; END; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near end of input: missing 'END'. SQLSTATE: 42601 (line 1, pos 64)",
+   "engine_line": 1
+  },
+  {
+   "id": "i025",
+   "kind": "missing-end-eof-nested",
+   "context": "top",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; BEGIN SET n = 1; VALUES (n);",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; BEGIN SET n = 1; END; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near end of input. SQLSTATE: 42601 (line 1, pos 59)",
+   "engine_line": 1
+  },
+  {
+   "id": "i026",
+   "kind": "missing-end-eof-in-loop",
+   "context": "loop",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; WHILE n < 2 DO SET n = n + 1; BEGIN SET n = n + 1; END WHILE; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; WHILE n < 2 DO SET n = n + 1; BEGIN SET n = n + 1; END; END WHILE; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near end of input. SQLSTATE: 42601 (line 1, pos 108)",
+   "engine_line": 1
+  },
+  {
+   "id": "i027",
+   "kind": "missing-end-outer-end-taken",
+   "context": "nested",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; BEGIN SET n = 1; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; BEGIN SET n = 1; END; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near end of input. SQLSTATE: 42601 (line 1, pos 63)",
+   "engine_line": 1
+  },
+  {
+   "id": "i028",
+   "kind": "missing-end-inner-begin-in-handler",
+   "context": "handler",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE EXIT HANDLER FOR SQLEXCEPTION BEGIN SET n = 1; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE EXIT HANDLER FOR SQLEXCEPTION BEGIN SET n = 1; END; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near end of input. SQLSTATE: 42601 (line 1, pos 101)",
+   "engine_line": 1
+  },
+  {
+   "id": "i029",
+   "kind": "wrong-closer:if-closed-by-while",
+   "context": "top",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; IF n = 0 THEN SET n = 1; END WHILE; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; IF n = 0 THEN SET n = 1; END IF; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'WHILE'. SQLSTATE: 42601 (line 1, pos 60)",
+   "engine_line": 1
+  },
+  {
+   "id": "i030",
+   "kind": "wrong-closer:if-closed-by-loop",
+   "context": "nested",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; BEGIN IF n = 0 THEN SET n = 1; END LOOP; END; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; BEGIN IF n = 0 THEN SET n = 1; END IF; END; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'LOOP'. SQLSTATE: 42601 (line 1, pos 66)",
+   "engine_line": 1
+  },
+  {
+   "id": "i031",
+   "kind": "wrong-closer:if-closed-by-repeat",
+   "context": "loop",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE i INT DEFAULT 0; WHILE i < 2 DO SET i = i + 1; IF n = 0 THEN SET n = 1; END REPEAT; END WHILE; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE i INT DEFAULT 0; WHILE i < 2 DO SET i = i + 1; IF n = 0 THEN SET n = 1; END IF; END WHILE; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'REPEAT'. SQLSTATE: 42601 (line 1, pos 115)",
+   "engine_line": 1
+  },
+  {
+   "id": "i032",
+   "kind": "wrong-closer:if-closed-by-for",
+   "context": "handler",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE EXIT HANDLER FOR SQLEXCEPTION BEGIN IF n = 0 THEN SET n = 1; END FOR; END; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE EXIT HANDLER FOR SQLEXCEPTION BEGIN IF n = 0 THEN SET n = 1; END IF; END; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'FOR'. SQLSTATE: 42601 (line 1, pos 104)",
+   "engine_line": 1
+  },
+  {
+   "id": "i033",
+   "kind": "wrong-closer:if-closed-by-case",
+   "context": "case",
+   "sql": "BEGIN DECLARE n INT DEFAULT 1; CASE n WHEN 1 THEN IF n = 0 THEN SET n = 1; END CASE; ELSE VALUES (0); END CASE; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 1; CASE n WHEN 1 THEN IF n = 0 THEN SET n = 1; END IF; ELSE VALUES (0); END CASE; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'CASE'. SQLSTATE: 42601 (line 1, pos 79)",
+   "engine_line": 1
+  },
+  {
+   "id": "i034",
+   "kind": "wrong-closer:if-closed-by-begin",
+   "context": "top",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; IF n = 0 THEN SET n = 1; END; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; IF n = 0 THEN SET n = 1; END IF; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near ';': missing 'IF'. SQLSTATE: 42601 (line 1, pos 59)",
+   "engine_line": 1
+  },
+  {
+   "id": "i035",
+   "kind": "wrong-closer:while-closed-by-if",
+   "context": "nested",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; BEGIN WHILE n < 2 DO SET n = n + 1; END IF; END; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; BEGIN WHILE n < 2 DO SET n = n + 1; END WHILE; END; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'IF': missing 'WHILE'. SQLSTATE: 42601 (line 1, pos 71)",
+   "engine_line": 1
+  },
+  {
+   "id": "i036",
+   "kind": "wrong-closer:while-closed-by-loop",
+   "context": "loop",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE i INT DEFAULT 0; WHILE i < 2 DO SET i = i + 1; WHILE n < 2 DO SET n = n + 1; END LOOP; END WHILE; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE i INT DEFAULT 0; WHILE i < 2 DO SET i = i + 1; WHILE n < 2 DO SET n = n + 1; END WHILE; END WHILE; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'LOOP': missing 'WHILE'. SQLSTATE: 42601 (line 1, pos 120)",
+   "engine_line": 1
+  },
+  {
+   "id": "i037",
+   "kind": "wrong-closer:while-closed-by-repeat",
+   "context": "handler",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE EXIT HANDLER FOR SQLEXCEPTION BEGIN WHILE n < 2 DO SET n = n + 1; END REPEAT; END; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE EXIT HANDLER FOR SQLEXCEPTION BEGIN WHILE n < 2 DO SET n = n + 1; END WHILE; END; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'REPEAT': missing 'WHILE'. SQLSTATE: 42601 (line 1, pos 109)",
+   "engine_line": 1
+  },
+  {
+   "id": "i038",
+   "kind": "wrong-closer:while-closed-by-for",
+   "context": "case",
+   "sql": "BEGIN DECLARE n INT DEFAULT 1; CASE n WHEN 1 THEN WHILE n < 2 DO SET n = n + 1; END FOR; ELSE VALUES (0); END CASE; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 1; CASE n WHEN 1 THEN WHILE n < 2 DO SET n = n + 1; END WHILE; ELSE VALUES (0); END CASE; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'FOR': missing 'WHILE'. SQLSTATE: 42601 (line 1, pos 84)",
+   "engine_line": 1
+  },
+  {
+   "id": "i039",
+   "kind": "wrong-closer:while-closed-by-case",
+   "context": "top",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; WHILE n < 2 DO SET n = n + 1; END CASE; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; WHILE n < 2 DO SET n = n + 1; END WHILE; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'CASE': missing 'WHILE'. SQLSTATE: 42601 (line 1, pos 65)",
+   "engine_line": 1
+  },
+  {
+   "id": "i040",
+   "kind": "wrong-closer:while-closed-by-begin",
+   "context": "nested",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; BEGIN WHILE n < 2 DO SET n = n + 1; END; END; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; BEGIN WHILE n < 2 DO SET n = n + 1; END WHILE; END; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near ';': missing 'WHILE'. SQLSTATE: 42601 (line 1, pos 70)",
+   "engine_line": 1
+  },
+  {
+   "id": "i041",
+   "kind": "wrong-closer:loop-closed-by-if",
+   "context": "loop",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE i INT DEFAULT 0; WHILE i < 2 DO SET i = i + 1; lp: LOOP SET n = n + 1; IF n > 1 THEN LEAVE lp; END IF; END IF; END WHILE; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE i INT DEFAULT 0; WHILE i < 2 DO SET i = i + 1; lp: LOOP SET n = n + 1; IF n > 1 THEN LEAVE lp; END IF; END LOOP; END WHILE; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'IF': missing 'LOOP'. SQLSTATE: 42601 (line 1, pos 146)",
+   "engine_line": 1
+  },
+  {
+   "id": "i042",
+   "kind": "wrong-closer:loop-closed-by-while",
+   "context": "handler",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE EXIT HANDLER FOR SQLEXCEPTION BEGIN lp: LOOP SET n = n + 1; IF n > 1 THEN LEAVE lp; END IF; END WHILE; END; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE EXIT HANDLER FOR SQLEXCEPTION BEGIN lp: LOOP SET n = n + 1; IF n > 1 THEN LEAVE lp; END IF; END LOOP; END; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'WHILE': missing 'LOOP'. SQLSTATE: 42601 (line 1, pos 135)",
+   "engine_line": 1
+  },
+  {
+   "id": "i043",
+   "kind": "wrong-closer:loop-closed-by-repeat",
+   "context": "case",
+   "sql": "BEGIN DECLARE n INT DEFAULT 1; CASE n WHEN 1 THEN lp: LOOP SET n = n + 1; IF n > 1 THEN LEAVE lp; END IF; END REPEAT; ELSE VALUES (0); END CASE; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 1; CASE n WHEN 1 THEN lp: LOOP SET n = n + 1; IF n > 1 THEN LEAVE lp; END IF; END LOOP; ELSE VALUES (0); END CASE; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'REPEAT': missing 'LOOP'. SQLSTATE: 42601 (line 1, pos 110)",
+   "engine_line": 1
+  },
+  {
+   "id": "i044",
+   "kind": "wrong-closer:loop-closed-by-for",
+   "context": "top",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; lp: LOOP SET n = n + 1; IF n > 1 THEN LEAVE lp; END IF; END FOR; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; lp: LOOP SET n = n + 1; IF n > 1 THEN LEAVE lp; END IF; END LOOP; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'FOR': missing 'LOOP'. SQLSTATE: 42601 (line 1, pos 91)",
+   "engine_line": 1
+  },
+  {
+   "id": "i045",
+   "kind": "wrong-closer:loop-closed-by-case",
+   "context": "nested",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; BEGIN lp: LOOP SET n = n + 1; IF n > 1 THEN LEAVE lp; END IF; END CASE; END; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; BEGIN lp: LOOP SET n = n + 1; IF n > 1 THEN LEAVE lp; END IF; END LOOP; END; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'CASE': missing 'LOOP'. SQLSTATE: 42601 (line 1, pos 97)",
+   "engine_line": 1
+  },
+  {
+   "id": "i046",
+   "kind": "wrong-closer:loop-closed-by-begin",
+   "context": "loop",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE i INT DEFAULT 0; WHILE i < 2 DO SET i = i + 1; lp: LOOP SET n = n + 1; IF n > 1 THEN LEAVE lp; END IF; END; END WHILE; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE i INT DEFAULT 0; WHILE i < 2 DO SET i = i + 1; lp: LOOP SET n = n + 1; IF n > 1 THEN LEAVE lp; END IF; END LOOP; END WHILE; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near ';': missing 'LOOP'. SQLSTATE: 42601 (line 1, pos 145)",
+   "engine_line": 1
+  },
+  {
+   "id": "i047",
+   "kind": "wrong-closer:repeat-closed-by-if",
+   "context": "handler",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE EXIT HANDLER FOR SQLEXCEPTION BEGIN REPEAT SET n = n + 1; UNTIL n > 1 END IF; END; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE EXIT HANDLER FOR SQLEXCEPTION BEGIN REPEAT SET n = n + 1; UNTIL n > 1 END REPEAT; END; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'IF': missing 'REPEAT'. SQLSTATE: 42601 (line 1, pos 113)",
+   "engine_line": 1
+  },
+  {
+   "id": "i048",
+   "kind": "wrong-closer:repeat-closed-by-while",
+   "context": "case",
+   "sql": "BEGIN DECLARE n INT DEFAULT 1; CASE n WHEN 1 THEN REPEAT SET n = n + 1; UNTIL n > 1 END WHILE; ELSE VALUES (0); END CASE; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 1; CASE n WHEN 1 THEN REPEAT SET n = n + 1; UNTIL n > 1 END REPEAT; ELSE VALUES (0); END CASE; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'WHILE': missing 'REPEAT'. SQLSTATE: 42601 (line 1, pos 88)",
+   "engine_line": 1
+  },
+  {
+   "id": "i049",
+   "kind": "wrong-closer:repeat-closed-by-loop",
+   "context": "top",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; REPEAT SET n = n + 1; UNTIL n > 1 END LOOP; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; REPEAT SET n = n + 1; UNTIL n > 1 END REPEAT; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'LOOP': missing 'REPEAT'. SQLSTATE: 42601 (line 1, pos 69)",
+   "engine_line": 1
+  },
+  {
+   "id": "i050",
+   "kind": "wrong-closer:repeat-closed-by-for",
+   "context": "nested",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; BEGIN REPEAT SET n = n + 1; UNTIL n > 1 END FOR; END; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; BEGIN REPEAT SET n = n + 1; UNTIL n > 1 END REPEAT; END; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'FOR': missing 'REPEAT'. SQLSTATE: 42601 (line 1, pos 75)",
+   "engine_line": 1
+  },
+  {
+   "id": "i051",
+   "kind": "wrong-closer:repeat-closed-by-case",
+   "context": "loop",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE i INT DEFAULT 0; WHILE i < 2 DO SET i = i + 1; REPEAT SET n = n + 1; UNTIL n > 1 END CASE; END WHILE; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE i INT DEFAULT 0; WHILE i < 2 DO SET i = i + 1; REPEAT SET n = n + 1; UNTIL n > 1 END REPEAT; END WHILE; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'CASE': missing 'REPEAT'. SQLSTATE: 42601 (line 1, pos 124)",
+   "engine_line": 1
+  },
+  {
+   "id": "i052",
+   "kind": "wrong-closer:repeat-closed-by-begin",
+   "context": "handler",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE EXIT HANDLER FOR SQLEXCEPTION BEGIN REPEAT SET n = n + 1; UNTIL n > 1 END; END; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE EXIT HANDLER FOR SQLEXCEPTION BEGIN REPEAT SET n = n + 1; UNTIL n > 1 END REPEAT; END; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near ';': missing 'REPEAT'. SQLSTATE: 42601 (line 1, pos 112)",
+   "engine_line": 1
+  },
+  {
+   "id": "i053",
+   "kind": "wrong-closer:for-closed-by-if",
+   "context": "case",
+   "sql": "BEGIN DECLARE n INT DEFAULT 1; CASE n WHEN 1 THEN FOR r AS SELECT 1 AS x DO SET n = n + r.x; END IF; ELSE VALUES (0); END CASE; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 1; CASE n WHEN 1 THEN FOR r AS SELECT 1 AS x DO SET n = n + r.x; END FOR; ELSE VALUES (0); END CASE; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'IF': missing 'FOR'. SQLSTATE: 42601 (line 1, pos 97)",
+   "engine_line": 1
+  },
+  {
+   "id": "i054",
+   "kind": "wrong-closer:for-closed-by-while",
+   "context": "top",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; FOR r AS SELECT 1 AS x DO SET n = n + r.x; END WHILE; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; FOR r AS SELECT 1 AS x DO SET n = n + r.x; END FOR; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'WHILE': missing 'FOR'. SQLSTATE: 42601 (line 1, pos 78)",
+   "engine_line": 1
+  },
+  {
+   "id": "i055",
+   "kind": "wrong-closer:for-closed-by-loop",
+   "context": "nested",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; BEGIN FOR r AS SELECT 1 AS x DO SET n = n + r.x; END LOOP; END; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; BEGIN FOR r AS SELECT 1 AS x DO SET n = n + r.x; END FOR; END; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'LOOP': missing 'FOR'. SQLSTATE: 42601 (line 1, pos 84)",
+   "engine_line": 1
+  },
+  {
+   "id": "i056",
+   "kind": "wrong-closer:for-closed-by-repeat",
+   "context": "loop",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE i INT DEFAULT 0; WHILE i < 2 DO SET i = i + 1; FOR r AS SELECT 1 AS x DO SET n = n + r.x; END REPEAT; END WHILE; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE i INT DEFAULT 0; WHILE i < 2 DO SET i = i + 1; FOR r AS SELECT 1 AS x DO SET n = n + r.x; END FOR; END WHILE; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'REPEAT': missing 'FOR'. SQLSTATE: 42601 (line 1, pos 133)",
+   "engine_line": 1
+  },
+  {
+   "id": "i057",
+   "kind": "wrong-closer:for-closed-by-case",
+   "context": "handler",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE EXIT HANDLER FOR SQLEXCEPTION BEGIN FOR r AS SELECT 1 AS x DO SET n = n + r.x; END CASE; END; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE EXIT HANDLER FOR SQLEXCEPTION BEGIN FOR r AS SELECT 1 AS x DO SET n = n + r.x; END FOR; END; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'CASE': missing 'FOR'. SQLSTATE: 42601 (line 1, pos 122)",
+   "engine_line": 1
+  },
+  {
+   "id": "i058",
+   "kind": "wrong-closer:for-closed-by-begin",
+   "context": "case",
+   "sql": "BEGIN DECLARE n INT DEFAULT 1; CASE n WHEN 1 THEN FOR r AS SELECT 1 AS x DO SET n = n + r.x; END; ELSE VALUES (0); END CASE; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 1; CASE n WHEN 1 THEN FOR r AS SELECT 1 AS x DO SET n = n + r.x; END FOR; ELSE VALUES (0); END CASE; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near ';': missing 'FOR'. SQLSTATE: 42601 (line 1, pos 96)",
+   "engine_line": 1
+  },
+  {
+   "id": "i059",
+   "kind": "wrong-closer:case-closed-by-if",
+   "context": "top",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; CASE n WHEN 0 THEN SET n = 1; ELSE SET n = 2; END IF; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; CASE n WHEN 0 THEN SET n = 1; ELSE SET n = 2; END CASE; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'IF'. SQLSTATE: 42601 (line 1, pos 81)",
+   "engine_line": 1
+  },
+  {
+   "id": "i060",
+   "kind": "wrong-closer:case-closed-by-while",
+   "context": "nested",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; BEGIN CASE n WHEN 0 THEN SET n = 1; ELSE SET n = 2; END WHILE; END; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; BEGIN CASE n WHEN 0 THEN SET n = 1; ELSE SET n = 2; END CASE; END; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'WHILE'. SQLSTATE: 42601 (line 1, pos 87)",
+   "engine_line": 1
+  },
+  {
+   "id": "i061",
+   "kind": "wrong-closer:case-closed-by-loop",
+   "context": "loop",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE i INT DEFAULT 0; WHILE i < 2 DO SET i = i + 1; CASE n WHEN 0 THEN SET n = 1; ELSE SET n = 2; END LOOP; END WHILE; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE i INT DEFAULT 0; WHILE i < 2 DO SET i = i + 1; CASE n WHEN 0 THEN SET n = 1; ELSE SET n = 2; END CASE; END WHILE; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'LOOP'. SQLSTATE: 42601 (line 1, pos 136)",
+   "engine_line": 1
+  },
+  {
+   "id": "i062",
+   "kind": "wrong-closer:case-closed-by-repeat",
+   "context": "handler",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE EXIT HANDLER FOR SQLEXCEPTION BEGIN CASE n WHEN 0 THEN SET n = 1; ELSE SET n = 2; END REPEAT; END; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE EXIT HANDLER FOR SQLEXCEPTION BEGIN CASE n WHEN 0 THEN SET n = 1; ELSE SET n = 2; END CASE; END; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'REPEAT'. SQLSTATE: 42601 (line 1, pos 125)",
+   "engine_line": 1
+  },
+  {
+   "id": "i063",
+   "kind": "wrong-closer:case-closed-by-for",
+   "context": "case",
+   "sql": "BEGIN DECLARE n INT DEFAULT 1; CASE n WHEN 1 THEN CASE n WHEN 0 THEN SET n = 1; ELSE SET n = 2; END FOR; ELSE VALUES (0); END CASE; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 1; CASE n WHEN 1 THEN CASE n WHEN 0 THEN SET n = 1; ELSE SET n = 2; END CASE; ELSE VALUES (0); END CASE; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'FOR'. SQLSTATE: 42601 (line 1, pos 100)",
+   "engine_line": 1
+  },
+  {
+   "id": "i064",
+   "kind": "wrong-closer:case-closed-by-begin",
+   "context": "top",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; CASE n WHEN 0 THEN SET n = 1; ELSE SET n = 2; END; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; CASE n WHEN 0 THEN SET n = 1; ELSE SET n = 2; END CASE; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near ';': missing 'CASE'. SQLSTATE: 42601 (line 1, pos 80)",
+   "engine_line": 1
+  },
+  {
+   "id": "i065",
+   "kind": "wrong-closer:begin-closed-by-if",
+   "context": "nested",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; BEGIN BEGIN SET n = n + 1; END IF; END; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; BEGIN BEGIN SET n = n + 1; END; END; VALUES (n); END",
+   "error_class": "END_LABEL_WITHOUT_BEGIN_LABEL",
+   "message": "[END_LABEL_WITHOUT_BEGIN_LABEL] End label `IF` can not exist without begin label. SQLSTATE: 42K0L",
+   "engine_line": null
+  },
+  {
+   "id": "i066",
+   "kind": "wrong-closer:begin-closed-by-while",
+   "context": "loop",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE i INT DEFAULT 0; WHILE i < 2 DO SET i = i + 1; BEGIN SET n = n + 1; END WHILE; END WHILE; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE i INT DEFAULT 0; WHILE i < 2 DO SET i = i + 1; BEGIN SET n = n + 1; END; END WHILE; VALUES (n); END",
+   "error_class": "END_LABEL_WITHOUT_BEGIN_LABEL",
+   "message": "[END_LABEL_WITHOUT_BEGIN_LABEL] End label `WHILE` can not exist without begin label. SQLSTATE: 42K0L",
+   "engine_line": null
+  },
+  {
+   "id": "i067",
+   "kind": "wrong-closer:begin-closed-by-loop",
+   "context": "handler",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE EXIT HANDLER FOR SQLEXCEPTION BEGIN BEGIN SET n = n + 1; END LOOP; END; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE EXIT HANDLER FOR SQLEXCEPTION BEGIN BEGIN SET n = n + 1; END; END; VALUES (n); END",
+   "error_class": "END_LABEL_WITHOUT_BEGIN_LABEL",
+   "message": "[END_LABEL_WITHOUT_BEGIN_LABEL] End label `LOOP` can not exist without begin label. SQLSTATE: 42K0L",
+   "engine_line": null
+  },
+  {
+   "id": "i068",
+   "kind": "wrong-closer:begin-closed-by-repeat",
+   "context": "case",
+   "sql": "BEGIN DECLARE n INT DEFAULT 1; CASE n WHEN 1 THEN BEGIN SET n = n + 1; END REPEAT; ELSE VALUES (0); END CASE; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 1; CASE n WHEN 1 THEN BEGIN SET n = n + 1; END; ELSE VALUES (0); END CASE; VALUES (n); END",
+   "error_class": "END_LABEL_WITHOUT_BEGIN_LABEL",
+   "message": "[END_LABEL_WITHOUT_BEGIN_LABEL] End label `REPEAT` can not exist without begin label. SQLSTATE: 42K0L",
+   "engine_line": null
+  },
+  {
+   "id": "i069",
+   "kind": "wrong-closer:begin-closed-by-for",
+   "context": "top",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; BEGIN SET n = n + 1; END FOR; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; BEGIN SET n = n + 1; END; VALUES (n); END",
+   "error_class": "END_LABEL_WITHOUT_BEGIN_LABEL",
+   "message": "[END_LABEL_WITHOUT_BEGIN_LABEL] End label `FOR` can not exist without begin label. SQLSTATE: 42K0L",
+   "engine_line": null
+  },
+  {
+   "id": "i070",
+   "kind": "wrong-closer:begin-closed-by-case",
+   "context": "nested",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; BEGIN BEGIN SET n = n + 1; END CASE; END; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; BEGIN BEGIN SET n = n + 1; END; END; VALUES (n); END",
+   "error_class": "END_LABEL_WITHOUT_BEGIN_LABEL",
+   "message": "[END_LABEL_WITHOUT_BEGIN_LABEL] End label `CASE` can not exist without begin label. SQLSTATE: 42K0L",
+   "engine_line": null
+  },
+  {
+   "id": "i071",
+   "kind": "wrong-closer:if-closed-by-bare-end",
+   "context": "nested",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; BEGIN IF n = 0 THEN SET n = 1; END; END; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; BEGIN IF n = 0 THEN SET n = 1; END IF; END; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near ';': missing 'IF'. SQLSTATE: 42601 (line 1, pos 65)",
+   "engine_line": 1
+  },
+  {
+   "id": "i072",
+   "kind": "wrong-closer:while-closed-by-bare-end",
+   "context": "loop",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE i INT DEFAULT 0; WHILE i < 2 DO SET i = i + 1; WHILE n < 2 DO SET n = n + 1; END; END WHILE; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE i INT DEFAULT 0; WHILE i < 2 DO SET i = i + 1; WHILE n < 2 DO SET n = n + 1; END WHILE; END WHILE; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near ';': missing 'WHILE'. SQLSTATE: 42601 (line 1, pos 119)",
+   "engine_line": 1
+  },
+  {
+   "id": "i073",
+   "kind": "wrong-closer:loop-closed-by-bare-end",
+   "context": "handler",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE EXIT HANDLER FOR SQLEXCEPTION BEGIN lp: LOOP SET n = n + 1; IF n > 1 THEN LEAVE lp; END IF; END; END; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE EXIT HANDLER FOR SQLEXCEPTION BEGIN lp: LOOP SET n = n + 1; IF n > 1 THEN LEAVE lp; END IF; END LOOP; END; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near ';': missing 'LOOP'. SQLSTATE: 42601 (line 1, pos 134)",
+   "engine_line": 1
+  },
+  {
+   "id": "i074",
+   "kind": "wrong-closer:repeat-closed-by-bare-end",
+   "context": "case",
+   "sql": "BEGIN DECLARE n INT DEFAULT 1; CASE n WHEN 1 THEN REPEAT SET n = n + 1; UNTIL n > 1 END; ELSE VALUES (0); END CASE; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 1; CASE n WHEN 1 THEN REPEAT SET n = n + 1; UNTIL n > 1 END REPEAT; ELSE VALUES (0); END CASE; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near ';': missing 'REPEAT'. SQLSTATE: 42601 (line 1, pos 87)",
+   "engine_line": 1
+  },
+  {
+   "id": "i075",
+   "kind": "wrong-closer:for-closed-by-bare-end",
+   "context": "top",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; FOR r AS SELECT 1 AS x DO SET n = n + r.x; END; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; FOR r AS SELECT 1 AS x DO SET n = n + r.x; END FOR; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near ';': missing 'FOR'. SQLSTATE: 42601 (line 1, pos 77)",
+   "engine_line": 1
+  },
+  {
+   "id": "i076",
+   "kind": "wrong-closer:case-closed-by-bare-end",
+   "context": "nested",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; BEGIN CASE n WHEN 0 THEN SET n = 1; ELSE SET n = 2; END; END; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; BEGIN CASE n WHEN 0 THEN SET n = 1; ELSE SET n = 2; END CASE; END; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near ';': missing 'CASE'. SQLSTATE: 42601 (line 1, pos 86)",
+   "engine_line": 1
+  },
+  {
+   "id": "i077",
+   "kind": "wrong-closer:loop-label-closer-while",
+   "context": "top",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; lp: LOOP SET n = n + 1; IF n > 1 THEN LEAVE lp; END IF; END WHILE lp; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; lp: LOOP SET n = n + 1; IF n > 1 THEN LEAVE lp; END IF; END LOOP lp; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'WHILE': missing 'LOOP'. SQLSTATE: 42601 (line 1, pos 91)",
+   "engine_line": 1
+  },
+  {
+   "id": "i078",
+   "kind": "wrong-closer:while-label-closer-loop",
+   "context": "loop",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE i INT DEFAULT 0; WHILE i < 2 DO SET i = i + 1; w: WHILE n < 2 DO SET n = n + 1; END LOOP w; END WHILE; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE i INT DEFAULT 0; WHILE i < 2 DO SET i = i + 1; w: WHILE n < 2 DO SET n = n + 1; END WHILE w; END WHILE; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'LOOP': missing 'WHILE'. SQLSTATE: 42601 (line 1, pos 123)",
+   "engine_line": 1
+  },
+  {
+   "id": "i079",
+   "kind": "missing-until",
+   "context": "top",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; REPEAT SET n = n + 1; END REPEAT; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; REPEAT SET n = n + 1; UNTIL n > 1 END REPEAT; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'END': missing 'UNTIL'. SQLSTATE: 42601 (line 1, pos 53)",
+   "engine_line": 1
+  },
+  {
+   "id": "i080",
+   "kind": "missing-until",
+   "context": "loop",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE i INT DEFAULT 0; WHILE i < 2 DO SET i = i + 1; REPEAT SET n = n + 1; END REPEAT; END WHILE; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE i INT DEFAULT 0; WHILE i < 2 DO SET i = i + 1; REPEAT SET n = n + 1; UNTIL n > 1 END REPEAT; END WHILE; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'END': missing 'UNTIL'. SQLSTATE: 42601 (line 1, pos 108)",
+   "engine_line": 1
+  },
+  {
+   "id": "i081",
+   "kind": "missing-until",
+   "context": "case",
+   "sql": "BEGIN DECLARE n INT DEFAULT 1; CASE n WHEN 1 THEN REPEAT SET n = n + 1; END REPEAT; ELSE VALUES (0); END CASE; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 1; CASE n WHEN 1 THEN REPEAT SET n = n + 1; UNTIL n > 1 END REPEAT; ELSE VALUES (0); END CASE; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'END': missing 'UNTIL'. SQLSTATE: 42601 (line 1, pos 72)",
+   "engine_line": 1
+  },
+  {
+   "id": "i082",
+   "kind": "missing-until",
+   "context": "handler",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE EXIT HANDLER FOR SQLEXCEPTION BEGIN REPEAT SET n = n + 1; END REPEAT; END; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE EXIT HANDLER FOR SQLEXCEPTION BEGIN REPEAT SET n = n + 1; UNTIL n > 1 END REPEAT; END; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'END': missing 'UNTIL'. SQLSTATE: 42601 (line 1, pos 97)",
+   "engine_line": 1
+  },
+  {
+   "id": "i083",
+   "kind": "missing-until",
+   "context": "nested",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; BEGIN w: REPEAT SET n = n + 1; END REPEAT w; END; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; BEGIN w: REPEAT SET n = n + 1; UNTIL n > 1 END REPEAT w; END; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'END': missing 'UNTIL'. SQLSTATE: 42601 (line 1, pos 62)",
+   "engine_line": 1
+  },
+  {
+   "id": "i084",
+   "kind": "missing-do-while",
+   "context": "top",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; WHILE n < 2 SET n = n + 1; END WHILE; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; WHILE n < 2 DO SET n = n + 1; END WHILE; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'SET': missing 'DO'. SQLSTATE: 42601 (line 1, pos 43)",
+   "engine_line": 1
+  },
+  {
+   "id": "i085",
+   "kind": "missing-do-while",
+   "context": "loop",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE i INT DEFAULT 0; WHILE i < 2 DO SET i = i + 1; WHILE n < 2 SET n = n + 1; END WHILE; END WHILE; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE i INT DEFAULT 0; WHILE i < 2 DO SET i = i + 1; WHILE n < 2 DO SET n = n + 1; END WHILE; END WHILE; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'SET': missing 'DO'. SQLSTATE: 42601 (line 1, pos 98)",
+   "engine_line": 1
+  },
+  {
+   "id": "i086",
+   "kind": "missing-do-while",
+   "context": "handler",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE EXIT HANDLER FOR SQLEXCEPTION BEGIN WHILE n < 2 SET n = n + 1; END WHILE; END; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE EXIT HANDLER FOR SQLEXCEPTION BEGIN WHILE n < 2 DO SET n = n + 1; END WHILE; END; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'SET': missing 'DO'. SQLSTATE: 42601 (line 1, pos 87)",
+   "engine_line": 1
+  },
+  {
+   "id": "i087",
+   "kind": "missing-do-while",
+   "context": "case",
+   "sql": "BEGIN DECLARE n INT DEFAULT 1; CASE n WHEN 1 THEN WHILE n < 2 SET n = n + 1; END WHILE; ELSE VALUES (0); END CASE; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 1; CASE n WHEN 1 THEN WHILE n < 2 DO SET n = n + 1; END WHILE; ELSE VALUES (0); END CASE; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'SET': missing 'DO'. SQLSTATE: 42601 (line 1, pos 62)",
+   "engine_line": 1
+  },
+  {
+   "id": "i088",
+   "kind": "missing-do-for",
+   "context": "top",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; FOR r AS SELECT 1 AS x SET n = n + r.x; END FOR; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; FOR r AS SELECT 1 AS x DO SET n = n + r.x; END FOR; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'SET': missing 'DO'. SQLSTATE: 42601 (line 1, pos 54)",
+   "engine_line": 1
+  },
+  {
+   "id": "i089",
+   "kind": "missing-do-for",
+   "context": "nested",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; BEGIN FOR r AS SELECT 1 AS x SET n = n + r.x; END FOR; END; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; BEGIN FOR r AS SELECT 1 AS x DO SET n = n + r.x; END FOR; END; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'SET': missing 'DO'. SQLSTATE: 42601 (line 1, pos 60)",
+   "engine_line": 1
+  },
+  {
+   "id": "i090",
+   "kind": "missing-do-for",
+   "context": "loop",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE i INT DEFAULT 0; WHILE i < 2 DO SET i = i + 1; FOR r AS SELECT 1 AS x SET n = n + r.x; END FOR; END WHILE; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE i INT DEFAULT 0; WHILE i < 2 DO SET i = i + 1; FOR r AS SELECT 1 AS x DO SET n = n + r.x; END FOR; END WHILE; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'SET': missing 'DO'. SQLSTATE: 42601 (line 1, pos 109)",
+   "engine_line": 1
+  },
+  {
+   "id": "i091",
+   "kind": "missing-do-while",
+   "context": "nested",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; BEGIN WHILE n < 2 SET n = n + 1; END WHILE; END; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; BEGIN WHILE n < 2 DO SET n = n + 1; END WHILE; END; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'SET': missing 'DO'. SQLSTATE: 42601 (line 1, pos 49)",
+   "engine_line": 1
+  },
+  {
+   "id": "i092",
+   "kind": "missing-then-if",
+   "context": "top",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; IF n = 0 SET n = 1; END IF; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; IF n = 0 THEN SET n = 1; END IF; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'SET': missing 'THEN'. SQLSTATE: 42601 (line 1, pos 40)",
+   "engine_line": 1
+  },
+  {
+   "id": "i093",
+   "kind": "missing-then-if",
+   "context": "nested",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; BEGIN IF n = 0 SET n = 1; END IF; END; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; BEGIN IF n = 0 THEN SET n = 1; END IF; END; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'SET': missing 'THEN'. SQLSTATE: 42601 (line 1, pos 46)",
+   "engine_line": 1
+  },
+  {
+   "id": "i094",
+   "kind": "missing-then-if",
+   "context": "loop",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE i INT DEFAULT 0; WHILE i < 2 DO SET i = i + 1; IF n = 0 SET n = 1; END IF; END WHILE; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE i INT DEFAULT 0; WHILE i < 2 DO SET i = i + 1; IF n = 0 THEN SET n = 1; END IF; END WHILE; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'SET': missing 'THEN'. SQLSTATE: 42601 (line 1, pos 95)",
+   "engine_line": 1
+  },
+  {
+   "id": "i095",
+   "kind": "missing-then-if",
+   "context": "handler",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE EXIT HANDLER FOR SQLEXCEPTION BEGIN IF n = 0 SET n = 1; END IF; END; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE EXIT HANDLER FOR SQLEXCEPTION BEGIN IF n = 0 THEN SET n = 1; END IF; END; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'SET': missing 'THEN'. SQLSTATE: 42601 (line 1, pos 84)",
+   "engine_line": 1
+  },
+  {
+   "id": "i096",
+   "kind": "missing-then-if",
+   "context": "case",
+   "sql": "BEGIN DECLARE n INT DEFAULT 1; CASE n WHEN 1 THEN IF n = 0 SET n = 1; END IF; ELSE VALUES (0); END CASE; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 1; CASE n WHEN 1 THEN IF n = 0 THEN SET n = 1; END IF; ELSE VALUES (0); END CASE; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'SET': missing 'THEN'. SQLSTATE: 42601 (line 1, pos 59)",
+   "engine_line": 1
+  },
+  {
+   "id": "i097",
+   "kind": "missing-then-elseif",
+   "context": "top",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; IF n = 5 THEN SET n = 1; ELSEIF n = 0 SET n = 2; END IF; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; IF n = 5 THEN SET n = 1; ELSEIF n = 0 THEN SET n = 2; END IF; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'SET': missing 'THEN'. SQLSTATE: 42601 (line 1, pos 69)",
+   "engine_line": 1
+  },
+  {
+   "id": "i098",
+   "kind": "missing-then-elseif",
+   "context": "loop",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE i INT DEFAULT 0; WHILE i < 2 DO SET i = i + 1; IF n = 5 THEN SET n = 1; ELSEIF n = 0 SET n = 2; END IF; END WHILE; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE i INT DEFAULT 0; WHILE i < 2 DO SET i = i + 1; IF n = 5 THEN SET n = 1; ELSEIF n = 0 THEN SET n = 2; END IF; END WHILE; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'SET': missing 'THEN'. SQLSTATE: 42601 (line 1, pos 124)",
+   "engine_line": 1
+  },
+  {
+   "id": "i099",
+   "kind": "missing-then-elseif",
+   "context": "case",
+   "sql": "BEGIN DECLARE n INT DEFAULT 1; CASE n WHEN 1 THEN IF n = 5 THEN SET n = 1; ELSEIF n = 0 SET n = 2; END IF; ELSE VALUES (0); END CASE; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 1; CASE n WHEN 1 THEN IF n = 5 THEN SET n = 1; ELSEIF n = 0 THEN SET n = 2; END IF; ELSE VALUES (0); END CASE; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'SET': missing 'THEN'. SQLSTATE: 42601 (line 1, pos 88)",
+   "engine_line": 1
+  },
+  {
+   "id": "i100",
+   "kind": "missing-then-case-when",
+   "context": "top",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; CASE n WHEN 0 SET n = 1; ELSE SET n = 2; END CASE; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; CASE n WHEN 0 THEN SET n = 1; ELSE SET n = 2; END CASE; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'SET': missing 'THEN'. SQLSTATE: 42601 (line 1, pos 45)",
+   "engine_line": 1
+  },
+  {
+   "id": "i101",
+   "kind": "missing-then-case-when",
+   "context": "handler",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE EXIT HANDLER FOR SQLEXCEPTION BEGIN CASE n WHEN 0 SET n = 1; ELSE SET n = 2; END CASE; END; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE EXIT HANDLER FOR SQLEXCEPTION BEGIN CASE n WHEN 0 THEN SET n = 1; ELSE SET n = 2; END CASE; END; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'SET': missing 'THEN'. SQLSTATE: 42601 (line 1, pos 89)",
+   "engine_line": 1
+  },
+  {
+   "id": "i102",
+   "kind": "missing-then-case-when",
+   "context": "nested",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; BEGIN CASE n WHEN 0 SET n = 1; ELSE SET n = 2; END CASE; END; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; BEGIN CASE n WHEN 0 THEN SET n = 1; ELSE SET n = 2; END CASE; END; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'SET': missing 'THEN'. SQLSTATE: 42601 (line 1, pos 51)",
+   "engine_line": 1
+  },
+  {
+   "id": "i103",
+   "kind": "missing-then-case-when",
+   "context": "loop",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE i INT DEFAULT 0; WHILE i < 2 DO SET i = i + 1; CASE WHEN n = 0 SET n = 1; END CASE; END WHILE; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE i INT DEFAULT 0; WHILE i < 2 DO SET i = i + 1; CASE WHEN n = 0 THEN SET n = 1; END CASE; END WHILE; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'SET': missing 'THEN'. SQLSTATE: 42601 (line 1, pos 102)",
+   "engine_line": 1
+  },
+  {
+   "id": "i104",
+   "kind": "missing-then-case-when",
+   "context": "top",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; CASE n WHEN 0 THEN SET n = 1; WHEN 1 SET n = 3; END CASE; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; CASE n WHEN 0 THEN SET n = 1; WHEN 1 THEN SET n = 3; END CASE; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'SET': missing 'THEN'. SQLSTATE: 42601 (line 1, pos 68)",
+   "engine_line": 1
+  },
+  {
+   "id": "i105",
+   "kind": "until-outside-repeat",
+   "context": "top",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; UNTIL n > 1; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; SET n = 2; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'UNTIL'. SQLSTATE: 42601 (line 1, pos 31)",
+   "engine_line": 1
+  },
+  {
+   "id": "i106",
+   "kind": "until-outside-repeat",
+   "context": "loop",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE i INT DEFAULT 0; WHILE i < 2 DO SET i = i + 1; UNTIL n > 1; END WHILE; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE i INT DEFAULT 0; WHILE i < 2 DO SET i = i + 1; SET n = 2; END WHILE; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'UNTIL'. SQLSTATE: 42601 (line 1, pos 86)",
+   "engine_line": 1
+  },
+  {
+   "id": "i107",
+   "kind": "until-outside-repeat",
+   "context": "handler",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE EXIT HANDLER FOR SQLEXCEPTION BEGIN UNTIL n > 1; END; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE EXIT HANDLER FOR SQLEXCEPTION BEGIN SET n = 2; END; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'n'. SQLSTATE: 42601 (line 1, pos 81)",
+   "engine_line": 1
+  },
+  {
+   "id": "i108",
+   "kind": "until-outside-repeat",
+   "context": "case",
+   "sql": "BEGIN DECLARE n INT DEFAULT 1; CASE n WHEN 1 THEN UNTIL n > 1; ELSE VALUES (0); END CASE; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 1; CASE n WHEN 1 THEN SET n = 2; ELSE VALUES (0); END CASE; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'n'. SQLSTATE: 42601 (line 1, pos 56)",
+   "engine_line": 1
+  },
+  {
+   "id": "i109",
+   "kind": "until-outside-repeat",
+   "context": "nested",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; BEGIN WHILE n < 2 DO SET n = n + 1; UNTIL n > 1 END WHILE; END; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; BEGIN WHILE n < 2 DO SET n = n + 1; END WHILE; END; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'UNTIL'. SQLSTATE: 42601 (line 1, pos 67)",
+   "engine_line": 1
+  },
+  {
+   "id": "i110",
+   "kind": "until-outside-repeat",
+   "context": "top",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; IF n = 0 THEN SET n = 1; UNTIL n > 0 END IF; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; IF n = 0 THEN SET n = 1; END IF; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'UNTIL'. SQLSTATE: 42601 (line 1, pos 56)",
+   "engine_line": 1
+  },
+  {
+   "id": "i111",
+   "kind": "until-outside-repeat",
+   "context": "top",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; lp: LOOP SET n = n + 1; UNTIL n > 1 END LOOP lp; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; lp: LOOP SET n = n + 1; LEAVE lp; END LOOP lp; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'UNTIL'. SQLSTATE: 42601 (line 1, pos 55)",
+   "engine_line": 1
+  },
+  {
+   "id": "i112",
+   "kind": "until-outside-repeat",
+   "context": "loop",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE i INT DEFAULT 0; WHILE i < 2 DO SET i = i + 1; BEGIN SET n = 1; UNTIL n > 0 END; END WHILE; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE i INT DEFAULT 0; WHILE i < 2 DO SET i = i + 1; BEGIN SET n = 1; END; END WHILE; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'UNTIL': missing 'END'. SQLSTATE: 42601 (line 1, pos 103)",
+   "engine_line": 1
+  },
+  {
+   "id": "i113",
+   "kind": "until-outside-repeat",
+   "context": "top",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; REPEAT SET n = n + 1; UNTIL n > 1 UNTIL n > 2 END REPEAT; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; REPEAT SET n = n + 1; UNTIL n > 1 END REPEAT; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'UNTIL'. SQLSTATE: 42601 (line 1, pos 65)",
+   "engine_line": 1
+  },
+  {
+   "id": "i114",
+   "kind": "label-mismatch-begin",
+   "context": "top",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; a: BEGIN SET n = n + 1; END b; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; a: BEGIN SET n = n + 1; END a; VALUES (n); END",
+   "error_class": "LABELS_MISMATCH",
+   "message": "[LABELS_MISMATCH] Begin label `a` does not match the end label `b`. SQLSTATE: 42K0L",
+   "engine_line": null
+  },
+  {
+   "id": "i115",
+   "kind": "label-mismatch-begin",
+   "context": "loop",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE i INT DEFAULT 0; WHILE i < 2 DO SET i = i + 1; a: BEGIN SET n = n + 1; END b; END WHILE; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE i INT DEFAULT 0; WHILE i < 2 DO SET i = i + 1; a: BEGIN SET n = n + 1; END a; END WHILE; VALUES (n); END",
+   "error_class": "LABELS_MISMATCH",
+   "message": "[LABELS_MISMATCH] Begin label `a` does not match the end label `b`. SQLSTATE: 42K0L",
+   "engine_line": null
+  },
+  {
+   "id": "i116",
+   "kind": "label-mismatch-begin",
+   "context": "case",
+   "sql": "BEGIN DECLARE n INT DEFAULT 1; CASE n WHEN 1 THEN a: BEGIN SET n = n + 1; END b; ELSE VALUES (0); END CASE; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 1; CASE n WHEN 1 THEN a: BEGIN SET n = n + 1; END a; ELSE VALUES (0); END CASE; VALUES (n); END",
+   "error_class": "LABELS_MISMATCH",
+   "message": "[LABELS_MISMATCH] Begin label `a` does not match the end label `b`. SQLSTATE: 42K0L",
+   "engine_line": null
+  },
+  {
+   "id": "i117",
+   "kind": "label-mismatch-while",
+   "context": "nested",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; BEGIN a: WHILE n < 2 DO SET n = n + 1; END WHILE b; END; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; BEGIN a: WHILE n < 2 DO SET n = n + 1; END WHILE a; END; VALUES (n); END",
+   "error_class": "LABELS_MISMATCH",
+   "message": "[LABELS_MISMATCH] Begin label `a` does not match the end label `b`. SQLSTATE: 42K0L",
+   "engine_line": null
+  },
+  {
+   "id": "i118",
+   "kind": "label-mismatch-while",
+   "context": "handler",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE EXIT HANDLER FOR SQLEXCEPTION BEGIN a: WHILE n < 2 DO SET n = n + 1; END WHILE b; END; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE EXIT HANDLER FOR SQLEXCEPTION BEGIN a: WHILE n < 2 DO SET n = n + 1; END WHILE a; END; VALUES (n); END",
+   "error_class": "LABELS_MISMATCH",
+   "message": "[LABELS_MISMATCH] Begin label `a` does not match the end label `b`. SQLSTATE: 42K0L",
+   "engine_line": null
+  },
+  {
+   "id": "i119",
+   "kind": "label-mismatch-while",
+   "context": "top",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; a: WHILE n < 2 DO SET n = n + 1; END WHILE b; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; a: WHILE n < 2 DO SET n = n + 1; END WHILE a; VALUES (n); END",
+   "error_class": "LABELS_MISMATCH",
+   "message": "[LABELS_MISMATCH] Begin label `a` does not match the end label `b`. SQLSTATE: 42K0L",
+   "engine_line": null
+  },
+  {
+   "id": "i120",
+   "kind": "label-mismatch-loop",
+   "context": "loop",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE i INT DEFAULT 0; WHILE i < 2 DO SET i = i + 1; a: LOOP SET n = n + 1; LEAVE a; END LOOP b; END WHILE; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE i INT DEFAULT 0; WHILE i < 2 DO SET i = i + 1; a: LOOP SET n = n + 1; LEAVE a; END LOOP a; END WHILE; VALUES (n); END",
+   "error_class": "LABELS_MISMATCH",
+   "message": "[LABELS_MISMATCH] Begin label `a` does not match the end label `b`. SQLSTATE: 42K0L",
+   "engine_line": null
+  },
+  {
+   "id": "i121",
+   "kind": "label-mismatch-loop",
+   "context": "case",
+   "sql": "BEGIN DECLARE n INT DEFAULT 1; CASE n WHEN 1 THEN a: LOOP SET n = n + 1; LEAVE a; END LOOP b; ELSE VALUES (0); END CASE; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 1; CASE n WHEN 1 THEN a: LOOP SET n = n + 1; LEAVE a; END LOOP a; ELSE VALUES (0); END CASE; VALUES (n); END",
+   "error_class": "LABELS_MISMATCH",
+   "message": "[LABELS_MISMATCH] Begin label `a` does not match the end label `b`. SQLSTATE: 42K0L",
+   "engine_line": null
+  },
+  {
+   "id": "i122",
+   "kind": "label-mismatch-loop",
+   "context": "nested",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; BEGIN a: LOOP SET n = n + 1; LEAVE a; END LOOP b; END; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; BEGIN a: LOOP SET n = n + 1; LEAVE a; END LOOP a; END; VALUES (n); END",
+   "error_class": "LABELS_MISMATCH",
+   "message": "[LABELS_MISMATCH] Begin label `a` does not match the end label `b`. SQLSTATE: 42K0L",
+   "engine_line": null
+  },
+  {
+   "id": "i123",
+   "kind": "label-mismatch-repeat",
+   "context": "handler",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE EXIT HANDLER FOR SQLEXCEPTION BEGIN a: REPEAT SET n = n + 1; UNTIL n > 1 END REPEAT b; END; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE EXIT HANDLER FOR SQLEXCEPTION BEGIN a: REPEAT SET n = n + 1; UNTIL n > 1 END REPEAT a; END; VALUES (n); END",
+   "error_class": "LABELS_MISMATCH",
+   "message": "[LABELS_MISMATCH] Begin label `a` does not match the end label `b`. SQLSTATE: 42K0L",
+   "engine_line": null
+  },
+  {
+   "id": "i124",
+   "kind": "label-mismatch-repeat",
+   "context": "top",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; a: REPEAT SET n = n + 1; UNTIL n > 1 END REPEAT b; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; a: REPEAT SET n = n + 1; UNTIL n > 1 END REPEAT a; VALUES (n); END",
+   "error_class": "LABELS_MISMATCH",
+   "message": "[LABELS_MISMATCH] Begin label `a` does not match the end label `b`. SQLSTATE: 42K0L",
+   "engine_line": null
+  },
+  {
+   "id": "i125",
+   "kind": "label-mismatch-repeat",
+   "context": "loop",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE i INT DEFAULT 0; WHILE i < 2 DO SET i = i + 1; a: REPEAT SET n = n + 1; UNTIL n > 1 END REPEAT b; END WHILE; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE i INT DEFAULT 0; WHILE i < 2 DO SET i = i + 1; a: REPEAT SET n = n + 1; UNTIL n > 1 END REPEAT a; END WHILE; VALUES (n); END",
+   "error_class": "LABELS_MISMATCH",
+   "message": "[LABELS_MISMATCH] Begin label `a` does not match the end label `b`. SQLSTATE: 42K0L",
+   "engine_line": null
+  },
+  {
+   "id": "i126",
+   "kind": "label-mismatch-for",
+   "context": "case",
+   "sql": "BEGIN DECLARE n INT DEFAULT 1; CASE n WHEN 1 THEN a: FOR r AS SELECT 1 AS x DO SET n = n + r.x; END FOR b; ELSE VALUES (0); END CASE; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 1; CASE n WHEN 1 THEN a: FOR r AS SELECT 1 AS x DO SET n = n + r.x; END FOR a; ELSE VALUES (0); END CASE; VALUES (n); END",
+   "error_class": "LABELS_MISMATCH",
+   "message": "[LABELS_MISMATCH] Begin label `a` does not match the end label `b`. SQLSTATE: 42K0L",
+   "engine_line": null
+  },
+  {
+   "id": "i127",
+   "kind": "label-mismatch-for",
+   "context": "nested",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; BEGIN a: FOR r AS SELECT 1 AS x DO SET n = n + r.x; END FOR b; END; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; BEGIN a: FOR r AS SELECT 1 AS x DO SET n = n + r.x; END FOR a; END; VALUES (n); END",
+   "error_class": "LABELS_MISMATCH",
+   "message": "[LABELS_MISMATCH] Begin label `a` does not match the end label `b`. SQLSTATE: 42K0L",
+   "engine_line": null
+  },
+  {
+   "id": "i128",
+   "kind": "label-mismatch-for",
+   "context": "handler",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE EXIT HANDLER FOR SQLEXCEPTION BEGIN a: FOR r AS SELECT 1 AS x DO SET n = n + r.x; END FOR b; END; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE EXIT HANDLER FOR SQLEXCEPTION BEGIN a: FOR r AS SELECT 1 AS x DO SET n = n + r.x; END FOR a; END; VALUES (n); END",
+   "error_class": "LABELS_MISMATCH",
+   "message": "[LABELS_MISMATCH] Begin label `a` does not match the end label `b`. SQLSTATE: 42K0L",
+   "engine_line": null
+  },
+  {
+   "id": "i129",
+   "kind": "end-label-without-begin-label-begin",
+   "context": "nested",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; BEGIN BEGIN SET n = n + 1; END a; END; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; BEGIN BEGIN SET n = n + 1; END; END; VALUES (n); END",
+   "error_class": "END_LABEL_WITHOUT_BEGIN_LABEL",
+   "message": "[END_LABEL_WITHOUT_BEGIN_LABEL] End label `a` can not exist without begin label. SQLSTATE: 42K0L",
+   "engine_line": null
+  },
+  {
+   "id": "i130",
+   "kind": "end-label-without-begin-label-begin",
+   "context": "handler",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE EXIT HANDLER FOR SQLEXCEPTION BEGIN BEGIN SET n = n + 1; END a; END; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE EXIT HANDLER FOR SQLEXCEPTION BEGIN BEGIN SET n = n + 1; END; END; VALUES (n); END",
+   "error_class": "END_LABEL_WITHOUT_BEGIN_LABEL",
+   "message": "[END_LABEL_WITHOUT_BEGIN_LABEL] End label `a` can not exist without begin label. SQLSTATE: 42K0L",
+   "engine_line": null
+  },
+  {
+   "id": "i131",
+   "kind": "end-label-without-begin-label-while",
+   "context": "loop",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE i INT DEFAULT 0; WHILE i < 2 DO SET i = i + 1; WHILE n < 2 DO SET n = n + 1; END WHILE a; END WHILE; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE i INT DEFAULT 0; WHILE i < 2 DO SET i = i + 1; WHILE n < 2 DO SET n = n + 1; END WHILE; END WHILE; VALUES (n); END",
+   "error_class": "END_LABEL_WITHOUT_BEGIN_LABEL",
+   "message": "[END_LABEL_WITHOUT_BEGIN_LABEL] End label `a` can not exist without begin label. SQLSTATE: 42K0L",
+   "engine_line": null
+  },
+  {
+   "id": "i132",
+   "kind": "end-label-without-begin-label-while",
+   "context": "case",
+   "sql": "BEGIN DECLARE n INT DEFAULT 1; CASE n WHEN 1 THEN WHILE n < 2 DO SET n = n + 1; END WHILE a; ELSE VALUES (0); END CASE; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 1; CASE n WHEN 1 THEN WHILE n < 2 DO SET n = n + 1; END WHILE; ELSE VALUES (0); END CASE; VALUES (n); END",
+   "error_class": "END_LABEL_WITHOUT_BEGIN_LABEL",
+   "message": "[END_LABEL_WITHOUT_BEGIN_LABEL] End label `a` can not exist without begin label. SQLSTATE: 42K0L",
+   "engine_line": null
+  },
+  {
+   "id": "i133",
+   "kind": "end-label-without-begin-label-loop",
+   "context": "handler",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE EXIT HANDLER FOR SQLEXCEPTION BEGIN LOOP SET n = n + 1; LEAVE lp; END LOOP a; END; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE EXIT HANDLER FOR SQLEXCEPTION BEGIN lp: LOOP SET n = n + 1; LEAVE lp; END LOOP; END; VALUES (n); END",
+   "error_class": "END_LABEL_WITHOUT_BEGIN_LABEL",
+   "message": "[END_LABEL_WITHOUT_BEGIN_LABEL] End label `a` can not exist without begin label. SQLSTATE: 42K0L",
+   "engine_line": null
+  },
+  {
+   "id": "i134",
+   "kind": "end-label-without-begin-label-loop",
+   "context": "top",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; LOOP SET n = n + 1; LEAVE lp; END LOOP a; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; lp: LOOP SET n = n + 1; LEAVE lp; END LOOP; VALUES (n); END",
+   "error_class": "END_LABEL_WITHOUT_BEGIN_LABEL",
+   "message": "[END_LABEL_WITHOUT_BEGIN_LABEL] End label `a` can not exist without begin label. SQLSTATE: 42K0L",
+   "engine_line": null
+  },
+  {
+   "id": "i135",
+   "kind": "end-label-without-begin-label-repeat",
+   "context": "case",
+   "sql": "BEGIN DECLARE n INT DEFAULT 1; CASE n WHEN 1 THEN REPEAT SET n = n + 1; UNTIL n > 1 END REPEAT a; ELSE VALUES (0); END CASE; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 1; CASE n WHEN 1 THEN REPEAT SET n = n + 1; UNTIL n > 1 END REPEAT; ELSE VALUES (0); END CASE; VALUES (n); END",
+   "error_class": "END_LABEL_WITHOUT_BEGIN_LABEL",
+   "message": "[END_LABEL_WITHOUT_BEGIN_LABEL] End label `a` can not exist without begin label. SQLSTATE: 42K0L",
+   "engine_line": null
+  },
+  {
+   "id": "i136",
+   "kind": "end-label-without-begin-label-repeat",
+   "context": "nested",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; BEGIN REPEAT SET n = n + 1; UNTIL n > 1 END REPEAT a; END; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; BEGIN REPEAT SET n = n + 1; UNTIL n > 1 END REPEAT; END; VALUES (n); END",
+   "error_class": "END_LABEL_WITHOUT_BEGIN_LABEL",
+   "message": "[END_LABEL_WITHOUT_BEGIN_LABEL] End label `a` can not exist without begin label. SQLSTATE: 42K0L",
+   "engine_line": null
+  },
+  {
+   "id": "i137",
+   "kind": "end-label-without-begin-label-for",
+   "context": "top",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; FOR r AS SELECT 1 AS x DO SET n = n + r.x; END FOR a; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; FOR r AS SELECT 1 AS x DO SET n = n + r.x; END FOR; VALUES (n); END",
+   "error_class": "END_LABEL_WITHOUT_BEGIN_LABEL",
+   "message": "[END_LABEL_WITHOUT_BEGIN_LABEL] End label `a` can not exist without begin label. SQLSTATE: 42K0L",
+   "engine_line": null
+  },
+  {
+   "id": "i138",
+   "kind": "end-label-without-begin-label-for",
+   "context": "loop",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE i INT DEFAULT 0; WHILE i < 2 DO SET i = i + 1; FOR r AS SELECT 1 AS x DO SET n = n + r.x; END FOR a; END WHILE; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE i INT DEFAULT 0; WHILE i < 2 DO SET i = i + 1; FOR r AS SELECT 1 AS x DO SET n = n + r.x; END FOR; END WHILE; VALUES (n); END",
+   "error_class": "END_LABEL_WITHOUT_BEGIN_LABEL",
+   "message": "[END_LABEL_WITHOUT_BEGIN_LABEL] End label `a` can not exist without begin label. SQLSTATE: 42K0L",
+   "engine_line": null
+  },
+  {
+   "id": "i139",
+   "kind": "end-label-on-unlabelled-kind-if",
+   "context": "top",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; IF n = 0 THEN SET n = 1; END IF a; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; IF n = 0 THEN SET n = 1; END IF; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'a': extra input 'a'. SQLSTATE: 42601 (line 1, pos 63)",
+   "engine_line": 1
+  },
+  {
+   "id": "i140",
+   "kind": "end-label-on-unlabelled-kind-case",
+   "context": "top",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; CASE n WHEN 0 THEN SET n = 1; END CASE a; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; CASE n WHEN 0 THEN SET n = 1; END CASE; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'a': extra input 'a'. SQLSTATE: 42601 (line 1, pos 70)",
+   "engine_line": 1
+  },
+  {
+   "id": "i141",
+   "kind": "begin-label-on-if",
+   "context": "top",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; a: IF n = 0 THEN SET n = 1; END IF; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; IF n = 0 THEN SET n = 1; END IF; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'IF'. SQLSTATE: 42601 (line 1, pos 34)",
+   "engine_line": 1
+  },
+  {
+   "id": "i142",
+   "kind": "begin-label-on-case",
+   "context": "loop",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE i INT DEFAULT 0; WHILE i < 2 DO SET i = i + 1; a: CASE n WHEN 0 THEN SET n = 1; END CASE; END WHILE; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE i INT DEFAULT 0; WHILE i < 2 DO SET i = i + 1; CASE n WHEN 0 THEN SET n = 1; END CASE; END WHILE; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'CASE'. SQLSTATE: 42601 (line 1, pos 89)",
+   "engine_line": 1
+  },
+  {
+   "id": "i143",
+   "kind": "extra-end",
+   "context": "top",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; SET n = 1; END; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; SET n = 1; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'VALUES'. SQLSTATE: 42601 (line 1, pos 47)",
+   "engine_line": 1
+  },
+  {
+   "id": "i144",
+   "kind": "extra-end",
+   "context": "loop",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE i INT DEFAULT 0; WHILE i < 2 DO SET i = i + 1; SET n = 1; END; END WHILE; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE i INT DEFAULT 0; WHILE i < 2 DO SET i = i + 1; SET n = 1; END WHILE; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near ';': missing 'WHILE'. SQLSTATE: 42601 (line 1, pos 100)",
+   "engine_line": 1
+  },
+  {
+   "id": "i145",
+   "kind": "extra-end",
+   "context": "handler",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE EXIT HANDLER FOR SQLEXCEPTION BEGIN SET n = 1; END; END; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE EXIT HANDLER FOR SQLEXCEPTION BEGIN SET n = 1; END; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'VALUES'. SQLSTATE: 42601 (line 1, pos 96)",
+   "engine_line": 1
+  },
+  {
+   "id": "i146",
+   "kind": "extra-end",
+   "context": "case",
+   "sql": "BEGIN DECLARE n INT DEFAULT 1; CASE n WHEN 1 THEN SET n = 1; END; ELSE VALUES (0); END CASE; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 1; CASE n WHEN 1 THEN SET n = 1; ELSE VALUES (0); END CASE; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near ';': missing 'CASE'. SQLSTATE: 42601 (line 1, pos 64)",
+   "engine_line": 1
+  },
+  {
+   "id": "i147",
+   "kind": "extra-end",
+   "context": "top",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; VALUES (n); END END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'END': extra input 'END'. SQLSTATE: 42601 (line 1, pos 47)",
+   "engine_line": 1
+  },
+  {
+   "id": "i148",
+   "kind": "extra-end",
+   "context": "top",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; VALUES (n); END; END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'END': extra input 'END'. SQLSTATE: 42601 (line 1, pos 48)",
+   "engine_line": 1
+  },
+  {
+   "id": "i149",
+   "kind": "stray-end-at-start",
+   "context": "top",
+   "sql": "END; BEGIN DECLARE n INT DEFAULT 0; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'END'. SQLSTATE: 42601 (line 1, pos 0)",
+   "engine_line": 1
+  },
+  {
+   "id": "i150",
+   "kind": "stray-end-at-start",
+   "context": "top",
+   "sql": "END BEGIN DECLARE n INT DEFAULT 0; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'END'. SQLSTATE: 42601 (line 1, pos 0)",
+   "engine_line": 1
+  },
+  {
+   "id": "i151",
+   "kind": "stray-end-at-start",
+   "context": "top",
+   "sql": "BEGIN END; DECLARE n INT DEFAULT 0; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'DECLARE'. SQLSTATE: 42601 (line 1, pos 11)",
+   "engine_line": 1
+  },
+  {
+   "id": "i152",
+   "kind": "stray-end-at-start",
+   "context": "top",
+   "sql": "BEGIN END DECLARE n INT DEFAULT 0; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'DECLARE'. SQLSTATE: 42601 (line 1, pos 10)",
+   "engine_line": 1
+  },
+  {
+   "id": "i153",
+   "kind": "end-if-without-if",
+   "context": "top",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; SET n = 1; END IF; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; SET n = 1; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'IF': extra input 'IF'. SQLSTATE: 42601 (line 1, pos 46)",
+   "engine_line": 1
+  },
+  {
+   "id": "i154",
+   "kind": "end-if-without-if",
+   "context": "loop",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE i INT DEFAULT 0; WHILE i < 2 DO SET i = i + 1; SET n = 1; END IF; END WHILE; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE i INT DEFAULT 0; WHILE i < 2 DO SET i = i + 1; SET n = 1; END WHILE; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'IF': missing 'WHILE'. SQLSTATE: 42601 (line 1, pos 101)",
+   "engine_line": 1
+  },
+  {
+   "id": "i155",
+   "kind": "end-while-without-while",
+   "context": "nested",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; BEGIN SET n = 1; END WHILE; END; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; BEGIN SET n = 1; END; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'VALUES'. SQLSTATE: 42601 (line 1, pos 64)",
+   "engine_line": 1
+  },
+  {
+   "id": "i156",
+   "kind": "end-loop-without-loop",
+   "context": "handler",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE EXIT HANDLER FOR SQLEXCEPTION BEGIN SET n = 1; END LOOP; END; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE EXIT HANDLER FOR SQLEXCEPTION BEGIN SET n = 1; END; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'VALUES'. SQLSTATE: 42601 (line 1, pos 101)",
+   "engine_line": 1
+  },
+  {
+   "id": "i157",
+   "kind": "end-repeat-without-repeat",
+   "context": "case",
+   "sql": "BEGIN DECLARE n INT DEFAULT 1; CASE n WHEN 1 THEN SET n = 1; END REPEAT; ELSE VALUES (0); END CASE; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 1; CASE n WHEN 1 THEN SET n = 1; ELSE VALUES (0); END CASE; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'REPEAT'. SQLSTATE: 42601 (line 1, pos 65)",
+   "engine_line": 1
+  },
+  {
+   "id": "i158",
+   "kind": "end-for-without-for",
+   "context": "top",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; SET n = 1; END FOR; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; SET n = 1; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'FOR': extra input 'FOR'. SQLSTATE: 42601 (line 1, pos 46)",
+   "engine_line": 1
+  },
+  {
+   "id": "i159",
+   "kind": "end-case-without-case",
+   "context": "top",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; SET n = 1; END CASE; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; SET n = 1; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'CASE': extra input 'CASE'. SQLSTATE: 42601 (line 1, pos 46)",
+   "engine_line": 1
+  },
+  {
+   "id": "i160",
+   "kind": "end-case-without-case",
+   "context": "loop",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE i INT DEFAULT 0; WHILE i < 2 DO SET i = i + 1; SET n = 1; END CASE; END WHILE; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE i INT DEFAULT 0; WHILE i < 2 DO SET i = i + 1; SET n = 1; END WHILE; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'CASE': missing 'WHILE'. SQLSTATE: 42601 (line 1, pos 101)",
+   "engine_line": 1
+  },
+  {
+   "id": "i161",
+   "kind": "extra-end-after-block",
+   "context": "loop",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE i INT DEFAULT 0; WHILE i < 2 DO SET i = i + 1; IF n = 0 THEN SET n = 1; END IF; END IF; END WHILE; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE i INT DEFAULT 0; WHILE i < 2 DO SET i = i + 1; IF n = 0 THEN SET n = 1; END IF; END WHILE; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'IF': missing 'WHILE'. SQLSTATE: 42601 (line 1, pos 123)",
+   "engine_line": 1
+  },
+  {
+   "id": "i162",
+   "kind": "extra-end-after-block",
+   "context": "top",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; WHILE n < 2 DO SET n = n + 1; END WHILE; END WHILE; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; WHILE n < 2 DO SET n = n + 1; END WHILE; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'WHILE': extra input 'WHILE'. SQLSTATE: 42601 (line 1, pos 76)",
+   "engine_line": 1
+  },
+  {
+   "id": "i163",
+   "kind": "extra-end-after-block",
+   "context": "nested",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; BEGIN FOR r AS SELECT 1 AS x DO SET n = n + r.x; END FOR; END; END; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; BEGIN FOR r AS SELECT 1 AS x DO SET n = n + r.x; END FOR; END; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'VALUES'. SQLSTATE: 42601 (line 1, pos 99)",
+   "engine_line": 1
+  },
+  {
+   "id": "i164",
+   "kind": "else-after-else-if",
+   "context": "top",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; IF n = 0 THEN SET n = 1; ELSE SET n = 2; ELSE SET n = 3; END IF; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; IF n = 0 THEN SET n = 1; ELSE SET n = 2; END IF; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'ELSE'. SQLSTATE: 42601 (line 1, pos 72)",
+   "engine_line": 1
+  },
+  {
+   "id": "i165",
+   "kind": "else-after-else-if",
+   "context": "loop",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE i INT DEFAULT 0; WHILE i < 2 DO SET i = i + 1; IF n = 0 THEN SET n = 1; ELSE SET n = 2; ELSE SET n = 3; END IF; END WHILE; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE i INT DEFAULT 0; WHILE i < 2 DO SET i = i + 1; IF n = 0 THEN SET n = 1; ELSE SET n = 2; END IF; END WHILE; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'ELSE'. SQLSTATE: 42601 (line 1, pos 127)",
+   "engine_line": 1
+  },
+  {
+   "id": "i166",
+   "kind": "else-after-else-case",
+   "context": "top",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; CASE n WHEN 0 THEN SET n = 1; ELSE SET n = 2; ELSE SET n = 3; END CASE; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; CASE n WHEN 0 THEN SET n = 1; ELSE SET n = 2; END CASE; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'ELSE'. SQLSTATE: 42601 (line 1, pos 77)",
+   "engine_line": 1
+  },
+  {
+   "id": "i167",
+   "kind": "else-after-else-case",
+   "context": "handler",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE EXIT HANDLER FOR SQLEXCEPTION BEGIN CASE n WHEN 0 THEN SET n = 1; ELSE SET n = 2; ELSE SET n = 3; END CASE; END; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE EXIT HANDLER FOR SQLEXCEPTION BEGIN CASE n WHEN 0 THEN SET n = 1; ELSE SET n = 2; END CASE; END; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'ELSE'. SQLSTATE: 42601 (line 1, pos 121)",
+   "engine_line": 1
+  },
+  {
+   "id": "i168",
+   "kind": "elseif-after-else",
+   "context": "top",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; IF n = 0 THEN SET n = 1; ELSE SET n = 2; ELSEIF n = 1 THEN SET n = 3; END IF; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; IF n = 0 THEN SET n = 1; ELSEIF n = 1 THEN SET n = 3; ELSE SET n = 2; END IF; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'ELSEIF'. SQLSTATE: 42601 (line 1, pos 72)",
+   "engine_line": 1
+  },
+  {
+   "id": "i169",
+   "kind": "elseif-after-else",
+   "context": "nested",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; BEGIN IF n = 0 THEN SET n = 1; ELSE SET n = 2; ELSEIF n = 1 THEN SET n = 3; END IF; END; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; BEGIN IF n = 0 THEN SET n = 1; ELSEIF n = 1 THEN SET n = 3; ELSE SET n = 2; END IF; END; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'ELSEIF'. SQLSTATE: 42601 (line 1, pos 78)",
+   "engine_line": 1
+  },
+  {
+   "id": "i170",
+   "kind": "elseif-after-else",
+   "context": "case",
+   "sql": "BEGIN DECLARE n INT DEFAULT 1; CASE n WHEN 1 THEN IF n = 0 THEN SET n = 1; ELSE SET n = 2; ELSEIF n = 1 THEN SET n = 3; END IF; ELSE VALUES (0); END CASE; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 1; CASE n WHEN 1 THEN IF n = 0 THEN SET n = 1; ELSEIF n = 1 THEN SET n = 3; ELSE SET n = 2; END IF; ELSE VALUES (0); END CASE; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'ELSEIF'. SQLSTATE: 42601 (line 1, pos 91)",
+   "engine_line": 1
+  },
+  {
+   "id": "i171",
+   "kind": "when-after-else",
+   "context": "top",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; CASE n WHEN 0 THEN SET n = 1; ELSE SET n = 2; WHEN 1 THEN SET n = 3; END CASE; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; CASE n WHEN 0 THEN SET n = 1; WHEN 1 THEN SET n = 3; ELSE SET n = 2; END CASE; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'WHEN'. SQLSTATE: 42601 (line 1, pos 77)",
+   "engine_line": 1
+  },
+  {
+   "id": "i172",
+   "kind": "when-after-else",
+   "context": "loop",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE i INT DEFAULT 0; WHILE i < 2 DO SET i = i + 1; CASE WHEN n = 0 THEN SET n = 1; ELSE SET n = 2; WHEN n = 1 THEN SET n = 3; END CASE; END WHILE; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE i INT DEFAULT 0; WHILE i < 2 DO SET i = i + 1; CASE WHEN n = 0 THEN SET n = 1; WHEN n = 1 THEN SET n = 3; ELSE SET n = 2; END CASE; END WHILE; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'WHEN'. SQLSTATE: 42601 (line 1, pos 134)",
+   "engine_line": 1
+  },
+  {
+   "id": "i173",
+   "kind": "when-after-else",
+   "context": "case",
+   "sql": "BEGIN DECLARE n INT DEFAULT 1; CASE n WHEN 1 THEN CASE n WHEN 0 THEN SET n = 1; ELSE SET n = 2; WHEN 1 THEN SET n = 3; END CASE; ELSE VALUES (0); END CASE; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 1; CASE n WHEN 1 THEN CASE n WHEN 0 THEN SET n = 1; WHEN 1 THEN SET n = 3; ELSE SET n = 2; END CASE; ELSE VALUES (0); END CASE; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'WHEN'. SQLSTATE: 42601 (line 1, pos 96)",
+   "engine_line": 1
+  },
+  {
+   "id": "i174",
+   "kind": "else-without-if",
+   "context": "top",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; SET n = 1; ELSE SET n = 2; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; SET n = 1; SET n = 2; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'ELSE'. SQLSTATE: 42601 (line 1, pos 42)",
+   "engine_line": 1
+  },
+  {
+   "id": "i175",
+   "kind": "else-without-if",
+   "context": "loop",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE i INT DEFAULT 0; WHILE i < 2 DO SET i = i + 1; SET n = 1; ELSE SET n = 2; END WHILE; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE i INT DEFAULT 0; WHILE i < 2 DO SET i = i + 1; SET n = 1; SET n = 2; END WHILE; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'ELSE'. SQLSTATE: 42601 (line 1, pos 97)",
+   "engine_line": 1
+  },
+  {
+   "id": "i176",
+   "kind": "else-without-if",
+   "context": "handler",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE EXIT HANDLER FOR SQLEXCEPTION BEGIN SET n = 1; ELSE SET n = 2; END; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE EXIT HANDLER FOR SQLEXCEPTION BEGIN SET n = 1; SET n = 2; END; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'ELSE': missing 'END'. SQLSTATE: 42601 (line 1, pos 86)",
+   "engine_line": 1
+  },
+  {
+   "id": "i177",
+   "kind": "else-without-if",
+   "context": "case",
+   "sql": "BEGIN DECLARE n INT DEFAULT 1; CASE n WHEN 1 THEN SET n = 1; ELSE SET n = 2; ELSE VALUES (0); END CASE; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 1; CASE n WHEN 1 THEN SET n = 1; SET n = 2; ELSE VALUES (0); END CASE; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'ELSE'. SQLSTATE: 42601 (line 1, pos 77)",
+   "engine_line": 1
+  },
+  {
+   "id": "i178",
+   "kind": "else-without-if",
+   "context": "nested",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; BEGIN SET n = 1; ELSE SET n = 2; END; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; BEGIN SET n = 1; SET n = 2; END; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'ELSE': missing 'END'. SQLSTATE: 42601 (line 1, pos 48)",
+   "engine_line": 1
+  },
+  {
+   "id": "i179",
+   "kind": "else-without-if",
+   "context": "top",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; WHILE n < 2 DO SET n = n + 1; ELSE SET n = 5; END WHILE; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; WHILE n < 2 DO SET n = n + 1; END WHILE; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'ELSE'. SQLSTATE: 42601 (line 1, pos 61)",
+   "engine_line": 1
+  },
+  {
+   "id": "i180",
+   "kind": "else-without-if",
+   "context": "loop",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE i INT DEFAULT 0; WHILE i < 2 DO SET i = i + 1; lp: LOOP SET n = n + 1; ELSE LEAVE lp; END LOOP; END WHILE; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE i INT DEFAULT 0; WHILE i < 2 DO SET i = i + 1; lp: LOOP SET n = n + 1; LEAVE lp; END LOOP; END WHILE; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'ELSE'. SQLSTATE: 42601 (line 1, pos 110)",
+   "engine_line": 1
+  },
+  {
+   "id": "i181",
+   "kind": "else-without-if",
+   "context": "top",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; ELSE SET n = 2; END IF; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; SET n = 2; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'ELSE'. SQLSTATE: 42601 (line 1, pos 31)",
+   "engine_line": 1
+  },
+  {
+   "id": "i182",
+   "kind": "elseif-without-if",
+   "context": "top",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; SET n = 1; ELSEIF n = 1 THEN SET n = 2; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; SET n = 1; SET n = 2; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'ELSEIF'. SQLSTATE: 42601 (line 1, pos 42)",
+   "engine_line": 1
+  },
+  {
+   "id": "i183",
+   "kind": "elseif-without-if",
+   "context": "loop",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE i INT DEFAULT 0; WHILE i < 2 DO SET i = i + 1; SET n = 1; ELSEIF n = 1 THEN SET n = 2; END WHILE; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE i INT DEFAULT 0; WHILE i < 2 DO SET i = i + 1; SET n = 1; SET n = 2; END WHILE; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'ELSEIF'. SQLSTATE: 42601 (line 1, pos 97)",
+   "engine_line": 1
+  },
+  {
+   "id": "i184",
+   "kind": "elseif-without-if",
+   "context": "case",
+   "sql": "BEGIN DECLARE n INT DEFAULT 1; CASE n WHEN 1 THEN SET n = 1; ELSEIF n = 1 THEN SET n = 2; ELSE VALUES (0); END CASE; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 1; CASE n WHEN 1 THEN SET n = 1; SET n = 2; ELSE VALUES (0); END CASE; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'ELSEIF': extra input 'ELSEIF'. SQLSTATE: 42601 (line 1, pos 61)",
+   "engine_line": 1
+  },
+  {
+   "id": "i185",
+   "kind": "elseif-without-if",
+   "context": "handler",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE EXIT HANDLER FOR SQLEXCEPTION BEGIN ELSEIF n = 1 THEN SET n = 2; END IF; END; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE EXIT HANDLER FOR SQLEXCEPTION BEGIN SET n = 2; END; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'n'. SQLSTATE: 42601 (line 1, pos 82)",
+   "engine_line": 1
+  },
+  {
+   "id": "i186",
+   "kind": "elseif-without-if",
+   "context": "top",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; CASE n WHEN 0 THEN SET n = 1; ELSEIF n = 1 THEN SET n = 2; END CASE; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; CASE n WHEN 0 THEN SET n = 1; WHEN 1 THEN SET n = 2; END CASE; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'ELSEIF': extra input 'ELSEIF'. SQLSTATE: 42601 (line 1, pos 61)",
+   "engine_line": 1
+  },
+  {
+   "id": "i187",
+   "kind": "when-outside-case",
+   "context": "top",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; SET n = 1; WHEN 1 THEN SET n = 2; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; SET n = 1; SET n = 2; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'WHEN'. SQLSTATE: 42601 (line 1, pos 42)",
+   "engine_line": 1
+  },
+  {
+   "id": "i188",
+   "kind": "when-outside-case",
+   "context": "loop",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE i INT DEFAULT 0; WHILE i < 2 DO SET i = i + 1; SET n = 1; WHEN 1 THEN SET n = 2; END WHILE; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE i INT DEFAULT 0; WHILE i < 2 DO SET i = i + 1; SET n = 1; SET n = 2; END WHILE; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'WHEN'. SQLSTATE: 42601 (line 1, pos 97)",
+   "engine_line": 1
+  },
+  {
+   "id": "i189",
+   "kind": "when-outside-case",
+   "context": "handler",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE EXIT HANDLER FOR SQLEXCEPTION BEGIN SET n = 1; WHEN 1 THEN SET n = 2; END; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE EXIT HANDLER FOR SQLEXCEPTION BEGIN SET n = 1; SET n = 2; END; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'WHEN': missing 'END'. SQLSTATE: 42601 (line 1, pos 86)",
+   "engine_line": 1
+  },
+  {
+   "id": "i190",
+   "kind": "when-outside-case",
+   "context": "nested",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; BEGIN SET n = 1; WHEN 1 THEN SET n = 2; END; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; BEGIN SET n = 1; SET n = 2; END; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'WHEN': missing 'END'. SQLSTATE: 42601 (line 1, pos 48)",
+   "engine_line": 1
+  },
+  {
+   "id": "i191",
+   "kind": "when-outside-case",
+   "context": "top",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; IF n = 0 THEN SET n = 1; WHEN 1 THEN SET n = 2; END IF; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; IF n = 0 THEN SET n = 1; ELSEIF n = 1 THEN SET n = 2; END IF; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'WHEN'. SQLSTATE: 42601 (line 1, pos 56)",
+   "engine_line": 1
+  },
+  {
+   "id": "i192",
+   "kind": "when-outside-case",
+   "context": "case",
+   "sql": "BEGIN DECLARE n INT DEFAULT 1; CASE n WHEN 1 THEN WHEN 2 THEN SET n = 2; ELSE VALUES (0); END CASE; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 1; CASE n WHEN 1 THEN SET n = 2; ELSE VALUES (0); END CASE; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near '2'. SQLSTATE: 42601 (line 1, pos 55)",
+   "engine_line": 1
+  },
+  {
+   "id": "i193",
+   "kind": "then-outside-if",
+   "context": "top",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; SET n = 1; THEN SET n = 2; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; SET n = 1; SET n = 2; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'SET'. SQLSTATE: 42601 (line 1, pos 47)",
+   "engine_line": 1
+  },
+  {
+   "id": "i194",
+   "kind": "do-outside-loop",
+   "context": "top",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; SET n = 1; DO SET n = 2; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; SET n = 1; SET n = 2; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'SET'. SQLSTATE: 42601 (line 1, pos 45)",
+   "engine_line": 1
+  },
+  {
+   "id": "i195",
+   "kind": "end-case-closing-if-in-case-branch",
+   "context": "case",
+   "sql": "BEGIN DECLARE n INT DEFAULT 1; CASE n WHEN 1 THEN IF n = 1 THEN SET n = 2; END CASE; ELSE VALUES (0); END CASE; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 1; CASE n WHEN 1 THEN IF n = 1 THEN SET n = 2; END IF; ELSE VALUES (0); END CASE; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'CASE'. SQLSTATE: 42601 (line 1, pos 79)",
+   "engine_line": 1
+  },
+  {
+   "id": "i196",
+   "kind": "bodyless-if",
+   "context": "top",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; IF n = 0 THEN END IF; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; IF n = 0 THEN SET n = 1; END IF; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'IF'. SQLSTATE: 42601 (line 1, pos 49)",
+   "engine_line": 1
+  },
+  {
+   "id": "i197",
+   "kind": "bodyless-if",
+   "context": "loop",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE i INT DEFAULT 0; WHILE i < 2 DO SET i = i + 1; IF n = 0 THEN END IF; END WHILE; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE i INT DEFAULT 0; WHILE i < 2 DO SET i = i + 1; IF n = 0 THEN SET n = 1; END IF; END WHILE; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'IF'. SQLSTATE: 42601 (line 1, pos 104)",
+   "engine_line": 1
+  },
+  {
+   "id": "i198",
+   "kind": "bodyless-elseif",
+   "context": "top",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; IF n = 5 THEN SET n = 1; ELSEIF n = 0 THEN END IF; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; IF n = 5 THEN SET n = 1; ELSEIF n = 0 THEN SET n = 2; END IF; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'IF'. SQLSTATE: 42601 (line 1, pos 78)",
+   "engine_line": 1
+  },
+  {
+   "id": "i199",
+   "kind": "bodyless-else",
+   "context": "top",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; IF n = 5 THEN SET n = 1; ELSE END IF; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; IF n = 5 THEN SET n = 1; ELSE SET n = 2; END IF; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'IF'. SQLSTATE: 42601 (line 1, pos 65)",
+   "engine_line": 1
+  },
+  {
+   "id": "i200",
+   "kind": "bodyless-else",
+   "context": "case",
+   "sql": "BEGIN DECLARE n INT DEFAULT 1; CASE n WHEN 1 THEN CASE n WHEN 0 THEN SET n = 1; ELSE END CASE; ELSE VALUES (0); END CASE; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 1; CASE n WHEN 1 THEN CASE n WHEN 0 THEN SET n = 1; ELSE SET n = 2; END CASE; ELSE VALUES (0); END CASE; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'CASE'. SQLSTATE: 42601 (line 1, pos 89)",
+   "engine_line": 1
+  },
+  {
+   "id": "i201",
+   "kind": "bodyless-while",
+   "context": "top",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; WHILE n < 2 DO END WHILE; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; WHILE n < 2 DO SET n = n + 1; END WHILE; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'WHILE'. SQLSTATE: 42601 (line 1, pos 50)",
+   "engine_line": 1
+  },
+  {
+   "id": "i202",
+   "kind": "bodyless-loop",
+   "context": "top",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; lp: LOOP END LOOP lp; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; lp: LOOP LEAVE lp; END LOOP lp; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'LOOP'. SQLSTATE: 42601 (line 1, pos 44)",
+   "engine_line": 1
+  },
+  {
+   "id": "i203",
+   "kind": "bodyless-repeat",
+   "context": "top",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; REPEAT UNTIL n > 1 END REPEAT; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; REPEAT SET n = n + 1; UNTIL n > 1 END REPEAT; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'n'. SQLSTATE: 42601 (line 1, pos 44)",
+   "engine_line": 1
+  },
+  {
+   "id": "i204",
+   "kind": "bodyless-for",
+   "context": "top",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; FOR r AS SELECT 1 AS x DO END FOR; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; FOR r AS SELECT 1 AS x DO SET n = n + r.x; END FOR; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'FOR'. SQLSTATE: 42601 (line 1, pos 61)",
+   "engine_line": 1
+  },
+  {
+   "id": "i205",
+   "kind": "bodyless-case-when",
+   "context": "top",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; CASE n WHEN 0 THEN END CASE; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; CASE n WHEN 0 THEN SET n = 1; ELSE SET n = 2; END CASE; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'CASE'. SQLSTATE: 42601 (line 1, pos 54)",
+   "engine_line": 1
+  },
+  {
+   "id": "i206",
+   "kind": "bodyless-case-when",
+   "context": "loop",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE i INT DEFAULT 0; WHILE i < 2 DO SET i = i + 1; CASE n WHEN 0 THEN WHEN 1 THEN SET n = 2; END CASE; END WHILE; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE i INT DEFAULT 0; WHILE i < 2 DO SET i = i + 1; CASE n WHEN 0 THEN SET n = 1; WHEN 1 THEN SET n = 2; END CASE; END WHILE; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near '1'. SQLSTATE: 42601 (line 1, pos 110)",
+   "engine_line": 1
+  },
+  {
+   "id": "i207",
+   "kind": "bodyless-case-no-when",
+   "context": "top",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; CASE n END CASE; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; CASE n WHEN 0 THEN SET n = 1; ELSE SET n = 2; END CASE; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'END'. SQLSTATE: 42601 (line 1, pos 38)",
+   "engine_line": 1
+  },
+  {
+   "id": "i208",
+   "kind": "bodyless-case-no-when",
+   "context": "nested",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; BEGIN CASE END CASE; END; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; BEGIN CASE WHEN n = 0 THEN SET n = 1; END CASE; END; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'CASE'. SQLSTATE: 42601 (line 1, pos 46)",
+   "engine_line": 1
+  },
+  {
+   "id": "i209",
+   "kind": "bodyless-handler",
+   "context": "top",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE EXIT HANDLER FOR SQLEXCEPTION; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE EXIT HANDLER FOR SQLEXCEPTION SET n = 9; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near ';'. SQLSTATE: 42601 (line 1, pos 68)",
+   "engine_line": 1
+  },
+  {
+   "id": "i210",
+   "kind": "unclosed-mid-if",
+   "context": "top",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; IF n = 0 THEN SET n = 1; WHILE n < 3 DO SET n = n + 1; END WHILE; FOR r AS SELECT 1 AS x DO SET n = n + r.x; END FOR; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; IF n = 0 THEN SET n = 1; END IF; WHILE n < 3 DO SET n = n + 1; END WHILE; FOR r AS SELECT 1 AS x DO SET n = n + r.x; END FOR; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near end of input. SQLSTATE: 42601 (line 1, pos 164)",
+   "engine_line": 1
+  },
+  {
+   "id": "i211",
+   "kind": "unclosed-mid-if",
+   "context": "handler",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE EXIT HANDLER FOR SQLEXCEPTION BEGIN IF n = 0 THEN SET n = 1; WHILE n < 3 DO SET n = n + 1; END WHILE; FOR r AS SELECT 1 AS x DO SET n = n + r.x; END FOR; END; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE EXIT HANDLER FOR SQLEXCEPTION BEGIN IF n = 0 THEN SET n = 1; END IF; WHILE n < 3 DO SET n = n + 1; END WHILE; FOR r AS SELECT 1 AS x DO SET n = n + r.x; END FOR; END; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near ';': missing 'IF'. SQLSTATE: 42601 (line 1, pos 196)",
+   "engine_line": 1
+  },
+  {
+   "id": "i212",
+   "kind": "unclosed-mid-while",
+   "context": "top",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; WHILE n < 3 DO SET n = n + 1; IF n = 0 THEN SET n = 1; END IF; FOR r AS SELECT 1 AS x DO SET n = n + r.x; END FOR; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; WHILE n < 3 DO SET n = n + 1; END WHILE; IF n = 0 THEN SET n = 1; END IF; FOR r AS SELECT 1 AS x DO SET n = n + r.x; END FOR; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near end of input. SQLSTATE: 42601 (line 1, pos 161)",
+   "engine_line": 1
+  },
+  {
+   "id": "i213",
+   "kind": "unclosed-mid-while",
+   "context": "handler",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE EXIT HANDLER FOR SQLEXCEPTION BEGIN WHILE n < 3 DO SET n = n + 1; IF n = 0 THEN SET n = 1; END IF; FOR r AS SELECT 1 AS x DO SET n = n + r.x; END FOR; END; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE EXIT HANDLER FOR SQLEXCEPTION BEGIN WHILE n < 3 DO SET n = n + 1; END WHILE; IF n = 0 THEN SET n = 1; END IF; FOR r AS SELECT 1 AS x DO SET n = n + r.x; END FOR; END; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near ';': missing 'WHILE'. SQLSTATE: 42601 (line 1, pos 193)",
+   "engine_line": 1
+  },
+  {
+   "id": "i214",
+   "kind": "unclosed-mid-for",
+   "context": "top",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; FOR r AS SELECT 1 AS x DO SET n = n + r.x; IF n = 0 THEN SET n = 1; END IF; REPEAT SET n = n + 1; UNTIL n > 1 END REPEAT; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; FOR r AS SELECT 1 AS x DO SET n = n + r.x; END FOR; IF n = 0 THEN SET n = 1; END IF; REPEAT SET n = n + 1; UNTIL n > 1 END REPEAT; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near end of input. SQLSTATE: 42601 (line 1, pos 168)",
+   "engine_line": 1
+  },
+  {
+   "id": "i215",
+   "kind": "unclosed-mid-for",
+   "context": "handler",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE EXIT HANDLER FOR SQLEXCEPTION BEGIN FOR r AS SELECT 1 AS x DO SET n = n + r.x; IF n = 0 THEN SET n = 1; END IF; REPEAT SET n = n + 1; UNTIL n > 1 END REPEAT; END; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE EXIT HANDLER FOR SQLEXCEPTION BEGIN FOR r AS SELECT 1 AS x DO SET n = n + r.x; END FOR; IF n = 0 THEN SET n = 1; END IF; REPEAT SET n = n + 1; UNTIL n > 1 END REPEAT; END; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near ';': missing 'FOR'. SQLSTATE: 42601 (line 1, pos 200)",
+   "engine_line": 1
+  },
+  {
+   "id": "i216",
+   "kind": "unclosed-mid-repeat",
+   "context": "top",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; REPEAT SET n = n + 1; UNTIL n > 1 IF n = 0 THEN SET n = 1; END IF; CASE n WHEN 0 THEN SET n = 1; END CASE; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; REPEAT SET n = n + 1; UNTIL n > 1 END REPEAT; IF n = 0 THEN SET n = 1; END IF; CASE n WHEN 0 THEN SET n = 1; END CASE; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'IF'. SQLSTATE: 42601 (line 1, pos 65)",
+   "engine_line": 1
+  },
+  {
+   "id": "i217",
+   "kind": "unclosed-mid-repeat",
+   "context": "handler",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE EXIT HANDLER FOR SQLEXCEPTION BEGIN REPEAT SET n = n + 1; UNTIL n > 1 IF n = 0 THEN SET n = 1; END IF; CASE n WHEN 0 THEN SET n = 1; END CASE; END; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE EXIT HANDLER FOR SQLEXCEPTION BEGIN REPEAT SET n = n + 1; UNTIL n > 1 END REPEAT; IF n = 0 THEN SET n = 1; END IF; CASE n WHEN 0 THEN SET n = 1; END CASE; END; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'IF'. SQLSTATE: 42601 (line 1, pos 109)",
+   "engine_line": 1
+  },
+  {
+   "id": "i218",
+   "kind": "unclosed-mid-case",
+   "context": "top",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; CASE n WHEN 0 THEN SET n = 1; WHILE n < 3 DO SET n = n + 1; END WHILE; IF n = 0 THEN SET n = 1; END IF; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; CASE n WHEN 0 THEN SET n = 1; END CASE; WHILE n < 3 DO SET n = n + 1; END WHILE; IF n = 0 THEN SET n = 1; END IF; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near end of input. SQLSTATE: 42601 (line 1, pos 150)",
+   "engine_line": 1
+  },
+  {
+   "id": "i219",
+   "kind": "unclosed-mid-case",
+   "context": "handler",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE EXIT HANDLER FOR SQLEXCEPTION BEGIN CASE n WHEN 0 THEN SET n = 1; WHILE n < 3 DO SET n = n + 1; END WHILE; IF n = 0 THEN SET n = 1; END IF; END; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE EXIT HANDLER FOR SQLEXCEPTION BEGIN CASE n WHEN 0 THEN SET n = 1; END CASE; WHILE n < 3 DO SET n = n + 1; END WHILE; IF n = 0 THEN SET n = 1; END IF; END; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near ';': missing 'CASE'. SQLSTATE: 42601 (line 1, pos 182)",
+   "engine_line": 1
+  },
+  {
+   "id": "i220",
+   "kind": "unclosed-mid-loop",
+   "context": "top",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; lp: LOOP SET n = n + 1; IF n > 1 THEN LEAVE lp; END IF; IF n = 0 THEN SET n = 1; END IF; WHILE n < 3 DO SET n = n + 1; END WHILE; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; lp: LOOP SET n = n + 1; IF n > 1 THEN LEAVE lp; END IF; END LOOP lp; IF n = 0 THEN SET n = 1; END IF; WHILE n < 3 DO SET n = n + 1; END WHILE; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near end of input. SQLSTATE: 42601 (line 1, pos 176)",
+   "engine_line": 1
+  },
+  {
+   "id": "i221",
+   "kind": "unclosed-mid-loop",
+   "context": "handler",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE EXIT HANDLER FOR SQLEXCEPTION BEGIN lp: LOOP SET n = n + 1; IF n > 1 THEN LEAVE lp; END IF; IF n = 0 THEN SET n = 1; END IF; WHILE n < 3 DO SET n = n + 1; END WHILE; END; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE EXIT HANDLER FOR SQLEXCEPTION BEGIN lp: LOOP SET n = n + 1; IF n > 1 THEN LEAVE lp; END IF; END LOOP lp; IF n = 0 THEN SET n = 1; END IF; WHILE n < 3 DO SET n = n + 1; END WHILE; END; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near ';': missing 'LOOP'. SQLSTATE: 42601 (line 1, pos 208)",
+   "engine_line": 1
+  },
+  {
+   "id": "i222",
+   "kind": "unclosed-mid-begin",
+   "context": "top",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; BEGIN SET n = n + 1; IF n = 0 THEN SET n = 1; END IF; WHILE n < 3 DO SET n = n + 1; END WHILE; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; BEGIN SET n = n + 1; END; IF n = 0 THEN SET n = 1; END IF; WHILE n < 3 DO SET n = n + 1; END WHILE; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near end of input. SQLSTATE: 42601 (line 1, pos 141)",
+   "engine_line": 1
+  },
+  {
+   "id": "i223",
+   "kind": "unclosed-mid-begin",
+   "context": "handler",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE EXIT HANDLER FOR SQLEXCEPTION BEGIN BEGIN SET n = n + 1; IF n = 0 THEN SET n = 1; END IF; WHILE n < 3 DO SET n = n + 1; END WHILE; END; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE EXIT HANDLER FOR SQLEXCEPTION BEGIN BEGIN SET n = n + 1; END; IF n = 0 THEN SET n = 1; END IF; WHILE n < 3 DO SET n = n + 1; END WHILE; END; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near end of input. SQLSTATE: 42601 (line 1, pos 190)",
+   "engine_line": 1
+  },
+  {
+   "id": "i224",
+   "kind": "two-openers-one-closer",
+   "context": "top",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; IF n = 0 THEN IF n = 0 THEN SET n = 1; END IF; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; IF n = 0 THEN IF n = 0 THEN SET n = 1; END IF; END IF; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near end of input. SQLSTATE: 42601 (line 1, pos 93)",
+   "engine_line": 1
+  },
+  {
+   "id": "i225",
+   "kind": "two-openers-one-closer",
+   "context": "loop",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE i INT DEFAULT 0; WHILE i < 2 DO SET i = i + 1; WHILE n < 3 DO SET n = n + 1; WHILE n < 2 DO SET n = n + 1; END WHILE; END WHILE; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE i INT DEFAULT 0; WHILE i < 2 DO SET i = i + 1; WHILE n < 3 DO SET n = n + 1; WHILE n < 2 DO SET n = n + 1; END WHILE; END WHILE; END WHILE; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near end of input. SQLSTATE: 42601 (line 1, pos 183)",
+   "engine_line": 1
+  },
+  {
+   "id": "i226",
+   "kind": "two-openers-one-closer",
+   "context": "case",
+   "sql": "BEGIN DECLARE n INT DEFAULT 1; CASE n WHEN 1 THEN BEGIN BEGIN SET n = 1; END; ELSE VALUES (0); END CASE; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 1; CASE n WHEN 1 THEN BEGIN BEGIN SET n = 1; END; END; ELSE VALUES (0); END CASE; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'ELSE': missing 'END'. SQLSTATE: 42601 (line 1, pos 78)",
+   "engine_line": 1
+  },
+  {
+   "id": "i227",
+   "kind": "two-openers-one-closer",
+   "context": "nested",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; BEGIN FOR r AS SELECT 1 AS x DO FOR q AS SELECT 2 AS y DO SET n = n + 1; END FOR; END; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; BEGIN FOR r AS SELECT 1 AS x DO FOR q AS SELECT 2 AS y DO SET n = n + 1; END FOR; END FOR; END; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near ';': missing 'FOR'. SQLSTATE: 42601 (line 1, pos 116)",
+   "engine_line": 1
+  },
+  {
+   "id": "i228",
+   "kind": "two-openers-one-closer",
+   "context": "handler",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE EXIT HANDLER FOR SQLEXCEPTION BEGIN IF n = 0 THEN WHILE n < 2 DO SET n = n + 1; END WHILE; END; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE EXIT HANDLER FOR SQLEXCEPTION BEGIN IF n = 0 THEN WHILE n < 2 DO SET n = n + 1; END WHILE; END IF; END; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near ';': missing 'IF'. SQLSTATE: 42601 (line 1, pos 133)",
+   "engine_line": 1
+  },
+  {
+   "id": "i229",
+   "kind": "two-openers-one-closer",
+   "context": "top",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; WHILE n < 3 DO SET n = n + 1; IF n = 0 THEN SET n = 1; END WHILE; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; WHILE n < 3 DO SET n = n + 1; IF n = 0 THEN SET n = 1; END IF; END WHILE; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'WHILE'. SQLSTATE: 42601 (line 1, pos 90)",
+   "engine_line": 1
+  },
+  {
+   "id": "i230",
+   "kind": "one-opener-two-closers",
+   "context": "top",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; IF n = 0 THEN SET n = 1; END IF; END IF; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; IF n = 0 THEN SET n = 1; END IF; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'IF': extra input 'IF'. SQLSTATE: 42601 (line 1, pos 68)",
+   "engine_line": 1
+  },
+  {
+   "id": "i231",
+   "kind": "one-opener-two-closers",
+   "context": "loop",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE i INT DEFAULT 0; WHILE i < 2 DO SET i = i + 1; WHILE n < 3 DO SET n = n + 1; END WHILE; END WHILE; END WHILE; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE i INT DEFAULT 0; WHILE i < 2 DO SET i = i + 1; WHILE n < 3 DO SET n = n + 1; END WHILE; END WHILE; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'WHILE': extra input 'WHILE'. SQLSTATE: 42601 (line 1, pos 142)",
+   "engine_line": 1
+  },
+  {
+   "id": "i232",
+   "kind": "one-opener-two-closers",
+   "context": "case",
+   "sql": "BEGIN DECLARE n INT DEFAULT 1; CASE n WHEN 1 THEN BEGIN SET n = 1; END; END; ELSE VALUES (0); END CASE; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 1; CASE n WHEN 1 THEN BEGIN SET n = 1; END; ELSE VALUES (0); END CASE; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near ';': missing 'CASE'. SQLSTATE: 42601 (line 1, pos 75)",
+   "engine_line": 1
+  },
+  {
+   "id": "i233",
+   "kind": "one-opener-two-closers",
+   "context": "nested",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; BEGIN CASE n WHEN 0 THEN SET n = 1; END CASE; END CASE; END; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; BEGIN CASE n WHEN 0 THEN SET n = 1; END CASE; END; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'VALUES'. SQLSTATE: 42601 (line 1, pos 92)",
+   "engine_line": 1
+  },
+  {
+   "id": "i234",
+   "kind": "one-opener-two-closers",
+   "context": "handler",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE EXIT HANDLER FOR SQLEXCEPTION BEGIN IF n = 0 THEN SET n = 1; END IF END IF; END; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE EXIT HANDLER FOR SQLEXCEPTION BEGIN IF n = 0 THEN SET n = 1; END IF; END; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'END': missing ';'. SQLSTATE: 42601 (line 1, pos 107)",
+   "engine_line": 1
+  },
+  {
+   "id": "i235",
+   "kind": "one-opener-two-closers",
+   "context": "top",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; REPEAT SET n = n + 1; UNTIL n > 1 END REPEAT END REPEAT; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; REPEAT SET n = n + 1; UNTIL n > 1 END REPEAT; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'REPEAT': extra input 'REPEAT'. SQLSTATE: 42601 (line 1, pos 80)",
+   "engine_line": 1
+  },
+  {
+   "id": "i236",
+   "kind": "mismatched-order",
+   "context": "top",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; BEGIN IF n = 0 THEN SET n = 1; END; END IF; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; BEGIN IF n = 0 THEN SET n = 1; END IF; END; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near ';': missing 'IF'. SQLSTATE: 42601 (line 1, pos 65)",
+   "engine_line": 1
+  },
+  {
+   "id": "i237",
+   "kind": "mismatched-order",
+   "context": "loop",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE i INT DEFAULT 0; WHILE i < 2 DO SET i = i + 1; IF n = 0 THEN WHILE n < 2 DO SET n = n + 1; END IF; END WHILE; END WHILE; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE i INT DEFAULT 0; WHILE i < 2 DO SET i = i + 1; IF n = 0 THEN WHILE n < 2 DO SET n = n + 1; END WHILE; END IF; END WHILE; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'IF': missing 'WHILE'. SQLSTATE: 42601 (line 1, pos 134)",
+   "engine_line": 1
+  },
+  {
+   "id": "i238",
+   "kind": "mismatched-order",
+   "context": "case",
+   "sql": "BEGIN DECLARE n INT DEFAULT 1; CASE n WHEN 1 THEN WHILE n < 3 DO BEGIN SET n = n + 1; END WHILE; END; ELSE VALUES (0); END CASE; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 1; CASE n WHEN 1 THEN WHILE n < 3 DO BEGIN SET n = n + 1; END; END WHILE; ELSE VALUES (0); END CASE; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near ';': missing 'WHILE'. SQLSTATE: 42601 (line 1, pos 100)",
+   "engine_line": 1
+  },
+  {
+   "id": "i239",
+   "kind": "mismatched-order",
+   "context": "handler",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE EXIT HANDLER FOR SQLEXCEPTION BEGIN FOR r AS SELECT 1 AS x DO IF n = 0 THEN SET n = 1; END FOR; END IF; END; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE EXIT HANDLER FOR SQLEXCEPTION BEGIN FOR r AS SELECT 1 AS x DO IF n = 0 THEN SET n = 1; END IF; END FOR; END; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'FOR'. SQLSTATE: 42601 (line 1, pos 130)",
+   "engine_line": 1
+  },
+  {
+   "id": "i240",
+   "kind": "mismatched-order",
+   "context": "nested",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; BEGIN CASE n WHEN 0 THEN IF n = 0 THEN SET n = 1; END CASE; END IF; END; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; BEGIN CASE n WHEN 0 THEN IF n = 0 THEN SET n = 1; END IF; END CASE; END; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'CASE'. SQLSTATE: 42601 (line 1, pos 85)",
+   "engine_line": 1
+  },
+  {
+   "id": "i241",
+   "kind": "closer-typo-if",
+   "context": "top",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; IF n = 0 THEN SET n = 1; END IFF; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; IF n = 0 THEN SET n = 1; END IF; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'IFF'. SQLSTATE: 42601 (line 1, pos 60)",
+   "engine_line": 1
+  },
+  {
+   "id": "i242",
+   "kind": "closer-typo-while",
+   "context": "loop",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE i INT DEFAULT 0; WHILE i < 2 DO SET i = i + 1; WHILE n < 2 DO SET n = n + 1; END WHILEE; END WHILE; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE i INT DEFAULT 0; WHILE i < 2 DO SET i = i + 1; WHILE n < 2 DO SET n = n + 1; END WHILE; END WHILE; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'WHILEE': missing 'WHILE'. SQLSTATE: 42601 (line 1, pos 120)",
+   "engine_line": 1
+  },
+  {
+   "id": "i243",
+   "kind": "closer-typo-loop",
+   "context": "handler",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE EXIT HANDLER FOR SQLEXCEPTION BEGIN lp: LOOP SET n = n + 1; IF n > 1 THEN LEAVE lp; END IF; END LOOPP; END; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE EXIT HANDLER FOR SQLEXCEPTION BEGIN lp: LOOP SET n = n + 1; IF n > 1 THEN LEAVE lp; END IF; END LOOP; END; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'LOOPP': missing 'LOOP'. SQLSTATE: 42601 (line 1, pos 135)",
+   "engine_line": 1
+  },
+  {
+   "id": "i244",
+   "kind": "closer-typo-repeat",
+   "context": "nested",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; BEGIN REPEAT SET n = n + 1; UNTIL n > 1 END REPEATT; END; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; BEGIN REPEAT SET n = n + 1; UNTIL n > 1 END REPEAT; END; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'REPEATT': missing 'REPEAT'. SQLSTATE: 42601 (line 1, pos 75)",
+   "engine_line": 1
+  },
+  {
+   "id": "i245",
+   "kind": "closer-typo-for",
+   "context": "case",
+   "sql": "BEGIN DECLARE n INT DEFAULT 1; CASE n WHEN 1 THEN FOR r AS SELECT 1 AS x DO SET n = n + r.x; END FORR; ELSE VALUES (0); END CASE; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 1; CASE n WHEN 1 THEN FOR r AS SELECT 1 AS x DO SET n = n + r.x; END FOR; ELSE VALUES (0); END CASE; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'FORR': missing 'FOR'. SQLSTATE: 42601 (line 1, pos 97)",
+   "engine_line": 1
+  },
+  {
+   "id": "i246",
+   "kind": "closer-typo-case",
+   "context": "top",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; CASE n WHEN 0 THEN SET n = 1; ELSE SET n = 2; END CASEE; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; CASE n WHEN 0 THEN SET n = 1; ELSE SET n = 2; END CASE; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'CASEE'. SQLSTATE: 42601 (line 1, pos 81)",
+   "engine_line": 1
+  },
+  {
+   "id": "i247",
+   "kind": "closer-typo-begin",
+   "context": "nested",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; BEGIN BEGIN SET n = n + 1; ENDD; END; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; BEGIN BEGIN SET n = n + 1; END; END; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near ';'. SQLSTATE: 42601 (line 1, pos 62)",
+   "engine_line": 1
+  },
+  {
+   "id": "i248",
+   "kind": "closer-typo-if",
+   "context": "loop",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE i INT DEFAULT 0; WHILE i < 2 DO SET i = i + 1; IF n = 0 THEN SET n = 1; END IFF; END WHILE; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE i INT DEFAULT 0; WHILE i < 2 DO SET i = i + 1; IF n = 0 THEN SET n = 1; END IF; END WHILE; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'IFF'. SQLSTATE: 42601 (line 1, pos 115)",
+   "engine_line": 1
+  },
+  {
+   "id": "i249",
+   "kind": "closer-typo-if",
+   "context": "top",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; IF n = 0 THEN SET n = 1; ENDIF; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; IF n = 0 THEN SET n = 1; END IF; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near ';'. SQLSTATE: 42601 (line 1, pos 61)",
+   "engine_line": 1
+  },
+  {
+   "id": "i250",
+   "kind": "closer-typo-while",
+   "context": "top",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; WHILE n < 2 DO SET n = n + 1; ENDWHILE; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; WHILE n < 2 DO SET n = n + 1; END WHILE; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near ';'. SQLSTATE: 42601 (line 1, pos 69)",
+   "engine_line": 1
+  },
+  {
+   "id": "i251",
+   "kind": "closer-typo-if",
+   "context": "top",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; IF n = 0 THEN SET n = 1; END IF IF; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; IF n = 0 THEN SET n = 1; END IF; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'IF': extra input 'IF'. SQLSTATE: 42601 (line 1, pos 63)",
+   "engine_line": 1
+  },
+  {
+   "id": "i252",
+   "kind": "closer-typo-if",
+   "context": "top",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; IF n = 0 THEN SET n = 1; END ELSE; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; IF n = 0 THEN SET n = 1; END IF; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'ELSE'. SQLSTATE: 42601 (line 1, pos 60)",
+   "engine_line": 1
+  },
+  {
+   "id": "i253",
+   "kind": "closer-typo-if",
+   "context": "handler",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE EXIT HANDLER FOR SQLEXCEPTION BEGIN IF n = 0 THEN SET n = 1; EDN IF; END; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE EXIT HANDLER FOR SQLEXCEPTION BEGIN IF n = 0 THEN SET n = 1; END IF; END; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'IF'. SQLSTATE: 42601 (line 1, pos 104)",
+   "engine_line": 1
+  },
+  {
+   "id": "i254",
+   "kind": "closer-typo-while",
+   "context": "handler",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE EXIT HANDLER FOR SQLEXCEPTION BEGIN WHILE n < 2 DO SET n = n + 1; END WHLE; END; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE EXIT HANDLER FOR SQLEXCEPTION BEGIN WHILE n < 2 DO SET n = n + 1; END WHILE; END; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'WHLE': missing 'WHILE'. SQLSTATE: 42601 (line 1, pos 109)",
+   "engine_line": 1
+  },
+  {
+   "id": "i255",
+   "kind": "end-then-wrong-word",
+   "context": "top",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; BEGIN SET n = n + 1; END 123; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; BEGIN SET n = n + 1; END; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near '123': extra input '123'. SQLSTATE: 42601 (line 1, pos 56)",
+   "engine_line": 1
+  },
+  {
+   "id": "i256",
+   "kind": "end-then-wrong-word",
+   "context": "loop",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE i INT DEFAULT 0; WHILE i < 2 DO SET i = i + 1; BEGIN SET n = n + 1; END 'lbl'; END WHILE; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE i INT DEFAULT 0; WHILE i < 2 DO SET i = i + 1; BEGIN SET n = n + 1; END; END WHILE; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near ''lbl'': extra input ''lbl''. SQLSTATE: 42601 (line 1, pos 111)",
+   "engine_line": 1
+  },
+  {
+   "id": "i257",
+   "kind": "end-then-wrong-word",
+   "context": "nested",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; BEGIN BEGIN SET n = n + 1; END +; END; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; BEGIN BEGIN SET n = n + 1; END; END; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near '+': extra input '+'. SQLSTATE: 42601 (line 1, pos 62)",
+   "engine_line": 1
+  },
+  {
+   "id": "i258",
+   "kind": "end-then-wrong-word",
+   "context": "handler",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE EXIT HANDLER FOR SQLEXCEPTION BEGIN BEGIN SET n = n + 1; END , ; END; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE EXIT HANDLER FOR SQLEXCEPTION BEGIN BEGIN SET n = n + 1; END; END; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near ',': extra input ','. SQLSTATE: 42601 (line 1, pos 100)",
+   "engine_line": 1
+  },
+  {
+   "id": "i259",
+   "kind": "end-then-wrong-word",
+   "context": "top",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; WHILE n < 2 DO SET n = n + 1; END WHILE 5; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; WHILE n < 2 DO SET n = n + 1; END WHILE; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near '5': extra input '5'. SQLSTATE: 42601 (line 1, pos 71)",
+   "engine_line": 1
+  },
+  {
+   "id": "i260",
+   "kind": "end-then-wrong-word",
+   "context": "top",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; IF n = 0 THEN SET n = 1; END IF 'x'; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; IF n = 0 THEN SET n = 1; END IF; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near ''x'': extra input ''x''. SQLSTATE: 42601 (line 1, pos 63)",
+   "engine_line": 1
+  },
+  {
+   "id": "i261",
+   "kind": "end-then-wrong-word",
+   "context": "top",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; lp: LOOP SET n = n + 1; IF n > 1 THEN LEAVE lp; END IF; END LOOP (a); VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; lp: LOOP SET n = n + 1; IF n > 1 THEN LEAVE lp; END IF; END LOOP; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near '(': missing ';'. SQLSTATE: 42601 (line 1, pos 96)",
+   "engine_line": 1
+  },
+  {
+   "id": "i262",
+   "kind": "end-then-wrong-word",
+   "context": "nested",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; BEGIN FOR r AS SELECT 1 AS x DO SET n = n + r.x; END FOR 1.5; END; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; BEGIN FOR r AS SELECT 1 AS x DO SET n = n + r.x; END FOR; END; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near '1.5': extra input '1.5'. SQLSTATE: 42601 (line 1, pos 88)",
+   "engine_line": 1
+  },
+  {
+   "id": "i263",
+   "kind": "end-then-wrong-word",
+   "context": "loop",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE i INT DEFAULT 0; WHILE i < 2 DO SET i = i + 1; REPEAT SET n = n + 1; UNTIL n > 1 END REPEAT -; END WHILE; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE i INT DEFAULT 0; WHILE i < 2 DO SET i = i + 1; REPEAT SET n = n + 1; UNTIL n > 1 END REPEAT; END WHILE; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near '-': extra input '-'. SQLSTATE: 42601 (line 1, pos 131)",
+   "engine_line": 1
+  },
+  {
+   "id": "i264",
+   "kind": "end-then-wrong-word",
+   "context": "case",
+   "sql": "BEGIN DECLARE n INT DEFAULT 1; CASE n WHEN 1 THEN CASE n WHEN 0 THEN SET n = 1; ELSE SET n = 2; END CASE 7; ELSE VALUES (0); END CASE; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 1; CASE n WHEN 1 THEN CASE n WHEN 0 THEN SET n = 1; ELSE SET n = 2; END CASE; ELSE VALUES (0); END CASE; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near '7': extra input '7'. SQLSTATE: 42601 (line 1, pos 105)",
+   "engine_line": 1
+  },
+  {
+   "id": "i265",
+   "kind": "end-then-wrong-word",
+   "context": "top",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; BEGIN SET n = n + 1; END THEN; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; BEGIN SET n = n + 1; END; VALUES (n); END",
+   "error_class": "END_LABEL_WITHOUT_BEGIN_LABEL",
+   "message": "[END_LABEL_WITHOUT_BEGIN_LABEL] End label `THEN` can not exist without begin label. SQLSTATE: 42K0L",
+   "engine_line": null
+  },
+  {
+   "id": "i266",
+   "kind": "end-then-wrong-word",
+   "context": "top",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; BEGIN SET n = n + 1; END DO; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; BEGIN SET n = n + 1; END; VALUES (n); END",
+   "error_class": "END_LABEL_WITHOUT_BEGIN_LABEL",
+   "message": "[END_LABEL_WITHOUT_BEGIN_LABEL] End label `DO` can not exist without begin label. SQLSTATE: 42K0L",
+   "engine_line": null
+  },
+  {
+   "id": "i267",
+   "kind": "end-then-wrong-word",
+   "context": "top",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; BEGIN SET n = n + 1; END UNTIL; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; BEGIN SET n = n + 1; END; VALUES (n); END",
+   "error_class": "END_LABEL_WITHOUT_BEGIN_LABEL",
+   "message": "[END_LABEL_WITHOUT_BEGIN_LABEL] End label `UNTIL` can not exist without begin label. SQLSTATE: 42K0L",
+   "engine_line": null
+  },
+  {
+   "id": "i268",
+   "kind": "end-then-wrong-word",
+   "context": "top",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; BEGIN SET n = n + 1; END SELECT 1; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; BEGIN SET n = n + 1; END; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near '1': extra input '1'. SQLSTATE: 42601 (line 1, pos 63)",
+   "engine_line": 1
+  },
+  {
+   "id": "i269",
+   "kind": "locality-missing-end-while",
+   "context": "locality",
+   "sql": "BEGIN\n  DECLARE total INT DEFAULT 0;\n  DECLARE i INT DEFAULT 0;\n  SET total = 1;\n  w: WHILE i < 3 DO\n    SET i = i + 1;\n  IF total = 1 THEN\n    SET total = total + 1;\n  ELSE\n    SET total = 0;\n  END IF;\n  FOR r AS SELECT 1 AS x DO\n    SET total = total + r.x;\n  END FOR;\n  REPEAT\n    SET i = i - 1;\n  UNTIL i <= 0\n  END REPEAT;\n  CASE total\n    WHEN 3 THEN SET total = 4;\n    ELSE SET total = 5;\n  END CASE;\n  lp: LOOP\n    SET total = total + 1;\n    IF total > 6 THEN\n      LEAVE lp;\n    END IF;\n  END LOOP lp;\n  VALUES (total);\nEND",
+   "twin_sql": "BEGIN\n  DECLARE total INT DEFAULT 0;\n  DECLARE i INT DEFAULT 0;\n  SET total = 1;\n  w: WHILE i < 3 DO\n    SET i = i + 1;\n  END WHILE w;\n  IF total = 1 THEN\n    SET total = total + 1;\n  ELSE\n    SET total = 0;\n  END IF;\n  FOR r AS SELECT 1 AS x DO\n    SET total = total + r.x;\n  END FOR;\n  REPEAT\n    SET i = i - 1;\n  UNTIL i <= 0\n  END REPEAT;\n  CASE total\n    WHEN 3 THEN SET total = 4;\n    ELSE SET total = 5;\n  END CASE;\n  lp: LOOP\n    SET total = total + 1;\n    IF total > 6 THEN\n      LEAVE lp;\n    END IF;\n  END LOOP lp;\n  VALUES (total);\nEND",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near end of input. SQLSTATE: 42601 (line 30, pos 3)",
+   "engine_line": 30
+  },
+  {
+   "id": "i270",
+   "kind": "locality-missing-end-if",
+   "context": "locality",
+   "sql": "BEGIN\n  DECLARE total INT DEFAULT 0;\n  DECLARE i INT DEFAULT 0;\n  SET total = 1;\n  w: WHILE i < 3 DO\n    SET i = i + 1;\n  END WHILE w;\n  IF total = 1 THEN\n    SET total = total + 1;\n  ELSE\n    SET total = 0;\n  FOR r AS SELECT 1 AS x DO\n    SET total = total + r.x;\n  END FOR;\n  REPEAT\n    SET i = i - 1;\n  UNTIL i <= 0\n  END REPEAT;\n  CASE total\n    WHEN 3 THEN SET total = 4;\n    ELSE SET total = 5;\n  END CASE;\n  lp: LOOP\n    SET total = total + 1;\n    IF total > 6 THEN\n      LEAVE lp;\n    END IF;\n  END LOOP lp;\n  VALUES (total);\nEND",
+   "twin_sql": "BEGIN\n  DECLARE total INT DEFAULT 0;\n  DECLARE i INT DEFAULT 0;\n  SET total = 1;\n  w: WHILE i < 3 DO\n    SET i = i + 1;\n  END WHILE w;\n  IF total = 1 THEN\n    SET total = total + 1;\n  ELSE\n    SET total = 0;\n  END IF;\n  FOR r AS SELECT 1 AS x DO\n    SET total = total + r.x;\n  END FOR;\n  REPEAT\n    SET i = i - 1;\n  UNTIL i <= 0\n  END REPEAT;\n  CASE total\n    WHEN 3 THEN SET total = 4;\n    ELSE SET total = 5;\n  END CASE;\n  lp: LOOP\n    SET total = total + 1;\n    IF total > 6 THEN\n      LEAVE lp;\n    END IF;\n  END LOOP lp;\n  VALUES (total);\nEND",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near end of input. SQLSTATE: 42601 (line 30, pos 3)",
+   "engine_line": 30
+  },
+  {
+   "id": "i271",
+   "kind": "locality-wrong-closer-for",
+   "context": "locality",
+   "sql": "BEGIN\n  DECLARE total INT DEFAULT 0;\n  DECLARE i INT DEFAULT 0;\n  SET total = 1;\n  w: WHILE i < 3 DO\n    SET i = i + 1;\n  END WHILE w;\n  IF total = 1 THEN\n    SET total = total + 1;\n  ELSE\n    SET total = 0;\n  END IF;\n  FOR r AS SELECT 1 AS x DO\n    SET total = total + r.x;\n  END WHILE;\n  REPEAT\n    SET i = i - 1;\n  UNTIL i <= 0\n  END REPEAT;\n  CASE total\n    WHEN 3 THEN SET total = 4;\n    ELSE SET total = 5;\n  END CASE;\n  lp: LOOP\n    SET total = total + 1;\n    IF total > 6 THEN\n      LEAVE lp;\n    END IF;\n  END LOOP lp;\n  VALUES (total);\nEND",
+   "twin_sql": "BEGIN\n  DECLARE total INT DEFAULT 0;\n  DECLARE i INT DEFAULT 0;\n  SET total = 1;\n  w: WHILE i < 3 DO\n    SET i = i + 1;\n  END WHILE w;\n  IF total = 1 THEN\n    SET total = total + 1;\n  ELSE\n    SET total = 0;\n  END IF;\n  FOR r AS SELECT 1 AS x DO\n    SET total = total + r.x;\n  END FOR;\n  REPEAT\n    SET i = i - 1;\n  UNTIL i <= 0\n  END REPEAT;\n  CASE total\n    WHEN 3 THEN SET total = 4;\n    ELSE SET total = 5;\n  END CASE;\n  lp: LOOP\n    SET total = total + 1;\n    IF total > 6 THEN\n      LEAVE lp;\n    END IF;\n  END LOOP lp;\n  VALUES (total);\nEND",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'WHILE': missing 'FOR'. SQLSTATE: 42601 (line 15, pos 4)",
+   "engine_line": 15
+  },
+  {
+   "id": "i272",
+   "kind": "locality-missing-until",
+   "context": "locality",
+   "sql": "BEGIN\n  DECLARE total INT DEFAULT 0;\n  DECLARE i INT DEFAULT 0;\n  SET total = 1;\n  w: WHILE i < 3 DO\n    SET i = i + 1;\n  END WHILE w;\n  IF total = 1 THEN\n    SET total = total + 1;\n  ELSE\n    SET total = 0;\n  END IF;\n  FOR r AS SELECT 1 AS x DO\n    SET total = total + r.x;\n  END FOR;\n  REPEAT\n    SET i = i - 1;\n  END REPEAT;\n  CASE total\n    WHEN 3 THEN SET total = 4;\n    ELSE SET total = 5;\n  END CASE;\n  lp: LOOP\n    SET total = total + 1;\n    IF total > 6 THEN\n      LEAVE lp;\n    END IF;\n  END LOOP lp;\n  VALUES (total);\nEND",
+   "twin_sql": "BEGIN\n  DECLARE total INT DEFAULT 0;\n  DECLARE i INT DEFAULT 0;\n  SET total = 1;\n  w: WHILE i < 3 DO\n    SET i = i + 1;\n  END WHILE w;\n  IF total = 1 THEN\n    SET total = total + 1;\n  ELSE\n    SET total = 0;\n  END IF;\n  FOR r AS SELECT 1 AS x DO\n    SET total = total + r.x;\n  END FOR;\n  REPEAT\n    SET i = i - 1;\n  UNTIL i <= 0\n  END REPEAT;\n  CASE total\n    WHEN 3 THEN SET total = 4;\n    ELSE SET total = 5;\n  END CASE;\n  lp: LOOP\n    SET total = total + 1;\n    IF total > 6 THEN\n      LEAVE lp;\n    END IF;\n  END LOOP lp;\n  VALUES (total);\nEND",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'END': missing 'UNTIL'. SQLSTATE: 42601 (line 18, pos 0)",
+   "engine_line": 18
+  },
+  {
+   "id": "i273",
+   "kind": "locality-label-mismatch",
+   "context": "locality",
+   "sql": "BEGIN\n  DECLARE total INT DEFAULT 0;\n  DECLARE i INT DEFAULT 0;\n  SET total = 1;\n  w: WHILE i < 3 DO\n    SET i = i + 1;\n  END WHILE v;\n  IF total = 1 THEN\n    SET total = total + 1;\n  ELSE\n    SET total = 0;\n  END IF;\n  FOR r AS SELECT 1 AS x DO\n    SET total = total + r.x;\n  END FOR;\n  REPEAT\n    SET i = i - 1;\n  UNTIL i <= 0\n  END REPEAT;\n  CASE total\n    WHEN 3 THEN SET total = 4;\n    ELSE SET total = 5;\n  END CASE;\n  lp: LOOP\n    SET total = total + 1;\n    IF total > 6 THEN\n      LEAVE lp;\n    END IF;\n  END LOOP lp;\n  VALUES (total);\nEND",
+   "twin_sql": "BEGIN\n  DECLARE total INT DEFAULT 0;\n  DECLARE i INT DEFAULT 0;\n  SET total = 1;\n  w: WHILE i < 3 DO\n    SET i = i + 1;\n  END WHILE w;\n  IF total = 1 THEN\n    SET total = total + 1;\n  ELSE\n    SET total = 0;\n  END IF;\n  FOR r AS SELECT 1 AS x DO\n    SET total = total + r.x;\n  END FOR;\n  REPEAT\n    SET i = i - 1;\n  UNTIL i <= 0\n  END REPEAT;\n  CASE total\n    WHEN 3 THEN SET total = 4;\n    ELSE SET total = 5;\n  END CASE;\n  lp: LOOP\n    SET total = total + 1;\n    IF total > 6 THEN\n      LEAVE lp;\n    END IF;\n  END LOOP lp;\n  VALUES (total);\nEND",
+   "error_class": "LABELS_MISMATCH",
+   "message": "[LABELS_MISMATCH] Begin label `w` does not match the end label `v`. SQLSTATE: 42K0L",
+   "engine_line": null
+  },
+  {
+   "id": "i274",
+   "kind": "locality-missing-then",
+   "context": "locality",
+   "sql": "BEGIN\n  DECLARE total INT DEFAULT 0;\n  DECLARE i INT DEFAULT 0;\n  SET total = 1;\n  w: WHILE i < 3 DO\n    SET i = i + 1;\n  END WHILE w;\n  IF total = 1\n    SET total = total + 1;\n  ELSE\n    SET total = 0;\n  END IF;\n  FOR r AS SELECT 1 AS x DO\n    SET total = total + r.x;\n  END FOR;\n  REPEAT\n    SET i = i - 1;\n  UNTIL i <= 0\n  END REPEAT;\n  CASE total\n    WHEN 3 THEN SET total = 4;\n    ELSE SET total = 5;\n  END CASE;\n  lp: LOOP\n    SET total = total + 1;\n    IF total > 6 THEN\n      LEAVE lp;\n    END IF;\n  END LOOP lp;\n  VALUES (total);\nEND",
+   "twin_sql": "BEGIN\n  DECLARE total INT DEFAULT 0;\n  DECLARE i INT DEFAULT 0;\n  SET total = 1;\n  w: WHILE i < 3 DO\n    SET i = i + 1;\n  END WHILE w;\n  IF total = 1 THEN\n    SET total = total + 1;\n  ELSE\n    SET total = 0;\n  END IF;\n  FOR r AS SELECT 1 AS x DO\n    SET total = total + r.x;\n  END FOR;\n  REPEAT\n    SET i = i - 1;\n  UNTIL i <= 0\n  END REPEAT;\n  CASE total\n    WHEN 3 THEN SET total = 4;\n    ELSE SET total = 5;\n  END CASE;\n  lp: LOOP\n    SET total = total + 1;\n    IF total > 6 THEN\n      LEAVE lp;\n    END IF;\n  END LOOP lp;\n  VALUES (total);\nEND",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'SET': missing 'THEN'. SQLSTATE: 42601 (line 9, pos 0)",
+   "engine_line": 9
+  },
+  {
+   "id": "i275",
+   "kind": "locality-extra-end",
+   "context": "locality",
+   "sql": "BEGIN\n  DECLARE total INT DEFAULT 0;\n  DECLARE i INT DEFAULT 0;\n  SET total = 1;\n  w: WHILE i < 3 DO\n    SET i = i + 1;\n  END WHILE w;\n  IF total = 1 THEN\n    SET total = total + 1;\n  ELSE\n    SET total = 0;\n  END IF;\n  FOR r AS SELECT 1 AS x DO\n    SET total = total + r.x;\n  END FOR;\n  END;\n  REPEAT\n    SET i = i - 1;\n  UNTIL i <= 0\n  END REPEAT;\n  CASE total\n    WHEN 3 THEN SET total = 4;\n    ELSE SET total = 5;\n  END CASE;\n  lp: LOOP\n    SET total = total + 1;\n    IF total > 6 THEN\n      LEAVE lp;\n    END IF;\n  END LOOP lp;\n  VALUES (total);\nEND",
+   "twin_sql": "BEGIN\n  DECLARE total INT DEFAULT 0;\n  DECLARE i INT DEFAULT 0;\n  SET total = 1;\n  w: WHILE i < 3 DO\n    SET i = i + 1;\n  END WHILE w;\n  IF total = 1 THEN\n    SET total = total + 1;\n  ELSE\n    SET total = 0;\n  END IF;\n  FOR r AS SELECT 1 AS x DO\n    SET total = total + r.x;\n  END FOR;\n  REPEAT\n    SET i = i - 1;\n  UNTIL i <= 0\n  END REPEAT;\n  CASE total\n    WHEN 3 THEN SET total = 4;\n    ELSE SET total = 5;\n  END CASE;\n  lp: LOOP\n    SET total = total + 1;\n    IF total > 6 THEN\n      LEAVE lp;\n    END IF;\n  END LOOP lp;\n  VALUES (total);\nEND",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'REPEAT'. SQLSTATE: 42601 (line 17, pos 0)",
+   "engine_line": 17
+  },
+  {
+   "id": "i276",
+   "kind": "locality-else-after-else",
+   "context": "locality",
+   "sql": "BEGIN\n  DECLARE total INT DEFAULT 0;\n  DECLARE i INT DEFAULT 0;\n  SET total = 1;\n  w: WHILE i < 3 DO\n    SET i = i + 1;\n  END WHILE w;\n  IF total = 1 THEN\n    SET total = total + 1;\n  ELSE\n    SET total = 0;\n  ELSE\n    SET total = 9;\n  END IF;\n  FOR r AS SELECT 1 AS x DO\n    SET total = total + r.x;\n  END FOR;\n  REPEAT\n    SET i = i - 1;\n  UNTIL i <= 0\n  END REPEAT;\n  CASE total\n    WHEN 3 THEN SET total = 4;\n    ELSE SET total = 5;\n  END CASE;\n  lp: LOOP\n    SET total = total + 1;\n    IF total > 6 THEN\n      LEAVE lp;\n    END IF;\n  END LOOP lp;\n  VALUES (total);\nEND",
+   "twin_sql": "BEGIN\n  DECLARE total INT DEFAULT 0;\n  DECLARE i INT DEFAULT 0;\n  SET total = 1;\n  w: WHILE i < 3 DO\n    SET i = i + 1;\n  END WHILE w;\n  IF total = 1 THEN\n    SET total = total + 1;\n  ELSE\n    SET total = 0;\n  END IF;\n  FOR r AS SELECT 1 AS x DO\n    SET total = total + r.x;\n  END FOR;\n  REPEAT\n    SET i = i - 1;\n  UNTIL i <= 0\n  END REPEAT;\n  CASE total\n    WHEN 3 THEN SET total = 4;\n    ELSE SET total = 5;\n  END CASE;\n  lp: LOOP\n    SET total = total + 1;\n    IF total > 6 THEN\n      LEAVE lp;\n    END IF;\n  END LOOP lp;\n  VALUES (total);\nEND",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'ELSE'. SQLSTATE: 42601 (line 12, pos 0)",
+   "engine_line": 12
+  },
+  {
+   "id": "i277",
+   "kind": "locality-missing-end-blk-begin",
+   "context": "locality",
+   "sql": "BEGIN\n  DECLARE total INT DEFAULT 0;\n  DECLARE i INT DEFAULT 0;\n  DECLARE EXIT HANDLER FOR SQLEXCEPTION\n  BEGIN\n    VALUES (-1);\n  END;\n  SET total = 10;\n  outer_loop: WHILE i < 2 DO\n    SET i = i + 1;\n    blk: BEGIN\n      SET total = total + 1;\n      IF total > 100 THEN\n        SET total = 0;\n      END IF;\n  END WHILE outer_loop;\n  CASE WHEN total > 5 THEN SET total = 5; ELSE SET total = 1; END CASE;\n  VALUES (total);\nEND",
+   "twin_sql": "BEGIN\n  DECLARE total INT DEFAULT 0;\n  DECLARE i INT DEFAULT 0;\n  DECLARE EXIT HANDLER FOR SQLEXCEPTION\n  BEGIN\n    VALUES (-1);\n  END;\n  SET total = 10;\n  outer_loop: WHILE i < 2 DO\n    SET i = i + 1;\n    blk: BEGIN\n      SET total = total + 1;\n      IF total > 100 THEN\n        SET total = 0;\n      END IF;\n    END blk;\n  END WHILE outer_loop;\n  CASE WHEN total > 5 THEN SET total = 5; ELSE SET total = 1; END CASE;\n  VALUES (total);\nEND",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'outer_loop': extra input 'outer_loop'. SQLSTATE: 42601 (line 16, pos 10)",
+   "engine_line": 16
+  },
+  {
+   "id": "i278",
+   "kind": "locality-when-after-else",
+   "context": "locality",
+   "sql": "BEGIN\n  DECLARE total INT DEFAULT 0;\n  DECLARE i INT DEFAULT 0;\n  SET total = 1;\n  w: WHILE i < 3 DO\n    SET i = i + 1;\n  END WHILE w;\n  IF total = 1 THEN\n    SET total = total + 1;\n  ELSE\n    SET total = 0;\n  END IF;\n  FOR r AS SELECT 1 AS x DO\n    SET total = total + r.x;\n  END FOR;\n  REPEAT\n    SET i = i - 1;\n  UNTIL i <= 0\n  END REPEAT;\n  CASE total\n    WHEN 3 THEN SET total = 4;\n    ELSE SET total = 5;\n    WHEN 7 THEN SET total = 8;\n  END CASE;\n  lp: LOOP\n    SET total = total + 1;\n    IF total > 6 THEN\n      LEAVE lp;\n    END IF;\n  END LOOP lp;\n  VALUES (total);\nEND",
+   "twin_sql": "BEGIN\n  DECLARE total INT DEFAULT 0;\n  DECLARE i INT DEFAULT 0;\n  SET total = 1;\n  w: WHILE i < 3 DO\n    SET i = i + 1;\n  END WHILE w;\n  IF total = 1 THEN\n    SET total = total + 1;\n  ELSE\n    SET total = 0;\n  END IF;\n  FOR r AS SELECT 1 AS x DO\n    SET total = total + r.x;\n  END FOR;\n  REPEAT\n    SET i = i - 1;\n  UNTIL i <= 0\n  END REPEAT;\n  CASE total\n    WHEN 3 THEN SET total = 4;\n    ELSE SET total = 5;\n  END CASE;\n  lp: LOOP\n    SET total = total + 1;\n    IF total > 6 THEN\n      LEAVE lp;\n    END IF;\n  END LOOP lp;\n  VALUES (total);\nEND",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "[PARSE_SYNTAX_ERROR] Syntax error at or near 'WHEN'. SQLSTATE: 42601 (line 23, pos 0)",
+   "engine_line": 23
+  }
+ ],
+ "checker_misses": [
+  "i113",
+  "i150",
+  "i152",
+  "i193",
+  "i194",
+  "i207",
+  "i208",
+  "i209",
+  "i234",
+  "i235",
+  "i255",
+  "i256",
+  "i259",
+  "i260",
+  "i261",
+  "i262",
+  "i264",
+  "i268"
+ ],
+ "engine_accepts": [
+  {
+   "kind": "bodyless-begin",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; BEGIN END; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; BEGIN SET n = 1; END; VALUES (n); END",
+   "note": "Engine accepts an empty BEGIN END block (no statements); the compound-stmt page does not forbid it. Output: [   {     \"col1\": \"0\"   } ]"
+  },
+  {
+   "kind": "bodyless-begin",
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE i INT DEFAULT 0; WHILE i < 2 DO SET i = i + 1; BEGIN END; END WHILE; VALUES (n); END",
+   "twin_sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE i INT DEFAULT 0; WHILE i < 2 DO SET i = i + 1; BEGIN SET n = 1; END; END WHILE; VALUES (n); END",
+   "note": "Engine accepts an empty BEGIN END block (no statements); the compound-stmt page does not forbid it. Output: [   {     \"col1\": \"0\"   } ]"
+  },
+  {
+   "kind": "bodyless-begin-atomic",
+   "sql": "BEGIN ATOMIC END",
+   "twin_sql": "BEGIN ATOMIC VALUES (1); END",
+   "note": "Engine accepts BEGIN ATOMIC END with no statements, although the compound_stmt reference case marks it must-reject. Output: Query executed successfully (no results)"
+  }
+ ]
+}

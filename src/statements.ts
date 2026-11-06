@@ -430,8 +430,8 @@ const FORBIDDEN_PAIRS = new Map<string, Adjacency>([
     why: "GLOBAL needs TEMPORARY" }],
 
   // --- compound statements --------------------------------------------------
-  ["ATOMIC END", { case: "compound-stmt.without-body",
-    why: "a BEGIN ATOMIC block has no statements in it" }],
+  // `ATOMIC END` was a pair here until a Databricks SQL warehouse accepted
+  // `BEGIN ATOMIC END` and `BEGIN END`: the statement list is optional.
   ["IF THEN", { case: "if-stmt.without-condition",
     why: "IF needs a condition before THEN" }],
 ]);

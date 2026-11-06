@@ -84,9 +84,32 @@ function scan(toks: Token[], from: number, stop: (i: number) => boolean): number
   return -1;
 }
 
+/** Brackets and CASE...END all balance from `from` to the fragment's end. */
+function wellFormed(toks: Token[], from: number): boolean {
+  let depth = 0;
+  let cases = 0;
+  for (let i = from; i < toks.length; i++) {
+    const t = toks[i];
+    if (isOpen(t)) depth++;
+    else if (isClose(t)) {
+      if (depth === 0) return false;
+      depth--;
+    } else if (t.kind === "word" && depth === 0) {
+      if (t.upper === "CASE" && !afterNameMarker(toks[i - 1])) cases++;
+      else if (t.upper === "END") {
+        if (cases === 0) return false;
+        cases--;
+      }
+    }
+  }
+  return depth === 0 && cases === 0;
+}
+
 class Cell {
   private readonly stack: Block[] = [];
   private gaveUp = false;
+  /** The block opened most recently, while nothing has been read inside it. */
+  private justOpened: Block | undefined;
 
   constructor(private readonly frags: Token[][], private readonly ctx: Ctx) {}
 
@@ -102,9 +125,16 @@ class Cell {
     }
   }
 
+  /** Report an error at `tok` and stop: the stack no longer matches the script. */
+  private fail(code: string, tok: Token, message: string): void {
+    report(this.ctx, code, "error", tok, message);
+    this.gaveUp = true;
+  }
+
   // --- reading one fragment ---------------------------------------------------
 
   private fragment(toks: Token[]): void {
+    this.justOpened = undefined;
     const lead = toks[0].kind === "word" ? toks[0].upper! : "";
     // CREATE PROCEDURE ... AS BEGIN ...: the body opens inside the statement.
     // Only for a PROCEDURE: in `CREATE VIEW v AS SELECT 1 AS begin` the word
@@ -148,33 +178,39 @@ class Cell {
         }
         case "IF": {
           const t = scan(toks, i + 1, (k) => isWord(toks[k], "THEN"));
-          if (t < 0) return void (this.gaveUp = true);
+          if (t < 0) return this.noKeyword(toks, i, "IF", "THEN", "its condition");
           this.open("IF", tok);
           i = t + 1;
           continue;
         }
         case "ELSEIF": {
+          if (top?.kind !== "IF") return this.fail("misplaced-block-word", tok, "`ELSEIF` is outside an `IF` block.");
+          if (top.sawElse) return this.fail("misplaced-block-word", tok, `\`ELSEIF\` follows the \`ELSE\` of ${this.describe(top)}.`);
           const t = scan(toks, i + 1, (k) => isWord(toks[k], "THEN"));
-          if (t < 0 || top?.kind !== "IF" || top.sawElse) return void (this.gaveUp = true);
+          if (t < 0) return this.noKeyword(toks, i, "ELSEIF", "THEN", "its condition");
           i = t + 1;
           continue;
         }
         case "ELSE": {
-          if ((top?.kind !== "IF" && top?.kind !== "CASE") || top.sawElse) return void (this.gaveUp = true);
+          if (top?.kind !== "IF" && top?.kind !== "CASE") return this.fail("misplaced-block-word", tok, "`ELSE` is outside an `IF` or `CASE` block.");
+          if (top.sawElse) return this.fail("misplaced-block-word", tok, `A second \`ELSE\` in ${this.describe(top)}.`);
           top.sawElse = true;
           i += 1;
           continue;
         }
         case "WHEN": {
+          if (top?.kind !== "CASE") return this.fail("misplaced-block-word", tok, "`WHEN` is outside a `CASE` statement.");
+          if (top.sawElse) return this.fail("misplaced-block-word", tok, `\`WHEN\` follows the \`ELSE\` of ${this.describe(top)}.`);
           const t = scan(toks, i + 1, (k) => isWord(toks[k], "THEN"));
-          if (t < 0 || top?.kind !== "CASE" || top.sawElse) return void (this.gaveUp = true);
+          if (t < 0) return this.noKeyword(toks, i, "WHEN", "THEN", "its condition");
           i = t + 1;
           continue;
         }
         case "CASE": {
           const w = scan(toks, i + 1, (k) => isWord(toks[k], "WHEN"));
-          const t = w < 0 ? -1 : scan(toks, w + 1, (k) => isWord(toks[k], "THEN"));
-          if (t < 0) return void (this.gaveUp = true);
+          if (w < 0) return this.noKeyword(toks, i, "CASE", "WHEN", "the CASE");
+          const t = scan(toks, w + 1, (k) => isWord(toks[k], "THEN"));
+          if (t < 0) return this.noKeyword(toks, w, "WHEN", "THEN", "its condition");
           this.open("CASE", tok);
           i = t + 1;
           continue;
@@ -182,7 +218,7 @@ class Cell {
         case "WHILE":
         case "FOR": {
           const d = scan(toks, i + 1, (k) => isWord(toks[k], "DO"));
-          if (d < 0) return void (this.gaveUp = true);
+          if (d < 0) return this.noKeyword(toks, i, tok.upper!, "DO", tok.upper === "FOR" ? "its query" : "its condition");
           this.open(tok.upper as Kind, tok, label);
           i = d + 1;
           continue;
@@ -199,8 +235,15 @@ class Cell {
           continue;
         }
         case "UNTIL": {
-          const e = scan(toks, i + 1, (k) => isWord(toks[k], "END") && isWord(toks[k + 1], "REPEAT"));
-          if (e < 0 || top?.kind !== "REPEAT") return void (this.gaveUp = true);
+          if (top?.kind !== "REPEAT") return this.fail("misplaced-block-word", tok, "`UNTIL` is outside a `REPEAT` block.");
+          if (this.justOpened === top) return this.fail("incomplete-block", top.tok, `${this.describe(top)} has no statement before its \`UNTIL\`.`);
+          // The condition ends at the first END that is not a CASE expression's:
+          // a wrong closer there is then reported by the ordinary matching.
+          const e = scan(toks, i + 1, (k) => isWord(toks[k], "END"));
+          if (e < 0) {
+            if (!wellFormed(toks, i + 1)) return void (this.gaveUp = true);
+            return this.fail("incomplete-block", tok, "`UNTIL` condition is not followed by `END REPEAT`.");
+          }
           top.sawUntil = true;
           i = e;
           continue;
@@ -213,8 +256,19 @@ class Cell {
     }
   }
 
+  /**
+   * A statement-start word whose required follower (`THEN`, `DO`, `WHEN`) is
+   * nowhere in the fragment. Reported only when the rest of the fragment is
+   * balanced, so a bracket the user has not finished typing stays silent.
+   */
+  private noKeyword(toks: Token[], at: number, word: string, need: string, of: string): void {
+    if (!wellFormed(toks, at + 1)) return void (this.gaveUp = true);
+    this.fail("incomplete-block", toks[at], `\`${word}\` has no \`${need}\` after ${of}.`);
+  }
+
   /** An ordinary statement: nothing opens or closes, unless it hides an opener. */
   private plain(toks: Token[], from: number): void {
+    this.justOpened = undefined;
     if (RAW_LEADS.has(toks[from].upper ?? "")) return;
     let depth = 0;
     for (let i = from; i < toks.length; i++) {
@@ -235,7 +289,9 @@ class Cell {
   // --- the stack -----------------------------------------------------------------
 
   private open(kind: Kind, tok: Token, label?: Token): void {
-    this.stack.push({ kind, tok, label, sawElse: false, sawUntil: false });
+    const b: Block = { kind, tok, label, sawElse: false, sawUntil: false };
+    this.stack.push(b);
+    this.justOpened = b;
   }
 
   private close(toks: Token[], i: number): void {
@@ -247,7 +303,13 @@ class Cell {
     if (j < toks.length) return void (this.gaveUp = true); // more after the closer: do not guess
     const shown = kw === "" ? "END" : `END ${kw}`;
 
+    const empty = this.justOpened;
+    this.justOpened = undefined;
     const top = this.stack.pop();
+    if (top && empty === top && top.kind !== "BEGIN" && top.kind !== "IF" && top.kind !== "CASE") {
+      // `WHILE c DO END WHILE`: the engine wants a statement in a loop (an empty BEGIN is fine).
+      return this.fail("incomplete-block", top.tok, `${this.describe(top)} has no statement in its body.`);
+    }
     if (!top) {
       report(this.ctx, "unmatched-block", "error", end, `\`${shown}\` closes nothing: no block is open here.`);
       this.gaveUp = true;
@@ -266,6 +328,11 @@ class Cell {
       report(this.ctx, "mismatched-block", "error", end,
         `${this.describe(top)} has no UNTIL before \`END REPEAT\`.`);
       this.gaveUp = true;
+      return;
+    }
+    if (label && !top.label) {
+      this.fail("mismatched-block", label,
+        `\`${label.text}\` is an end label, but ${this.describe(top)} has no label.`);
       return;
     }
     if (label && top.label && label.upper !== top.label.upper) {

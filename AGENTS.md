@@ -302,7 +302,7 @@ the second element is the end of the statement). One mechanism covers what
 looked like four checks: exclusive alternatives (`ALL DISTINCT`, `EXTENDED
 CODEGEN`, `FULL LITE`), a mandatory slot with nothing in it (`GRANT ON`,
 `FROM FILEFORMAT`, `TABLE RENAME`), a missing required modifier (`OR VIEW`,
-`GLOBAL VIEW`) and compound-statement shape (`ATOMIC END`, `IF THEN`).
+`GLOBAL VIEW`) and compound-statement shape (`IF THEN`).
 
 **`FORBIDDEN_PAIRS` is an explicit deny-list and must stay one.** A table of
 "adjacencies not seen in the corpus" fires on 21.8% of valid statements --

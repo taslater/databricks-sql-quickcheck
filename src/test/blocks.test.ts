@@ -146,6 +146,42 @@ describe("block structure: valid scripts stay quiet", () => {
   });
 });
 
+describe("block structure: required words and misplaced words", () => {
+  // [script, the code it must raise, or null when the engine accepts it and
+  // the checker must say nothing]. Each was run on a Databricks SQL warehouse.
+  const rows: [string, string | null][] = [
+    ["BEGIN IF 1 = 1 VALUES (1); END IF; END", "incomplete-block"],
+    ["BEGIN IF 1 = 1 THEN VALUES (1); END IF; END", null],
+    ["BEGIN IF 1 = 2 THEN VALUES (1); ELSEIF 1 = 1 VALUES (2); END IF; END", "incomplete-block"],
+    ["BEGIN WHILE false VALUES (1); END WHILE; END", "incomplete-block"],
+    ["BEGIN FOR r AS SELECT 1 AS n VALUES (1); END FOR; END", "incomplete-block"],
+    ["BEGIN CASE 1 WHEN 1 VALUES (1); END CASE; END", "incomplete-block"],
+    ["BEGIN REPEAT VALUES (1); UNTIL true; END", "incomplete-block"],
+    ["BEGIN REPEAT VALUES (1); UNTIL true END WHILE; END", "mismatched-block"],
+    ["BEGIN REPEAT VALUES (1); UNTIL true END REPEAT; END", null],
+    ["BEGIN WHILE false DO END WHILE; END", "incomplete-block"],
+    ["BEGIN lp: LOOP END LOOP lp; END", "incomplete-block"],
+    ["BEGIN WHILE false DO BEGIN END; END WHILE; END", null],
+    ["BEGIN BEGIN END; END", null],
+    ["BEGIN IF 1 = 2 THEN VALUES (1); ELSE VALUES (2); ELSE VALUES (3); END IF; END", "misplaced-block-word"],
+    ["BEGIN IF 1 = 2 THEN VALUES (1); ELSE VALUES (2); ELSEIF 1 = 1 THEN VALUES (3); END IF; END", "misplaced-block-word"],
+    ["BEGIN VALUES (1); ELSE VALUES (2); END", "misplaced-block-word"],
+    ["BEGIN VALUES (1); ELSEIF 1 = 1 THEN VALUES (2); END", "misplaced-block-word"],
+    ["BEGIN CASE 1 WHEN 1 THEN VALUES (1); ELSE VALUES (2); WHEN 2 THEN VALUES (3); END CASE; END", "misplaced-block-word"],
+    ["BEGIN VALUES (1); WHEN 1 THEN VALUES (2); END", "misplaced-block-word"],
+    ["BEGIN VALUES (1); UNTIL true; END", "misplaced-block-word"],
+    ["BEGIN CASE 1 WHEN 1 THEN VALUES (1); WHEN 2 THEN VALUES (2); ELSE VALUES (3); END CASE; END", null],
+    ["BEGIN IF 1 = 1 THEN VALUES (1); END IF a; END", "mismatched-block"],
+    ["BEGIN BEGIN VALUES (1); END a; END", "mismatched-block"],
+  ];
+  for (const [sql, code] of rows) {
+    it(code === null ? `quiet: ${sql}` : `${code}: ${sql}`, () => {
+      if (code === null) clean(sql);
+      else fires(sql, code);
+    });
+  }
+});
+
 describe("block structure: gives up rather than guess", () => {
   it("a lone BEGIN could be a transaction", () => {
     clean("BEGIN; SELECT 1; COMMIT");

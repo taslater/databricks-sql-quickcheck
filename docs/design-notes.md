@@ -88,7 +88,7 @@ One mechanism covers five families that looked like five separate checks:
 | truncation | `TO $`, `OF $`, `TABLE $` | `grant.without-principal` |
 | missing mid-statement slot | `TABLE COMPUTE`, `FROM FILEFORMAT`, `INTO BUCKETS`, `BETWEEN AND` | `analyze-compute-statistics.without-table` |
 | exclusive alternatives | `ALL DISTINCT`, `EXTENDED CODEGEN`, `TEMP EXTERNAL`, `DELETE UPDATE` | `select-clause.all-and-distinct` |
-| compound-statement shape | `BEGIN LOOP`, `ATOMIC END`, `IF THEN`, `DO END` | `compound-stmt.without-body` |
+| compound-statement shape | `BEGIN LOOP`, `IF THEN`, `DO END` | `if-stmt.without-condition` |
 | missing required modifier | `OR VIEW`, `GLOBAL VIEW`, `WITH AS` | `create-view.or-without-replace` |
 
 Predicted yield was 63 of the 202 then-missed cases. **Delivered: 48**, because
