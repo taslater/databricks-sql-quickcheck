@@ -1,32 +1,29 @@
 # Changelog
 
-## Unreleased
+## 0.4.0 (2026-11-06)
 
 - **SQL scripting block structure** (#11). A new pass matches block openers and
   closers across statements: a missing `END`, `END IF`, `END WHILE` or `UNTIL`,
   a closer for the wrong block, a stray `END`, a label that does not match, a
   missing `THEN` or `DO`, an `ELSE`/`ELSEIF`/`WHEN`/`UNTIL` out of place, and a
   block left open when a notebook cell ends. Every one is an error because a
-  Databricks SQL warehouse rejects each; the design and the traps it must stay
-  quiet on are in `docs/scripting.md`.
+  Databricks SQL warehouse rejects each. The design, and the traps it has to
+  stay quiet on, are in `docs/scripting.md`.
+- **A query bracket right after a subquery's alias** is an error (#5):
+  `(SELECT a FROM t) x (SELECT b FROM u) y`. After an alias the only bracket
+  allowed is the column alias list, so a comma went missing.
+- **Two numbers with nothing between them** are an error (#6):
+  `IN (2, 3, 5 7)`, `SELECT 1 2`, `1.2.3`. Digit-leading names such as
+  `2012_s` are not numbers and stay quiet.
+- **Three names in a row in a FROM list** are a warning (#7):
+  `FROM store_returns, date_dim d1, date_dim d2 date_dim d3, store`.
+  Keyword aliases, time travel, `TABLESAMPLE` and qualified names stay quiet.
 - **Fixed a false positive on `BEGIN ATOMIC END`.** It was reported as a block
   with no statements; the engine accepts it, and `BEGIN END`.
 - **Fixed false positives on scripting labels and keyword-like names**: a
   label that is a keyword (`LEAVE from`, `select: BEGIN`), a JSON key named
   `then` or `end` (`j:then`), a variable named `end` inside `CASE WHEN end = 1`
   or `IF then = 1`, and a variable named `case`, as in `VALUES (case)`.
-
-Three missed errors found in the `delete-comma` mutants (#5, #6, #7).
-
-- **A query bracket right after a subquery's alias** is an error:
-  `(SELECT a FROM t) x (SELECT b FROM u) y`. After an alias the only bracket
-  allowed is the column alias list, so a comma went missing.
-- **Two numbers with nothing between them** are an error:
-  `IN (2, 3, 5 7)`, `SELECT 1 2`, `1.2.3`. Digit-leading names such as
-  `2012_s` are not numbers and stay quiet.
-- **Three names in a row in a FROM list** are a warning:
-  `FROM store_returns, date_dim d1, date_dim d2 date_dim d3, store`.
-  Keyword aliases, time travel, `TABLESAMPLE` and qualified names stay quiet.
 
 ## 0.3.1 (2026-11-06)
 

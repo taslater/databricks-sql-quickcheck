@@ -2,7 +2,7 @@
   "name": "databricks-sql-quickcheck",
   "displayName": "Quickcheck for Databricks SQL",
   "description": "A Databricks SQL language mode whose highlighting understands backslash escapes, raw strings and notebook cells, plus instant, as-you-type structural syntax checks: brackets, quotes, commas, operators, CASE/END.",
-  "version": "0.3.1",
+  "version": "0.4.0",
   "publisher": "ThomasAndrewSlater",
   "icon": "images/icon.png",
   "pricing": "Free",
