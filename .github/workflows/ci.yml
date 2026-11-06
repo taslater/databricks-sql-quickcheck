@@ -41,7 +41,7 @@ jobs:
     env:
       # Bump deliberately, in its own PR, so a corpus change is never mixed
       # with a checker change.
-      CORPUS_REF: a5073ec3c7bdba4e480a09af66408242d809ecae
+      CORPUS_REF: 19af16d34a570906cd194379c0bd6c316ca7c94c
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
