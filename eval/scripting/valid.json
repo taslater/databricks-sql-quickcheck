@@ -1,0 +1,2431 @@
+{
+ "_about": "Scripts run on a Databricks SQL warehouse (channel Current, v2026.43) on 2026-11-06. Every entry in 'valid' ran successfully (a parse error would have failed it); every entry in 'rejected' was refused by the engine. The block-structure checker must report nothing on 'valid'. Synthetic: no real tables, no real data.",
+ "valid": [
+  {
+   "id": "v001",
+   "tags": [
+    "begin",
+    "end"
+   ],
+   "sql": "BEGIN VALUES (1); END"
+  },
+  {
+   "id": "v002",
+   "tags": [
+    "begin",
+    "atomic"
+   ],
+   "sql": "BEGIN ATOMIC VALUES (1); END"
+  },
+  {
+   "id": "v003",
+   "tags": [
+    "begin",
+    "declare",
+    "default"
+   ],
+   "sql": "BEGIN DECLARE a INT DEFAULT 1; VALUES (a); END"
+  },
+  {
+   "id": "v004",
+   "tags": [
+    "if",
+    "end-if"
+   ],
+   "sql": "BEGIN IF 1 = 1 THEN VALUES (1); END IF; END"
+  },
+  {
+   "id": "v005",
+   "tags": [
+    "if",
+    "elseif",
+    "else",
+    "end-if"
+   ],
+   "sql": "BEGIN DECLARE c INT DEFAULT 3; IF c < 2 THEN VALUES (1); ELSEIF c < 4 THEN VALUES (2); ELSE VALUES (0); END IF; END"
+  },
+  {
+   "id": "v006",
+   "tags": [
+    "if",
+    "multi-elseif"
+   ],
+   "sql": "BEGIN DECLARE c INT DEFAULT 3; IF c = 1 THEN VALUES (1); ELSEIF c = 2 THEN VALUES (2); ELSEIF c = 3 THEN VALUES (3); ELSEIF c = 4 THEN VALUES (4); END IF; END"
+  },
+  {
+   "id": "v007",
+   "tags": [
+    "while",
+    "end-while"
+   ],
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; WHILE n < 3 DO SET n = n + 1; END WHILE; VALUES (n); END"
+  },
+  {
+   "id": "v009",
+   "tags": [
+    "repeat",
+    "until",
+    "end-repeat"
+   ],
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; REPEAT SET n = n + 1; UNTIL n >= 3 END REPEAT; VALUES (n); END"
+  },
+  {
+   "id": "v010",
+   "tags": [
+    "for",
+    "end-for"
+   ],
+   "sql": "BEGIN DECLARE s INT DEFAULT 0; FOR SELECT id FROM range(3) DO SET s = s + 1; END FOR; VALUES (s); END"
+  },
+  {
+   "id": "v011",
+   "tags": [
+    "for",
+    "var",
+    "end-for"
+   ],
+   "sql": "BEGIN DECLARE s INT DEFAULT 0; FOR r AS SELECT id FROM range(3) DO SET s = s + r.id::INT; END FOR; VALUES (s); END"
+  },
+  {
+   "id": "v012",
+   "tags": [
+    "case-stmt",
+    "simple",
+    "end-case"
+   ],
+   "sql": "BEGIN DECLARE c INT DEFAULT 2; CASE c WHEN 1 THEN VALUES (1); WHEN 2 THEN VALUES (2); END CASE; END"
+  },
+  {
+   "id": "v013",
+   "tags": [
+    "case-stmt",
+    "simple",
+    "else",
+    "end-case"
+   ],
+   "sql": "BEGIN DECLARE c INT DEFAULT 5; CASE c WHEN 1 THEN VALUES (1); ELSE VALUES (0); END CASE; END"
+  },
+  {
+   "id": "v014",
+   "tags": [
+    "case-stmt",
+    "searched",
+    "end-case"
+   ],
+   "sql": "BEGIN DECLARE c INT DEFAULT 2; CASE WHEN c < 2 THEN VALUES (1); WHEN c < 4 THEN VALUES (2); END CASE; END"
+  },
+  {
+   "id": "v015",
+   "tags": [
+    "case-stmt",
+    "searched",
+    "else",
+    "end-case"
+   ],
+   "sql": "BEGIN DECLARE c INT DEFAULT 9; CASE WHEN c < 2 THEN VALUES (1); ELSE VALUES (0); END CASE; END"
+  },
+  {
+   "id": "v018",
+   "tags": [
+    "label",
+    "while",
+    "label-repeated",
+    "leave"
+   ],
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; w: WHILE n < 5 DO SET n = n + 1; IF n = 2 THEN LEAVE w; END IF; END WHILE w; VALUES (n); END"
+  },
+  {
+   "id": "v019",
+   "tags": [
+    "label",
+    "while",
+    "no-repeat",
+    "iterate"
+   ],
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; w: WHILE n < 3 DO SET n = n + 1; ITERATE w; END WHILE; VALUES (n); END"
+  },
+  {
+   "id": "v020",
+   "tags": [
+    "label",
+    "loop",
+    "label-repeated",
+    "leave"
+   ],
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; l: LOOP SET n = n + 1; IF n > 2 THEN LEAVE l; END IF; END LOOP l; END"
+  },
+  {
+   "id": "v021",
+   "tags": [
+    "label",
+    "loop",
+    "no-repeat",
+    "leave"
+   ],
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; l: LOOP SET n = n + 1; IF n > 2 THEN LEAVE l; END IF; END LOOP; END"
+  },
+  {
+   "id": "v022",
+   "tags": [
+    "label",
+    "repeat",
+    "label-repeated",
+    "iterate"
+   ],
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; r: REPEAT SET n = n + 1; IF n = 1 THEN ITERATE r; END IF; UNTIL n >= 3 END REPEAT r; END"
+  },
+  {
+   "id": "v023",
+   "tags": [
+    "label",
+    "repeat",
+    "no-repeat"
+   ],
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; r: REPEAT SET n = n + 1; UNTIL n >= 3 END REPEAT; END"
+  },
+  {
+   "id": "v024",
+   "tags": [
+    "label",
+    "for",
+    "label-repeated"
+   ],
+   "sql": "BEGIN f: FOR x AS SELECT id FROM range(3) DO IF x.id = 1 THEN LEAVE f; END IF; END FOR f; END"
+  },
+  {
+   "id": "v025",
+   "tags": [
+    "label",
+    "for",
+    "no-repeat"
+   ],
+   "sql": "BEGIN f: FOR x AS SELECT id FROM range(3) DO VALUES (x.id); END FOR; END"
+  },
+  {
+   "id": "v026",
+   "tags": [
+    "label",
+    "for-no-var",
+    "label-repeated"
+   ],
+   "sql": "BEGIN f: FOR SELECT id FROM range(2) DO ITERATE f; END FOR f; END"
+  },
+  {
+   "id": "v027",
+   "tags": [
+    "label",
+    "sibling-reuse"
+   ],
+   "sql": "BEGIN a: BEGIN VALUES (1); END a; a: BEGIN VALUES (2); END a; END"
+  },
+  {
+   "id": "v028",
+   "tags": [
+    "label",
+    "sibling-reuse",
+    "loops"
+   ],
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; l: LOOP SET n = n + 1; LEAVE l; END LOOP l; l: LOOP SET n = n + 1; LEAVE l; END LOOP l; VALUES (n); END"
+  },
+  {
+   "id": "v029",
+   "tags": [
+    "label",
+    "sibling-reuse",
+    "mixed"
+   ],
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; x: WHILE n < 1 DO SET n = n + 1; END WHILE x; x: REPEAT SET n = n + 1; UNTIL n > 3 END REPEAT x; x: BEGIN VALUES (n); END x; END"
+  },
+  {
+   "id": "v031",
+   "tags": [
+    "label",
+    "leave-outer"
+   ],
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; o: LOOP i: LOOP SET n = n + 1; IF n > 1 THEN LEAVE o; END IF; END LOOP i; END LOOP o; VALUES (n); END"
+  },
+  {
+   "id": "v032",
+   "tags": [
+    "label",
+    "iterate-outer"
+   ],
+   "sql": "BEGIN DECLARE i INT DEFAULT 0; DECLARE j INT DEFAULT 0; o: WHILE i < 3 DO SET i = i + 1; SET j = 0; WHILE j < 3 DO SET j = j + 1; IF j = 2 THEN ITERATE o; END IF; END WHILE; END WHILE o; VALUES (i); END"
+  },
+  {
+   "id": "v033",
+   "tags": [
+    "label",
+    "leave-begin"
+   ],
+   "sql": "BEGIN b: BEGIN VALUES (1); LEAVE b; VALUES (2); END b; END"
+  },
+  {
+   "id": "v035",
+   "tags": [
+    "label",
+    "case"
+   ],
+   "sql": "BEGIN DECLARE c INT DEFAULT 1; k: BEGIN CASE c WHEN 1 THEN LEAVE k; ELSE VALUES (0); END CASE; END k; END"
+  },
+  {
+   "id": "v036",
+   "tags": [
+    "nest",
+    "loop",
+    "if",
+    "case",
+    "begin"
+   ],
+   "sql": "BEGIN DECLARE c INT DEFAULT 1; CASE c WHEN 1 THEN IF c = 1 THEN l: LOOP LEAVE l; END LOOP l; END IF; END CASE; END"
+  },
+  {
+   "id": "v038",
+   "tags": [
+    "nest",
+    "for",
+    "while",
+    "if"
+   ],
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; FOR r AS SELECT id FROM range(2) DO WHILE n < 2 DO IF n = 0 THEN SET n = n + 1; ELSE SET n = n + 1; END IF; END WHILE; END FOR; VALUES (n); END"
+  },
+  {
+   "id": "v039",
+   "tags": [
+    "nest",
+    "repeat",
+    "case",
+    "if",
+    "begin"
+   ],
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; REPEAT SET n = n + 1; CASE WHEN n = 1 THEN IF n = 1 THEN BEGIN VALUES (n); END; END IF; ELSE VALUES (0); END CASE; UNTIL n >= 2 END REPEAT; END"
+  },
+  {
+   "id": "v041",
+   "tags": [
+    "nest",
+    "if-in-if-in-if"
+   ],
+   "sql": "BEGIN IF 1=1 THEN IF 2=2 THEN IF 3=3 THEN IF 4=4 THEN VALUES (4); END IF; END IF; END IF; END IF; END"
+  },
+  {
+   "id": "v042",
+   "tags": [
+    "nest",
+    "loops-in-loops"
+   ],
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; a: LOOP b: LOOP c: LOOP SET n = n + 1; LEAVE a; END LOOP c; END LOOP b; END LOOP a; VALUES (n); END"
+  },
+  {
+   "id": "v043",
+   "tags": [
+    "nest",
+    "case-in-case"
+   ],
+   "sql": "BEGIN DECLARE x INT DEFAULT 1; CASE x WHEN 1 THEN CASE WHEN x > 0 THEN CASE x WHEN 1 THEN VALUES (1); END CASE; END CASE; END CASE; END"
+  },
+  {
+   "id": "v044",
+   "tags": [
+    "nest",
+    "elseif-with-nested"
+   ],
+   "sql": "BEGIN DECLARE x INT DEFAULT 2; IF x = 1 THEN VALUES (1); ELSEIF x = 2 THEN IF x > 1 THEN VALUES (2); ELSE VALUES (3); END IF; ELSE WHILE FALSE DO VALUES (0); END WHILE; END IF; END"
+  },
+  {
+   "id": "v045",
+   "tags": [
+    "nest",
+    "repeat-in-repeat"
+   ],
+   "sql": "BEGIN DECLARE i INT DEFAULT 0; DECLARE j INT DEFAULT 0; REPEAT SET i = i + 1; REPEAT SET j = j + 1; UNTIL j >= 2 END REPEAT; UNTIL i >= 2 END REPEAT; VALUES (i, j); END"
+  },
+  {
+   "id": "v046",
+   "tags": [
+    "nest",
+    "for-in-for"
+   ],
+   "sql": "BEGIN DECLARE s INT DEFAULT 0; FOR a AS SELECT id FROM range(2) DO FOR b AS SELECT id FROM range(2) DO SET s = s + 1; END FOR; END FOR; VALUES (s); END"
+  },
+  {
+   "id": "v048",
+   "tags": [
+    "declare",
+    "handler",
+    "exit",
+    "begin-end"
+   ],
+   "sql": "BEGIN DECLARE EXIT HANDLER FOR DIVIDE_BY_ZERO BEGIN VALUES (0); END; SELECT 10/0; END"
+  },
+  {
+   "id": "v049",
+   "tags": [
+    "declare",
+    "handler",
+    "exit",
+    "single-stmt"
+   ],
+   "sql": "BEGIN DECLARE EXIT HANDLER FOR DIVIDE_BY_ZERO VALUES (0); SELECT 10/0; END"
+  },
+  {
+   "id": "v050",
+   "tags": [
+    "declare",
+    "handler",
+    "continue",
+    "begin-end"
+   ],
+   "sql": "BEGIN DECLARE CONTINUE HANDLER FOR DIVIDE_BY_ZERO BEGIN VALUES (0); END; SELECT 10/0; VALUES (1); END"
+  },
+  {
+   "id": "v051",
+   "tags": [
+    "declare",
+    "handler",
+    "continue",
+    "single-stmt"
+   ],
+   "sql": "BEGIN DECLARE CONTINUE HANDLER FOR DIVIDE_BY_ZERO VALUES (0); SELECT 10/0; VALUES (1); END"
+  },
+  {
+   "id": "v052",
+   "tags": [
+    "declare",
+    "handler",
+    "sqlexception"
+   ],
+   "sql": "BEGIN DECLARE EXIT HANDLER FOR SQLEXCEPTION BEGIN VALUES (0); END; SELECT 10/0; END"
+  },
+  {
+   "id": "v053",
+   "tags": [
+    "declare",
+    "handler",
+    "sqlstate"
+   ],
+   "sql": "BEGIN DECLARE EXIT HANDLER FOR SQLSTATE '22012' VALUES (0); SELECT 10/0; END"
+  },
+  {
+   "id": "v054",
+   "tags": [
+    "declare",
+    "handler",
+    "not-found"
+   ],
+   "sql": "BEGIN DECLARE CONTINUE HANDLER FOR NOT FOUND VALUES (0); VALUES (1); END"
+  },
+  {
+   "id": "v055",
+   "tags": [
+    "declare",
+    "condition",
+    "handler"
+   ],
+   "sql": "BEGIN DECLARE my_cond CONDITION FOR SQLSTATE '45000'; DECLARE EXIT HANDLER FOR my_cond BEGIN VALUES (0); END; SIGNAL my_cond; END"
+  },
+  {
+   "id": "v056",
+   "tags": [
+    "declare",
+    "condition",
+    "no-sqlstate"
+   ],
+   "sql": "BEGIN DECLARE my_cond CONDITION; VALUES (1); END"
+  },
+  {
+   "id": "v057",
+   "tags": [
+    "signal",
+    "sqlstate",
+    "message"
+   ],
+   "sql": "BEGIN DECLARE EXIT HANDLER FOR SQLSTATE '45000' VALUES (0); SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'nope'; END"
+  },
+  {
+   "id": "v059",
+   "tags": [
+    "resignal",
+    "handler",
+    "nested"
+   ],
+   "sql": "BEGIN DECLARE EXIT HANDLER FOR SQLSTATE '45000' VALUES (9); BEGIN DECLARE EXIT HANDLER FOR DIVIDE_BY_ZERO BEGIN SIGNAL SQLSTATE '45000'; END; SELECT 10/0; END; END"
+  },
+  {
+   "id": "v060",
+   "tags": [
+    "resignal"
+   ],
+   "sql": "BEGIN DECLARE EXIT HANDLER FOR SQLSTATE '45000' VALUES (9); BEGIN DECLARE EXIT HANDLER FOR SQLSTATE '45000' BEGIN RESIGNAL; END; SIGNAL SQLSTATE '45000'; END; END"
+  },
+  {
+   "id": "v061",
+   "tags": [
+    "get-diagnostics",
+    "condition",
+    "handler"
+   ],
+   "sql": "BEGIN DECLARE msg STRING; DECLARE EXIT HANDLER FOR DIVIDE_BY_ZERO BEGIN GET DIAGNOSTICS CONDITION 1 msg = MESSAGE_TEXT; VALUES (msg); END; SELECT 10/0; END"
+  },
+  {
+   "id": "v062",
+   "tags": [
+    "get-diagnostics",
+    "row-count"
+   ],
+   "sql": "BEGIN DECLARE rc BIGINT; VALUES (1); GET DIAGNOSTICS rc = ROW_COUNT; VALUES (rc); END"
+  },
+  {
+   "id": "v063",
+   "tags": [
+    "declare",
+    "multiple",
+    "vars"
+   ],
+   "sql": "BEGIN DECLARE a, b INT DEFAULT 1; VALUES (a, b); END"
+  },
+  {
+   "id": "v064",
+   "tags": [
+    "declare",
+    "types"
+   ],
+   "sql": "BEGIN DECLARE s STRING DEFAULT 'x'; DECLARE d DOUBLE DEFAULT 1.5; DECLARE b BOOLEAN DEFAULT TRUE; DECLARE arr ARRAY<INT> DEFAULT array(1,2); VALUES (s, d, b, arr); END"
+  },
+  {
+   "id": "v065",
+   "tags": [
+    "declare",
+    "variable-equals-default"
+   ],
+   "sql": "BEGIN DECLARE a INT = 4; VALUES (a); END"
+  },
+  {
+   "id": "v066",
+   "tags": [
+    "declare",
+    "variable",
+    "keyword"
+   ],
+   "sql": "BEGIN DECLARE VARIABLE a INT DEFAULT 4; VALUES (a); END"
+  },
+  {
+   "id": "v068",
+   "tags": [
+    "loop",
+    "end-loop",
+    "leave",
+    "labelled",
+    "retry-of-v008"
+   ],
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; l: LOOP SET n = n + 1; IF n > 2 THEN LEAVE l; END IF; END LOOP l; VALUES (n); END"
+  },
+  {
+   "id": "v069",
+   "tags": [
+    "nest",
+    "while",
+    "if",
+    "loop",
+    "retry-of-v037"
+   ],
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; WHILE n < 2 DO SET n = n + 1; IF n > 0 THEN l: LOOP LEAVE l; END LOOP l; END IF; END WHILE; END"
+  },
+  {
+   "id": "v071",
+   "tags": [
+    "nest",
+    "5-deep",
+    "with",
+    "outer",
+    "label"
+   ],
+   "sql": "BEGIN ow: BEGIN IF 1=1 THEN WHILE 1=1 DO CASE WHEN 1=1 THEN l: LOOP LEAVE l; END LOOP l; END CASE; LEAVE ow; END WHILE; END IF; END ow; END"
+  },
+  {
+   "id": "v072",
+   "tags": [
+    "label",
+    "nested-block",
+    "inside",
+    "outer",
+    "retry-of-v047"
+   ],
+   "sql": "BEGIN b1: BEGIN l: LOOP b2: BEGIN LEAVE l; END b2; END LOOP l; END b1; END"
+  },
+  {
+   "id": "v073",
+   "tags": [
+    "lookalike",
+    "function-if"
+   ],
+   "sql": "BEGIN SELECT if(1 > 0, 'a', 'b'); END"
+  },
+  {
+   "id": "v074",
+   "tags": [
+    "lookalike",
+    "function-iff"
+   ],
+   "sql": "BEGIN SELECT iff(1 > 0, 'a', 'b'); END"
+  },
+  {
+   "id": "v075",
+   "tags": [
+    "lookalike",
+    "function-repeat"
+   ],
+   "sql": "BEGIN SELECT repeat('x', 3); END"
+  },
+  {
+   "id": "v076",
+   "tags": [
+    "lookalike",
+    "function-if-in-if-cond"
+   ],
+   "sql": "BEGIN IF if(1 > 0, TRUE, FALSE) THEN VALUES (1); END IF; END"
+  },
+  {
+   "id": "v077",
+   "tags": [
+    "lookalike",
+    "function-repeat-in-repeat-stmt"
+   ],
+   "sql": "BEGIN DECLARE s STRING DEFAULT ''; REPEAT SET s = s || repeat('a', 2); UNTIL length(s) >= 4 END REPEAT; VALUES (s); END"
+  },
+  {
+   "id": "v078",
+   "tags": [
+    "lookalike",
+    "function-if-in-while-cond"
+   ],
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; WHILE if(n < 2, TRUE, FALSE) DO SET n = n + 1; END WHILE; VALUES (n); END"
+  },
+  {
+   "id": "v079",
+   "tags": [
+    "lookalike",
+    "function-if-in-until"
+   ],
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; REPEAT SET n = n + 1; UNTIL if(n >= 2, TRUE, FALSE) END REPEAT; END"
+  },
+  {
+   "id": "v080",
+   "tags": [
+    "case-expr",
+    "searched",
+    "in-select"
+   ],
+   "sql": "BEGIN SELECT CASE WHEN 1 = 1 THEN 'a' ELSE 'b' END; END"
+  },
+  {
+   "id": "v081",
+   "tags": [
+    "case-expr",
+    "simple",
+    "in-select"
+   ],
+   "sql": "BEGIN SELECT CASE 1 WHEN 1 THEN 'a' WHEN 2 THEN 'b' END AS c; END"
+  },
+  {
+   "id": "v082",
+   "tags": [
+    "case-expr",
+    "nested"
+   ],
+   "sql": "BEGIN SELECT CASE WHEN 1=1 THEN CASE 2 WHEN 2 THEN 'x' ELSE 'y' END ELSE 'z' END; END"
+  },
+  {
+   "id": "v083",
+   "tags": [
+    "case-expr",
+    "in-if-cond"
+   ],
+   "sql": "BEGIN IF CASE WHEN 1=1 THEN TRUE ELSE FALSE END THEN VALUES (1); END IF; END"
+  },
+  {
+   "id": "v084",
+   "tags": [
+    "case-expr",
+    "in-set"
+   ],
+   "sql": "BEGIN DECLARE v STRING; SET v = CASE WHEN 1=1 THEN 'p' ELSE 'q' END; VALUES (v); END"
+  },
+  {
+   "id": "v085",
+   "tags": [
+    "case-expr",
+    "in-while-cond"
+   ],
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; WHILE CASE WHEN n < 2 THEN TRUE ELSE FALSE END DO SET n = n + 1; END WHILE; VALUES (n); END"
+  },
+  {
+   "id": "v086",
+   "tags": [
+    "case-expr",
+    "in-function-arg"
+   ],
+   "sql": "BEGIN SELECT upper(CASE WHEN 1=1 THEN 'a' ELSE 'b' END); END"
+  },
+  {
+   "id": "v087",
+   "tags": [
+    "case-expr",
+    "in-until"
+   ],
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; REPEAT SET n = n + 1; UNTIL CASE WHEN n >= 2 THEN TRUE ELSE FALSE END END REPEAT; END"
+  },
+  {
+   "id": "v088",
+   "tags": [
+    "case-expr",
+    "in-case-stmt-scrutinee"
+   ],
+   "sql": "BEGIN CASE CASE WHEN 1=1 THEN 1 ELSE 2 END WHEN 1 THEN VALUES (1); ELSE VALUES (2); END CASE; END"
+  },
+  {
+   "id": "v089",
+   "tags": [
+    "case-expr",
+    "in-case-stmt-when"
+   ],
+   "sql": "BEGIN CASE WHEN CASE WHEN 1=1 THEN TRUE ELSE FALSE END THEN VALUES (1); ELSE VALUES (2); END CASE; END"
+  },
+  {
+   "id": "v090",
+   "tags": [
+    "case-expr",
+    "in-for-query"
+   ],
+   "sql": "BEGIN FOR r AS SELECT CASE WHEN id = 0 THEN 'z' ELSE 'nz' END AS k FROM range(2) DO VALUES (r.k); END FOR; END"
+  },
+  {
+   "id": "v091",
+   "tags": [
+    "case-expr",
+    "in-if-then-body-and-stmt-case"
+   ],
+   "sql": "BEGIN DECLARE c INT DEFAULT 1; IF c = 1 THEN SELECT CASE c WHEN 1 THEN 'one' END; CASE c WHEN 1 THEN SELECT CASE WHEN c > 0 THEN 'pos' END; END CASE; END IF; END"
+  },
+  {
+   "id": "v092",
+   "tags": [
+    "case-expr",
+    "in-elseif-cond"
+   ],
+   "sql": "BEGIN DECLARE c INT DEFAULT 2; IF c = 1 THEN VALUES (1); ELSEIF CASE c WHEN 2 THEN TRUE ELSE FALSE END THEN VALUES (2); END IF; END"
+  },
+  {
+   "id": "v093",
+   "tags": [
+    "case-expr",
+    "in-for-body"
+   ],
+   "sql": "BEGIN FOR r AS SELECT id FROM range(2) DO SELECT CASE WHEN r.id = 0 THEN 'a' ELSE 'b' END; END FOR; END"
+  },
+  {
+   "id": "v094",
+   "tags": [
+    "string",
+    "keywords"
+   ],
+   "sql": "BEGIN SELECT 'END IF; END LOOP; END WHILE; END; BEGIN IF REPEAT UNTIL FOR LOOP'; END"
+  },
+  {
+   "id": "v095",
+   "tags": [
+    "string",
+    "end-case"
+   ],
+   "sql": "BEGIN DECLARE s STRING DEFAULT 'END CASE; END FOR'; VALUES (s); END"
+  },
+  {
+   "id": "v096",
+   "tags": [
+    "string",
+    "semicolon-inside-string"
+   ],
+   "sql": "BEGIN SELECT 'a;b;END;'; SELECT \"c;END\"; END"
+  },
+  {
+   "id": "v097",
+   "tags": [
+    "string",
+    "in-if-cond"
+   ],
+   "sql": "BEGIN IF 'END IF' = 'END IF' THEN VALUES ('THEN END IF'); END IF; END"
+  },
+  {
+   "id": "v098",
+   "tags": [
+    "string",
+    "in-loop"
+   ],
+   "sql": "BEGIN l: LOOP SELECT 'END LOOP l'; LEAVE l; END LOOP l; END"
+  },
+  {
+   "id": "v099",
+   "tags": [
+    "comment",
+    "line-comment-keywords"
+   ],
+   "sql": "BEGIN -- END IF; END LOOP\n VALUES (1); -- BEGIN\nEND"
+  },
+  {
+   "id": "v100",
+   "tags": [
+    "comment",
+    "block-comment-keywords"
+   ],
+   "sql": "BEGIN /* END; END IF; BEGIN LOOP */ VALUES (1); /* UNTIL */ END"
+  },
+  {
+   "id": "v101",
+   "tags": [
+    "comment",
+    "multiline-block-comment"
+   ],
+   "sql": "BEGIN /* a\n END WHILE;\n REPEAT\n*/ VALUES (1); END"
+  },
+  {
+   "id": "v102",
+   "tags": [
+    "comment",
+    "between-every-token"
+   ],
+   "sql": "BEGIN /*1*/ DECLARE /*2*/ n /*3*/ INT /*4*/ DEFAULT /*5*/ 0 /*6*/ ; /*7*/ WHILE /*8*/ n /*9*/ < /*10*/ 2 /*11*/ DO /*12*/ SET /*13*/ n /*14*/ = /*15*/ n + 1 /*16*/ ; /*17*/ END /*18*/ WHILE /*19*/ ; /*20*/ END"
+  },
+  {
+   "id": "v103",
+   "tags": [
+    "comment",
+    "between-every-token-if"
+   ],
+   "sql": "BEGIN IF /*a*/ 1 = 1 /*b*/ THEN /*c*/ VALUES (1); /*d*/ ELSEIF /*e*/ 2 = 2 /*f*/ THEN VALUES (2); ELSE /*g*/ VALUES (3); END /*h*/ IF /*i*/ ; END"
+  },
+  {
+   "id": "v104",
+   "tags": [
+    "comment",
+    "line-comments-between-tokens"
+   ],
+   "sql": "BEGIN -- c1\nIF -- c2\n1 = 1 -- c3\nTHEN -- c4\nVALUES (1); -- c5\nEND -- c6\nIF; -- c7\nEND -- c8"
+  },
+  {
+   "id": "v105",
+   "tags": [
+    "comment",
+    "line-comment-at-very-end"
+   ],
+   "sql": "BEGIN VALUES (1); END -- trailing END IF comment"
+  },
+  {
+   "id": "v106",
+   "tags": [
+    "comment",
+    "unterminated-looking-hash"
+   ],
+   "sql": "BEGIN VALUES (1); -- it's a comment with a quote ' and END\nEND"
+  },
+  {
+   "id": "v107",
+   "tags": [
+    "comment",
+    "block-comment-at-end"
+   ],
+   "sql": "BEGIN VALUES (1); END /* BEGIN */"
+  },
+  {
+   "id": "v108",
+   "tags": [
+    "backtick",
+    "identifiers",
+    "keywords"
+   ],
+   "sql": "BEGIN SELECT 1 AS `END`, 2 AS `BEGIN`, 3 AS `IF`, 4 AS `LOOP`, 5 AS `UNTIL`, 6 AS `REPEAT`, 7 AS `FOR`; END"
+  },
+  {
+   "id": "v109",
+   "tags": [
+    "backtick",
+    "end-in-from"
+   ],
+   "sql": "BEGIN SELECT `end` FROM VALUES (1) AS t(`end`); END"
+  },
+  {
+   "id": "v110",
+   "tags": [
+    "backtick",
+    "variable",
+    "names"
+   ],
+   "sql": "BEGIN DECLARE `end` INT DEFAULT 1; VALUES (`end`); END"
+  },
+  {
+   "id": "v111",
+   "tags": [
+    "backtick",
+    "label?"
+   ],
+   "sql": "BEGIN `lp`: LOOP LEAVE `lp`; END LOOP `lp`; END"
+  },
+  {
+   "id": "v112",
+   "tags": [
+    "probe",
+    "alias",
+    "loop"
+   ],
+   "sql": "BEGIN SELECT 1 AS loop; END"
+  },
+  {
+   "id": "v113",
+   "tags": [
+    "probe",
+    "alias",
+    "repeat"
+   ],
+   "sql": "BEGIN SELECT 1 AS repeat; END"
+  },
+  {
+   "id": "v114",
+   "tags": [
+    "probe",
+    "alias",
+    "until"
+   ],
+   "sql": "BEGIN SELECT 1 AS until; END"
+  },
+  {
+   "id": "v115",
+   "tags": [
+    "probe",
+    "alias",
+    "end"
+   ],
+   "sql": "BEGIN SELECT 1 AS end; END"
+  },
+  {
+   "id": "v116",
+   "tags": [
+    "probe",
+    "alias",
+    "begin"
+   ],
+   "sql": "BEGIN SELECT 1 AS begin; END"
+  },
+  {
+   "id": "v117",
+   "tags": [
+    "probe",
+    "alias",
+    "if"
+   ],
+   "sql": "BEGIN SELECT 1 AS if; END"
+  },
+  {
+   "id": "v118",
+   "tags": [
+    "probe",
+    "alias",
+    "for"
+   ],
+   "sql": "BEGIN SELECT 1 AS for; END"
+  },
+  {
+   "id": "v119",
+   "tags": [
+    "probe",
+    "alias",
+    "while"
+   ],
+   "sql": "BEGIN SELECT 1 AS while; END"
+  },
+  {
+   "id": "v120",
+   "tags": [
+    "probe",
+    "alias",
+    "case"
+   ],
+   "sql": "BEGIN SELECT 1 AS case; END"
+  },
+  {
+   "id": "v121",
+   "tags": [
+    "probe",
+    "alias",
+    "do"
+   ],
+   "sql": "BEGIN SELECT 1 AS do; END"
+  },
+  {
+   "id": "v122",
+   "tags": [
+    "probe",
+    "alias",
+    "then"
+   ],
+   "sql": "BEGIN SELECT 1 AS then; END"
+  },
+  {
+   "id": "v123",
+   "tags": [
+    "probe",
+    "alias",
+    "else"
+   ],
+   "sql": "BEGIN SELECT 1 AS else; END"
+  },
+  {
+   "id": "v124",
+   "tags": [
+    "probe",
+    "alias",
+    "elseif"
+   ],
+   "sql": "BEGIN SELECT 1 AS elseif; END"
+  },
+  {
+   "id": "v125",
+   "tags": [
+    "probe",
+    "alias",
+    "leave"
+   ],
+   "sql": "BEGIN SELECT 1 AS leave; END"
+  },
+  {
+   "id": "v126",
+   "tags": [
+    "probe",
+    "alias",
+    "iterate"
+   ],
+   "sql": "BEGIN SELECT 1 AS iterate; END"
+  },
+  {
+   "id": "v127",
+   "tags": [
+    "probe",
+    "alias",
+    "declare"
+   ],
+   "sql": "BEGIN SELECT 1 AS declare; END"
+  },
+  {
+   "id": "v128",
+   "tags": [
+    "probe",
+    "alias",
+    "handler"
+   ],
+   "sql": "BEGIN SELECT 1 AS handler; END"
+  },
+  {
+   "id": "v129",
+   "tags": [
+    "probe",
+    "alias",
+    "atomic"
+   ],
+   "sql": "BEGIN SELECT 1 AS atomic; END"
+  },
+  {
+   "id": "v130",
+   "tags": [
+    "probe",
+    "declare-name",
+    "loop"
+   ],
+   "sql": "BEGIN DECLARE loop INT DEFAULT 1; VALUES (loop); END"
+  },
+  {
+   "id": "v131",
+   "tags": [
+    "probe",
+    "declare-name",
+    "repeat"
+   ],
+   "sql": "BEGIN DECLARE repeat INT DEFAULT 1; VALUES (repeat); END"
+  },
+  {
+   "id": "v132",
+   "tags": [
+    "probe",
+    "declare-name",
+    "until"
+   ],
+   "sql": "BEGIN DECLARE until INT DEFAULT 1; VALUES (until); END"
+  },
+  {
+   "id": "v133",
+   "tags": [
+    "probe",
+    "declare-name",
+    "end"
+   ],
+   "sql": "BEGIN DECLARE end INT DEFAULT 1; VALUES (end); END"
+  },
+  {
+   "id": "v134",
+   "tags": [
+    "probe",
+    "declare-name",
+    "if"
+   ],
+   "sql": "BEGIN DECLARE if INT DEFAULT 1; VALUES (if); END"
+  },
+  {
+   "id": "v135",
+   "tags": [
+    "probe",
+    "declare-name",
+    "for"
+   ],
+   "sql": "BEGIN DECLARE for INT DEFAULT 1; VALUES (for); END"
+  },
+  {
+   "id": "v136",
+   "tags": [
+    "probe",
+    "declare-name",
+    "while"
+   ],
+   "sql": "BEGIN DECLARE while INT DEFAULT 1; VALUES (while); END"
+  },
+  {
+   "id": "v137",
+   "tags": [
+    "probe",
+    "declare-name",
+    "handler"
+   ],
+   "sql": "BEGIN DECLARE handler INT DEFAULT 1; VALUES (handler); END"
+  },
+  {
+   "id": "v138",
+   "tags": [
+    "probe",
+    "declare-name",
+    "atomic"
+   ],
+   "sql": "BEGIN DECLARE atomic INT DEFAULT 1; VALUES (atomic); END"
+  },
+  {
+   "id": "v139",
+   "tags": [
+    "probe",
+    "declare-name",
+    "leave"
+   ],
+   "sql": "BEGIN DECLARE leave INT DEFAULT 1; VALUES (leave); END"
+  },
+  {
+   "id": "v140",
+   "tags": [
+    "probe",
+    "declare-name",
+    "condition"
+   ],
+   "sql": "BEGIN DECLARE condition INT DEFAULT 1; VALUES (condition); END"
+  },
+  {
+   "id": "v141",
+   "tags": [
+    "probe",
+    "declare-name",
+    "case"
+   ],
+   "sql": "BEGIN DECLARE case INT DEFAULT 1; VALUES (case); END"
+  },
+  {
+   "id": "v142",
+   "tags": [
+    "cond",
+    "exists-subquery",
+    "if"
+   ],
+   "sql": "BEGIN IF EXISTS (SELECT 1) THEN VALUES (1); END IF; END"
+  },
+  {
+   "id": "v143",
+   "tags": [
+    "cond",
+    "scalar-subquery",
+    "if"
+   ],
+   "sql": "BEGIN IF (SELECT 1) = 1 THEN VALUES (1); END IF; END"
+  },
+  {
+   "id": "v144",
+   "tags": [
+    "cond",
+    "subquery",
+    "while"
+   ],
+   "sql": "BEGIN WHILE (SELECT n FROM VALUES (1) AS t(n)) < 0 DO VALUES (1); END WHILE; END"
+  },
+  {
+   "id": "v145",
+   "tags": [
+    "cond",
+    "bracketed",
+    "until"
+   ],
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; REPEAT SET n = n + 1; UNTIL (n >= 2) END REPEAT; END"
+  },
+  {
+   "id": "v146",
+   "tags": [
+    "cond",
+    "bracketed",
+    "until",
+    "subquery"
+   ],
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; REPEAT SET n = n + 1; UNTIL (SELECT n FROM VALUES (1) AS t(x)) > 0 END REPEAT; END"
+  },
+  {
+   "id": "v147",
+   "tags": [
+    "cond",
+    "subquery-with-case-and-end",
+    "in-if"
+   ],
+   "sql": "BEGIN IF (SELECT CASE WHEN 1=1 THEN 1 ELSE 0 END) = 1 THEN VALUES (1); END IF; END"
+  },
+  {
+   "id": "v148",
+   "tags": [
+    "cond",
+    "not-exists",
+    "elseif"
+   ],
+   "sql": "BEGIN IF NOT EXISTS (SELECT 1 WHERE FALSE) THEN VALUES (1); ELSEIF EXISTS (SELECT 1) THEN VALUES (2); END IF; END"
+  },
+  {
+   "id": "v149",
+   "tags": [
+    "cond",
+    "subquery-with-keywords-in-strings"
+   ],
+   "sql": "BEGIN IF (SELECT 'END IF' ) = 'END IF' THEN VALUES (1); END IF; END"
+  },
+  {
+   "id": "v150",
+   "tags": [
+    "cond",
+    "subquery",
+    "in-case-stmt"
+   ],
+   "sql": "BEGIN CASE (SELECT 2) WHEN 2 THEN VALUES (2); END CASE; END"
+  },
+  {
+   "id": "v151",
+   "tags": [
+    "cond",
+    "subquery",
+    "in-case-when"
+   ],
+   "sql": "BEGIN CASE WHEN EXISTS (SELECT 1) THEN VALUES (1); END CASE; END"
+  },
+  {
+   "id": "v152",
+   "tags": [
+    "cond",
+    "deep-brackets"
+   ],
+   "sql": "BEGIN IF (((1 = 1) AND (2 = 2))) THEN VALUES (1); END IF; END"
+  },
+  {
+   "id": "v153",
+   "tags": [
+    "cond",
+    "subquery-with-then-alias"
+   ],
+   "sql": "BEGIN IF EXISTS (SELECT 1 AS `then`) THEN VALUES (1); END IF; END"
+  },
+  {
+   "id": "v154",
+   "tags": [
+    "cond",
+    "subquery-with-do"
+   ],
+   "sql": "BEGIN WHILE EXISTS (SELECT 1 WHERE FALSE) DO VALUES (1); END WHILE; END"
+  },
+  {
+   "id": "v155",
+   "tags": [
+    "cond",
+    "cte-in-subquery"
+   ],
+   "sql": "BEGIN IF EXISTS (WITH t AS (SELECT 1 AS x) SELECT x FROM t) THEN VALUES (1); END IF; END"
+  },
+  {
+   "id": "v156",
+   "tags": [
+    "for",
+    "query-with-cte"
+   ],
+   "sql": "BEGIN FOR r AS WITH t AS (SELECT 1 AS x) SELECT x FROM t DO VALUES (r.x); END FOR; END"
+  },
+  {
+   "id": "v157",
+   "tags": [
+    "for",
+    "query-with-union"
+   ],
+   "sql": "BEGIN FOR r AS SELECT 1 AS x UNION ALL SELECT 2 DO VALUES (r.x); END FOR; END"
+  },
+  {
+   "id": "v158",
+   "tags": [
+    "for",
+    "query-with-subquery-from"
+   ],
+   "sql": "BEGIN FOR r AS SELECT x FROM (SELECT id AS x FROM range(2)) DO VALUES (r.x); END FOR; END"
+  },
+  {
+   "id": "v159",
+   "tags": [
+    "for",
+    "query-values"
+   ],
+   "sql": "BEGIN FOR r AS VALUES (1), (2) DO SELECT 1; END FOR; END"
+  },
+  {
+   "id": "v160",
+   "tags": [
+    "for",
+    "query-with-where-do-string"
+   ],
+   "sql": "BEGIN FOR r AS SELECT 'DO' AS k DO VALUES (r.k); END FOR; END"
+  },
+  {
+   "id": "v161",
+   "tags": [
+    "format",
+    "lowercase-all"
+   ],
+   "sql": "begin declare n int default 0; if n = 0 then values (1); elseif n = 1 then values (2); else values (3); end if; while n < 2 do set n = n + 1; end while; end"
+  },
+  {
+   "id": "v162",
+   "tags": [
+    "format",
+    "lowercase-loops"
+   ],
+   "sql": "begin declare n int default 0; l: loop set n = n + 1; if n > 1 then leave l; end if; end loop l; r: repeat set n = n + 1; until n > 4 end repeat r; for x as select 1 as y do values (x.y); end for; case n when 5 then values (1); end case; end"
+  },
+  {
+   "id": "v163",
+   "tags": [
+    "format",
+    "mixed-case"
+   ],
+   "sql": "Begin Declare n Int Default 0; If n = 0 Then Values (1); End If; While n < 1 Do Set n = n + 1; End While; L: Loop Leave L; End Loop L; End"
+  },
+  {
+   "id": "v164",
+   "tags": [
+    "format",
+    "end-newline-if"
+   ],
+   "sql": "BEGIN\nIF 1 = 1 THEN\nVALUES (1);\nEND\nIF;\nEND"
+  },
+  {
+   "id": "v165",
+   "tags": [
+    "format",
+    "end-newline-all"
+   ],
+   "sql": "BEGIN\nDECLARE n INT DEFAULT 0;\nWHILE n < 1 DO\nSET n = n + 1;\nEND\nWHILE;\nl: LOOP\nLEAVE l;\nEND\nLOOP\nl;\nREPEAT\nSET n = n + 1;\nUNTIL n > 2\nEND\nREPEAT;\nCASE n WHEN 3 THEN VALUES (1); END\nCASE;\nEND"
+  },
+  {
+   "id": "v166",
+   "tags": [
+    "format",
+    "tabs"
+   ],
+   "sql": "BEGIN\n\tDECLARE n INT DEFAULT 0;\n\tIF\tn = 0\tTHEN\n\t\tVALUES\t(1);\n\tEND\tIF;\nEND"
+  },
+  {
+   "id": "v167",
+   "tags": [
+    "format",
+    "all-on-one-line-minimal-spacing"
+   ],
+   "sql": "BEGIN DECLARE n INT DEFAULT 0;WHILE n<2 DO SET n=n+1;END WHILE;IF(n=2)THEN VALUES(1);END IF;END"
+  },
+  {
+   "id": "v168",
+   "tags": [
+    "format",
+    "trailing-semicolon-after-end"
+   ],
+   "sql": "BEGIN VALUES (1); END;"
+  },
+  {
+   "id": "v172",
+   "tags": [
+    "format",
+    "space-before-label-colon"
+   ],
+   "sql": "BEGIN l : LOOP LEAVE l; END LOOP l; END"
+  },
+  {
+   "id": "v173",
+   "tags": [
+    "format",
+    "label-no-space"
+   ],
+   "sql": "BEGIN l:LOOP LEAVE l; END LOOP l; END"
+  },
+  {
+   "id": "v175",
+   "tags": [
+    "format",
+    "leading-blank-lines"
+   ],
+   "sql": "BEGIN VALUES (1); END"
+  },
+  {
+   "id": "v176",
+   "tags": [
+    "format",
+    "block-comment-before"
+   ],
+   "sql": "/* BEGIN END */ BEGIN VALUES (1); END"
+  },
+  {
+   "id": "v177",
+   "tags": [
+    "format",
+    "long-multiline-realistic"
+   ],
+   "sql": "BEGIN\n  DECLARE total INT DEFAULT 0;\n  DECLARE i INT DEFAULT 0;\n  outer_loop: WHILE i < 4 DO\n    SET i = i + 1;\n    IF i = 2 THEN\n      ITERATE outer_loop;\n    END IF;\n    CASE\n      WHEN i = 3 THEN\n        SET total = total + 10;\n      ELSE\n        SET total = total + 1;\n    END CASE;\n  END WHILE outer_loop;\n  VALUES (total);\nEND"
+  },
+  {
+   "id": "v178",
+   "tags": [
+    "handler",
+    "in-nested-block",
+    "begin-end-action",
+    "loop"
+   ],
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE CONTINUE HANDLER FOR DIVIDE_BY_ZERO BEGIN SET n = n + 100; END; l: LOOP SET n = n + 1; IF n = 1 THEN SELECT 1/0; END IF; IF n > 101 THEN LEAVE l; END IF; END LOOP l; VALUES (n); END"
+  },
+  {
+   "id": "v180",
+   "tags": [
+    "handler",
+    "action-is-set"
+   ],
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE CONTINUE HANDLER FOR DIVIDE_BY_ZERO SET n = 7; SELECT 1/0; VALUES (n); END"
+  },
+  {
+   "id": "v182",
+   "tags": [
+    "handler",
+    "multiple-conditions"
+   ],
+   "sql": "BEGIN DECLARE EXIT HANDLER FOR DIVIDE_BY_ZERO, SQLSTATE '45000' VALUES (0); SELECT 1/0; END"
+  },
+  {
+   "id": "v183",
+   "tags": [
+    "handler",
+    "multiple-handlers"
+   ],
+   "sql": "BEGIN DECLARE EXIT HANDLER FOR SQLSTATE '45000' VALUES (1); DECLARE EXIT HANDLER FOR DIVIDE_BY_ZERO VALUES (2); SELECT 1/0; END"
+  },
+  {
+   "id": "v184",
+   "tags": [
+    "handler",
+    "declare-after-vars",
+    "order"
+   ],
+   "sql": "BEGIN DECLARE a INT DEFAULT 1; DECLARE c CONDITION FOR SQLSTATE '45001'; DECLARE EXIT HANDLER FOR c VALUES (a); SIGNAL c; END"
+  },
+  {
+   "id": "v185",
+   "tags": [
+    "handler",
+    "in-label-block"
+   ],
+   "sql": "BEGIN b: BEGIN DECLARE EXIT HANDLER FOR DIVIDE_BY_ZERO BEGIN VALUES (1); END; SELECT 1/0; END b; VALUES (2); END"
+  },
+  {
+   "id": "v186",
+   "tags": [
+    "signal",
+    "message-text-var"
+   ],
+   "sql": "BEGIN DECLARE m STRING DEFAULT 'oops'; DECLARE EXIT HANDLER FOR SQLSTATE '45000' VALUES (0); SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = m; END"
+  },
+  {
+   "id": "v187",
+   "tags": [
+    "signal",
+    "value-keyword"
+   ],
+   "sql": "BEGIN DECLARE EXIT HANDLER FOR SQLSTATE '45000' VALUES (0); SIGNAL SQLSTATE VALUE '45000' SET MESSAGE_TEXT = 'x'; END"
+  },
+  {
+   "id": "v188",
+   "tags": [
+    "signal",
+    "in-if"
+   ],
+   "sql": "BEGIN DECLARE EXIT HANDLER FOR SQLSTATE '45000' VALUES (0); IF 1 = 1 THEN SIGNAL SQLSTATE '45000'; END IF; VALUES (9); END"
+  },
+  {
+   "id": "v189",
+   "tags": [
+    "signal",
+    "condition-with-message"
+   ],
+   "sql": "BEGIN DECLARE c CONDITION FOR SQLSTATE '45002'; DECLARE EXIT HANDLER FOR c VALUES (0); SIGNAL c SET MESSAGE_TEXT = 'hi'; END"
+  },
+  {
+   "id": "v190",
+   "tags": [
+    "get-diagnostics",
+    "multiple-items"
+   ],
+   "sql": "BEGIN DECLARE m STRING; DECLARE s STRING; DECLARE EXIT HANDLER FOR DIVIDE_BY_ZERO BEGIN GET DIAGNOSTICS CONDITION 1 m = MESSAGE_TEXT, s = RETURNED_SQLSTATE; VALUES (s); END; SELECT 1/0; END"
+  },
+  {
+   "id": "v191",
+   "tags": [
+    "get-diagnostics",
+    "inside-loop"
+   ],
+   "sql": "BEGIN DECLARE rc BIGINT; l: LOOP VALUES (1); GET DIAGNOSTICS rc = ROW_COUNT; LEAVE l; END LOOP l; END"
+  },
+  {
+   "id": "v192",
+   "tags": [
+    "case-stmt",
+    "multi-stmt-branches"
+   ],
+   "sql": "BEGIN DECLARE c INT DEFAULT 1; DECLARE x INT DEFAULT 0; CASE c WHEN 1 THEN SET x = 1; SET x = x + 1; WHEN 2 THEN SET x = 5; ELSE SET x = 9; SET x = x + 1; END CASE; VALUES (x); END"
+  },
+  {
+   "id": "v193",
+   "tags": [
+    "case-stmt",
+    "multi-when-values"
+   ],
+   "sql": "BEGIN DECLARE c INT DEFAULT 3; CASE c WHEN 1 THEN VALUES (1); WHEN 2 THEN VALUES (2); WHEN 3 THEN VALUES (3); WHEN 4 THEN VALUES (4); END CASE; END"
+  },
+  {
+   "id": "v194",
+   "tags": [
+    "case-stmt",
+    "with-string-scrutinee"
+   ],
+   "sql": "BEGIN CASE 'END CASE' WHEN 'END CASE' THEN VALUES (1); END CASE; END"
+  },
+  {
+   "id": "v195",
+   "tags": [
+    "case-stmt",
+    "end-case-newline"
+   ],
+   "sql": "BEGIN CASE 1 WHEN 1 THEN VALUES (1);\nEND\nCASE;\nEND"
+  },
+  {
+   "id": "v196",
+   "tags": [
+    "case-stmt",
+    "inside-loop-with-leave"
+   ],
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; l: LOOP SET n = n + 1; CASE WHEN n > 2 THEN LEAVE l; ELSE ITERATE l; END CASE; END LOOP l; END"
+  },
+  {
+   "id": "v197",
+   "tags": [
+    "if",
+    "inside-case-branch-with-elseif"
+   ],
+   "sql": "BEGIN DECLARE c INT DEFAULT 1; CASE c WHEN 1 THEN IF c = 2 THEN VALUES (2); ELSEIF c = 1 THEN VALUES (1); END IF; ELSE VALUES (0); END CASE; END"
+  },
+  {
+   "id": "v198",
+   "tags": [
+    "if",
+    "else-only-nested-end-ifs"
+   ],
+   "sql": "BEGIN IF 1 = 2 THEN VALUES (0); ELSE IF 1 = 1 THEN VALUES (1); ELSE VALUES (2); END IF; END IF; END"
+  },
+  {
+   "id": "v199",
+   "tags": [
+    "while",
+    "with-leave-in-case"
+   ],
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; w: WHILE TRUE DO SET n = n + 1; CASE n WHEN 3 THEN LEAVE w; ELSE SELECT 1; END CASE; END WHILE w; VALUES (n); END"
+  },
+  {
+   "id": "v200",
+   "tags": [
+    "for",
+    "with-leave-iterate"
+   ],
+   "sql": "BEGIN f: FOR r AS SELECT id FROM range(5) DO IF r.id = 1 THEN ITERATE f; END IF; IF r.id = 3 THEN LEAVE f; END IF; END FOR f; END"
+  },
+  {
+   "id": "v201",
+   "tags": [
+    "repeat-with-until-in-string-and-comment"
+   ],
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; REPEAT SET n = n + 1; SELECT 'UNTIL n > 5 END REPEAT'; -- UNTIL END REPEAT\n UNTIL n >= 2 END REPEAT; END"
+  },
+  {
+   "id": "v202",
+   "tags": [
+    "repeat-until-with-comparison-and-and"
+   ],
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE m INT DEFAULT 0; REPEAT SET n = n + 1; SET m = m + 2; UNTIL n >= 2 AND m >= 4 END REPEAT; VALUES (n, m); END"
+  },
+  {
+   "id": "v203",
+   "tags": [
+    "repeat-nested-in-while-label-sibling"
+   ],
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE m INT DEFAULT 0; WHILE n < 2 DO SET n = n + 1; r: REPEAT SET m = m + 1; UNTIL m >= n END REPEAT r; END WHILE; r: REPEAT SET m = m + 1; UNTIL m > 5 END REPEAT r; END"
+  },
+  {
+   "id": "v205",
+   "tags": [
+    "set-var-named-like-keywords-in-expr"
+   ],
+   "sql": "BEGIN DECLARE `loop` INT DEFAULT 1; SET `loop` = `loop` + 1; VALUES (`loop`); END"
+  },
+  {
+   "id": "v206",
+   "tags": [
+    "select-into-style-values"
+   ],
+   "sql": "BEGIN DECLARE a INT; SET a = (SELECT max(id) FROM range(3)); IF a = 2 THEN VALUES ('two'); END IF; END"
+  },
+  {
+   "id": "v207",
+   "tags": [
+    "execute-immediate-inside-block"
+   ],
+   "sql": "BEGIN DECLARE r INT; EXECUTE IMMEDIATE 'SELECT 1 AS x' ; VALUES (1); END"
+  },
+  {
+   "id": "v209",
+   "tags": [
+    "qualified-for-var-in-cond"
+   ],
+   "sql": "BEGIN FOR r AS SELECT id FROM range(2) DO IF r.id = 1 THEN VALUES (r.id); END IF; END FOR; END"
+  },
+  {
+   "id": "v210",
+   "tags": [
+    "begin-block-with-no-semicolon-before-end"
+   ],
+   "sql": "BEGIN VALUES (1) ; VALUES (2) ; END"
+  },
+  {
+   "id": "v211",
+   "tags": [
+    "for-without-semicolon-last-stmt"
+   ],
+   "sql": "BEGIN FOR r AS SELECT 1 AS x DO VALUES (r.x); END FOR; END"
+  },
+  {
+   "id": "v212",
+   "tags": [
+    "compound-with-only-nested-begin"
+   ],
+   "sql": "BEGIN BEGIN BEGIN VALUES (1); END; END; END"
+  },
+  {
+   "id": "v213",
+   "tags": [
+    "compound-atomic-nested"
+   ],
+   "sql": "BEGIN ATOMIC BEGIN VALUES (1); END; END"
+  },
+  {
+   "id": "v214",
+   "tags": [
+    "atomic-with-declare"
+   ],
+   "sql": "BEGIN ATOMIC DECLARE a INT DEFAULT 1; VALUES (a); END"
+  },
+  {
+   "id": "v215",
+   "tags": [
+    "comment",
+    "leading-line-comment-first-line",
+    "retry-of-v174"
+   ],
+   "sql": "\n-- leading comment\nBEGIN VALUES (1); END"
+  },
+  {
+   "id": "v216",
+   "tags": [
+    "string",
+    "execute-immediate-backslash-escaped-quotes",
+    "retry-of-v208"
+   ],
+   "sql": "BEGIN EXECUTE IMMEDIATE 'SELECT \\'END; BEGIN\\' AS x'; END"
+  },
+  {
+   "id": "v218",
+   "tags": [
+    "set-tuple-in-block"
+   ],
+   "sql": "BEGIN DECLARE a INT; DECLARE b INT; SET (a, b) = (SELECT 2, 3); VALUES (a, b); END"
+  },
+  {
+   "id": "v219",
+   "tags": [
+    "handler",
+    "action-begin-wrapping-if",
+    "retry-of-v179"
+   ],
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE CONTINUE HANDLER FOR DIVIDE_BY_ZERO BEGIN IF n = 0 THEN SET n = 5; END IF; END; SELECT 1/0; VALUES (n); END"
+  },
+  {
+   "id": "v220",
+   "tags": [
+    "handler",
+    "action-begin-wrapping-while",
+    "retry-of-v181"
+   ],
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE CONTINUE HANDLER FOR DIVIDE_BY_ZERO BEGIN WHILE n < 2 DO SET n = n + 1; END WHILE; END; SELECT 1/0; VALUES (n); END"
+  },
+  {
+   "id": "v221",
+   "tags": [
+    "ident",
+    "keyword-prefix",
+    "columns"
+   ],
+   "sql": "BEGIN SELECT 1 AS end_date, 2 AS begin_ts, 3 AS if_flag, 4 AS loop_count, 5 AS repeat_n, 6 AS until_x, 7 AS for_each, 8 AS ifnull_v, 9 AS endif, 10 AS elseif_x; END"
+  },
+  {
+   "id": "v222",
+   "tags": [
+    "ident",
+    "keyword-prefix",
+    "variables"
+   ],
+   "sql": "BEGIN DECLARE end_date INT DEFAULT 1; DECLARE loop_count INT DEFAULT 0; DECLARE until_date INT DEFAULT 2; WHILE loop_count < end_date DO SET loop_count = loop_count + 1; END WHILE; VALUES (until_date); END"
+  },
+  {
+   "id": "v223",
+   "tags": [
+    "ident",
+    "function-ifnull-nvl"
+   ],
+   "sql": "BEGIN SELECT ifnull(NULL, 1), nvl(NULL, 2), coalesce(NULL, 3); END"
+  },
+  {
+   "id": "v224",
+   "tags": [
+    "ident",
+    "struct-field-named-keyword"
+   ],
+   "sql": "BEGIN SELECT named_struct('end', 1, 'loop', 2).end AS e, named_struct('end', 1, 'loop', 2).`loop` AS l; END"
+  },
+  {
+   "id": "v225",
+   "tags": [
+    "ident",
+    "table-alias-keyword"
+   ],
+   "sql": "BEGIN SELECT t.`end` FROM VALUES (1) AS t(`end`); END"
+  },
+  {
+   "id": "v226",
+   "tags": [
+    "ident",
+    "column-named-end-unquoted"
+   ],
+   "sql": "BEGIN SELECT `end` FROM VALUES (1) AS t(`end`) WHERE `end` > 0; END"
+  },
+  {
+   "id": "v227",
+   "tags": [
+    "label",
+    "named-like-keyword-end"
+   ],
+   "sql": "BEGIN `end`: LOOP LEAVE `end`; END LOOP `end`; END"
+  },
+  {
+   "id": "v228",
+   "tags": [
+    "label",
+    "named-loop"
+   ],
+   "sql": "BEGIN loop: LOOP LEAVE loop; END LOOP loop; END"
+  },
+  {
+   "id": "v229",
+   "tags": [
+    "label",
+    "named-end"
+   ],
+   "sql": "BEGIN end: LOOP LEAVE end; END LOOP end; END"
+  },
+  {
+   "id": "v230",
+   "tags": [
+    "label",
+    "named-repeat"
+   ],
+   "sql": "BEGIN repeat: REPEAT SELECT 1; UNTIL TRUE END REPEAT repeat; END"
+  },
+  {
+   "id": "v231",
+   "tags": [
+    "label",
+    "named-if"
+   ],
+   "sql": "BEGIN if: BEGIN VALUES (1); END if; END"
+  },
+  {
+   "id": "v232",
+   "tags": [
+    "label",
+    "named-begin"
+   ],
+   "sql": "BEGIN begin: BEGIN VALUES (1); END begin; END"
+  },
+  {
+   "id": "v233",
+   "tags": [
+    "label",
+    "upper-vs-lower-match"
+   ],
+   "sql": "BEGIN Lbl: LOOP LEAVE lbl; END LOOP LBL; END"
+  },
+  {
+   "id": "v234",
+   "tags": [
+    "label",
+    "for-var-keyword-name"
+   ],
+   "sql": "BEGIN FOR end AS SELECT 1 AS x DO VALUES (end.x); END FOR; END"
+  },
+  {
+   "id": "v235",
+   "tags": [
+    "label",
+    "for-var-loop"
+   ],
+   "sql": "BEGIN FOR loop AS SELECT 1 AS x DO VALUES (loop.x); END FOR; END"
+  },
+  {
+   "id": "v236",
+   "tags": [
+    "string",
+    "leave-iterate-words"
+   ],
+   "sql": "BEGIN SELECT 'LEAVE l; ITERATE l; DECLARE x INT; HANDLER FOR'; END"
+  },
+  {
+   "id": "v237",
+   "tags": [
+    "string",
+    "double-quoted-keywords"
+   ],
+   "sql": "BEGIN SELECT \"END IF; END LOOP\" AS s; END"
+  },
+  {
+   "id": "v238",
+   "tags": [
+    "string",
+    "backslash-quote-inside"
+   ],
+   "sql": "BEGIN SELECT 'it\\'s END; IF' AS s; END"
+  },
+  {
+   "id": "v239",
+   "tags": [
+    "string",
+    "adjacent-literals"
+   ],
+   "sql": "BEGIN SELECT 'END ' 'IF;' AS s; END"
+  },
+  {
+   "id": "v240",
+   "tags": [
+    "string",
+    "raw-literal"
+   ],
+   "sql": "BEGIN SELECT r'\\END IF;' AS s; END"
+  },
+  {
+   "id": "v242",
+   "tags": [
+    "comment",
+    "dashes-inside-string"
+   ],
+   "sql": "BEGIN SELECT '-- not a comment END;' AS s; VALUES (2); END"
+  },
+  {
+   "id": "v243",
+   "tags": [
+    "comment",
+    "block-comment-marker-in-string"
+   ],
+   "sql": "BEGIN SELECT '/* x' AS s; SELECT '*/ END;' AS t; END"
+  },
+  {
+   "id": "v244",
+   "tags": [
+    "comment",
+    "hint-comment-select"
+   ],
+   "sql": "BEGIN SELECT /*+ COALESCE(1) */ 1; END"
+  },
+  {
+   "id": "v245",
+   "tags": [
+    "comment",
+    "line-comment-after-then"
+   ],
+   "sql": "BEGIN IF 1 = 1 THEN -- END IF;\n VALUES (1); END IF; END"
+  },
+  {
+   "id": "v246",
+   "tags": [
+    "comment",
+    "line-comment-ends-with-semicolon-before-end"
+   ],
+   "sql": "BEGIN VALUES (1); -- ; END\nEND"
+  },
+  {
+   "id": "v247",
+   "tags": [
+    "if",
+    "end-if-same-line-as-else"
+   ],
+   "sql": "BEGIN IF 1 = 2 THEN VALUES (1); ELSE VALUES (2); END IF; END"
+  },
+  {
+   "id": "v248",
+   "tags": [
+    "format",
+    "crlf-newlines"
+   ],
+   "sql": "BEGIN\r\nIF 1 = 1 THEN\r\nVALUES (1);\r\nEND IF;\r\nEND"
+  },
+  {
+   "id": "v249",
+   "tags": [
+    "format",
+    "multiple-spaces-between-end-and-keyword"
+   ],
+   "sql": "BEGIN IF 1 = 1 THEN VALUES (1); END    IF; END"
+  },
+  {
+   "id": "v250",
+   "tags": [
+    "format",
+    "block-comment-between-end-and-keyword"
+   ],
+   "sql": "BEGIN WHILE FALSE DO VALUES (1); END /* x */ WHILE; END"
+  },
+  {
+   "id": "v251",
+   "tags": [
+    "format",
+    "begin-newline-atomic"
+   ],
+   "sql": "BEGIN\nATOMIC\nVALUES (1);\nEND"
+  },
+  {
+   "id": "v252",
+   "tags": [
+    "format",
+    "label-newline-colon"
+   ],
+   "sql": "BEGIN lbl\n:\nLOOP LEAVE lbl; END LOOP lbl; END"
+  },
+  {
+   "id": "v253",
+   "tags": [
+    "format",
+    "keyword-split-across-comment-lines"
+   ],
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; REPEAT -- r\nSET n = n + 1; -- s\nUNTIL -- u\nn >= 2 -- c\nEND -- e\nREPEAT; END"
+  },
+  {
+   "id": "v254",
+   "tags": [
+    "nest",
+    "6-deep"
+   ],
+   "sql": "BEGIN a: BEGIN IF 1=1 THEN b: WHILE 1=1 DO CASE WHEN 1=1 THEN FOR r AS SELECT 1 AS x DO c: LOOP LEAVE a; END LOOP c; END FOR; END CASE; END WHILE b; END IF; END a; END"
+  },
+  {
+   "id": "v255",
+   "tags": [
+    "nest",
+    "repeat-for-case-if"
+   ],
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; REPEAT SET n = n + 1; FOR r AS SELECT 1 AS x DO CASE n WHEN 1 THEN IF r.x = 1 THEN VALUES (n); END IF; ELSE VALUES (0); END CASE; END FOR; UNTIL n >= 2 END REPEAT; END"
+  },
+  {
+   "id": "v256",
+   "tags": [
+    "nest",
+    "loop-in-case-in-if-in-begin"
+   ],
+   "sql": "BEGIN IF TRUE THEN CASE 1 WHEN 1 THEN BEGIN l: LOOP LEAVE l; END LOOP; END; END CASE; END IF; END"
+  },
+  {
+   "id": "v258",
+   "tags": [
+    "nest",
+    "handler-in-loop-body-block"
+   ],
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; l: LOOP BEGIN DECLARE CONTINUE HANDLER FOR DIVIDE_BY_ZERO SET n = n + 10; SELECT 1/0; END; SET n = n + 1; IF n > 10 THEN LEAVE l; END IF; END LOOP l; VALUES (n); END"
+  },
+  {
+   "id": "v259",
+   "tags": [
+    "nest",
+    "while-in-for-in-while-labels"
+   ],
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; a: WHILE n < 2 DO SET n = n + 1; b: FOR r AS SELECT id FROM range(2) DO c: WHILE FALSE DO SELECT 1; END WHILE c; IF r.id = 1 THEN LEAVE b; END IF; END FOR b; END WHILE a; END"
+  },
+  {
+   "id": "v260",
+   "tags": [
+    "nest",
+    "iterate-in-for-in-loop-outer"
+   ],
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; o: LOOP SET n = n + 1; FOR r AS SELECT id FROM range(2) DO IF n < 3 THEN ITERATE o; END IF; END FOR; LEAVE o; END LOOP o; VALUES (n); END"
+  },
+  {
+   "id": "v261",
+   "tags": [
+    "declare",
+    "after-nothing",
+    "then-nested-declare-shadow"
+   ],
+   "sql": "BEGIN DECLARE a INT DEFAULT 1; BEGIN DECLARE a INT DEFAULT 2; VALUES (a); END; VALUES (a); END"
+  },
+  {
+   "id": "v262",
+   "tags": [
+    "declare",
+    "unused-condition-and-handler-ordering"
+   ],
+   "sql": "BEGIN DECLARE x INT DEFAULT 0; DECLARE c1 CONDITION FOR SQLSTATE '45010'; DECLARE c2 CONDITION; DECLARE CONTINUE HANDLER FOR c1 SET x = 1; DECLARE EXIT HANDLER FOR c2 SET x = 2; SIGNAL c1; VALUES (x); END"
+  },
+  {
+   "id": "v263",
+   "tags": [
+    "if",
+    "elseif-else-all-nested-begin"
+   ],
+   "sql": "BEGIN DECLARE x INT DEFAULT 2; IF x = 1 THEN BEGIN VALUES (1); END; ELSEIF x = 2 THEN BEGIN VALUES (2); END; ELSE BEGIN VALUES (3); END; END IF; END"
+  },
+  {
+   "id": "v264",
+   "tags": [
+    "begin",
+    "sequential-sibling-blocks"
+   ],
+   "sql": "BEGIN BEGIN VALUES (1); END; BEGIN VALUES (2); END; BEGIN VALUES (3); END; END"
+  },
+  {
+   "id": "v265",
+   "tags": [
+    "begin",
+    "sibling-labeled-then-unlabeled"
+   ],
+   "sql": "BEGIN a: BEGIN VALUES (1); END a; BEGIN VALUES (2); END; a: BEGIN VALUES (3); END; END"
+  },
+  {
+   "id": "v266",
+   "tags": [
+    "comment",
+    "nested-block-comment-closed",
+    "retry-of-v241"
+   ],
+   "sql": "BEGIN /* outer /* inner END; */ still comment END IF; */ VALUES (1); END"
+  },
+  {
+   "id": "v267",
+   "tags": [
+    "nest",
+    "iterate-label-in-repeat",
+    "retry-of-v257"
+   ],
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; r: REPEAT SET n = n + 1; IF n = 1 THEN ITERATE r; END IF; UNTIL CASE WHEN n > 1 THEN TRUE ELSE FALSE END END REPEAT r; END"
+  },
+  {
+   "id": "v268",
+   "tags": [
+    "probe",
+    "declare-name-as-keyword-cond-body"
+   ],
+   "sql": "BEGIN DECLARE `then` INT DEFAULT 1; DECLARE `do` INT DEFAULT 1; IF `then` = `do` THEN VALUES (1); END IF; END"
+  },
+  {
+   "id": "v269",
+   "tags": [
+    "if",
+    "bare-boolean-variable-cond"
+   ],
+   "sql": "BEGIN DECLARE f BOOLEAN DEFAULT TRUE; IF f THEN VALUES (1); END IF; WHILE NOT f DO SELECT 1; END WHILE; END"
+  },
+  {
+   "id": "v270",
+   "tags": [
+    "probe",
+    "variable-named-then-unquoted"
+   ],
+   "sql": "BEGIN DECLARE then INT DEFAULT 1; VALUES (then); END"
+  },
+  {
+   "id": "v271",
+   "tags": [
+    "probe",
+    "variable-named-do-unquoted"
+   ],
+   "sql": "BEGIN DECLARE do INT DEFAULT 1; VALUES (do); END"
+  },
+  {
+   "id": "v272",
+   "tags": [
+    "probe",
+    "variable-named-elseif-unquoted"
+   ],
+   "sql": "BEGIN DECLARE elseif INT DEFAULT 1; VALUES (elseif); END"
+  },
+  {
+   "id": "v273",
+   "tags": [
+    "probe",
+    "variable-named-begin-unquoted"
+   ],
+   "sql": "BEGIN DECLARE begin INT DEFAULT 1; VALUES (begin); END"
+  },
+  {
+   "id": "v274",
+   "tags": [
+    "probe",
+    "variable-named-declare"
+   ],
+   "sql": "BEGIN DECLARE declare INT DEFAULT 1; VALUES (declare); END"
+  },
+  {
+   "id": "v275",
+   "tags": [
+    "probe",
+    "variable-named-else"
+   ],
+   "sql": "BEGIN DECLARE else INT DEFAULT 1; VALUES (else); END"
+  },
+  {
+   "id": "v900",
+   "tags": [
+    "bare",
+    "begin-transaction"
+   ],
+   "sql": "BEGIN TRANSACTION"
+  },
+  {
+   "id": "v901",
+   "tags": [
+    "bare",
+    "begin-work"
+   ],
+   "sql": "BEGIN WORK"
+  },
+  {
+   "id": "v905",
+   "tags": [
+    "bare",
+    "begin-transaction-semicolon"
+   ],
+   "sql": "BEGIN TRANSACTION;"
+  }
+ ],
+ "rejected": [
+  {
+   "id": "v008",
+   "tags": [
+    "loop",
+    "end-loop",
+    "leave"
+   ],
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; LOOP SET n = n + 1; IF n > 2 THEN LEAVE; END IF; END LOOP; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "Syntax error at or near ';'. SQLSTATE: 42601 (line 1, pos 70)"
+  },
+  {
+   "id": "v016",
+   "tags": [
+    "label",
+    "begin",
+    "label-repeated"
+   ],
+   "sql": "lbl: BEGIN VALUES (1); END lbl",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "Syntax error at or near 'lbl'. SQLSTATE: 42601 (line 1, pos 0)"
+  },
+  {
+   "id": "v017",
+   "tags": [
+    "label",
+    "begin",
+    "no-repeat"
+   ],
+   "sql": "lbl: BEGIN VALUES (1); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "Syntax error at or near 'lbl'. SQLSTATE: 42601 (line 1, pos 0)"
+  },
+  {
+   "id": "v030",
+   "tags": [
+    "label",
+    "nested-same-name"
+   ],
+   "sql": "BEGIN a: BEGIN a: BEGIN VALUES (1); END a; END a; END",
+   "error_class": "LABEL_OR_FOR_VARIABLE_ALREADY_EXISTS",
+   "message": "The label or FOR variable `a` already exists. Choose another name or rename the existing one. SQLSTATE: 42K0L"
+  },
+  {
+   "id": "v034",
+   "tags": [
+    "label",
+    "begin-atomic",
+    "label-repeated"
+   ],
+   "sql": "lbl: BEGIN ATOMIC VALUES (1); END lbl",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "Syntax error at or near 'lbl'. SQLSTATE: 42601 (line 1, pos 0)"
+  },
+  {
+   "id": "v037",
+   "tags": [
+    "nest",
+    "while",
+    "if",
+    "loop"
+   ],
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; WHILE n < 2 DO SET n = n + 1; IF n > 0 THEN LOOP LEAVE; END LOOP; END IF; END WHILE; END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "Syntax error at or near ';'. SQLSTATE: 42601 (line 1, pos 85)"
+  },
+  {
+   "id": "v040",
+   "tags": [
+    "nest",
+    "5-deep",
+    "begin",
+    "if",
+    "while",
+    "case",
+    "loop"
+   ],
+   "sql": "BEGIN BEGIN IF 1=1 THEN WHILE 1=1 DO CASE WHEN 1=1 THEN LOOP LEAVE; END LOOP; END CASE; BEGIN LEAVE; END; END WHILE; END IF; END; END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "Syntax error at or near ';'. SQLSTATE: 42601 (line 1, pos 66)"
+  },
+  {
+   "id": "v047",
+   "tags": [
+    "nest",
+    "begin-in-loop-in-begin"
+   ],
+   "sql": "b1: BEGIN l: LOOP b2: BEGIN LEAVE l; END b2; END LOOP l; END b1",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "Syntax error at or near 'b1'. SQLSTATE: 42601 (line 1, pos 0)"
+  },
+  {
+   "id": "v058",
+   "tags": [
+    "signal",
+    "condition"
+   ],
+   "sql": "BEGIN DECLARE EXIT HANDLER FOR USER_RAISED_EXCEPTION VALUES (0); SIGNAL USER_RAISED_EXCEPTION; END",
+   "error_class": "INTERNAL_ERROR",
+   "message": "parses; fails at runtime: Undefined error message parameter for error class: 'USER_RAISED_EXCEPTION', MessageTemplate: <errorMessage>, Parameters: Map() SQLSTATE: XX000"
+  },
+  {
+   "id": "v067",
+   "tags": [
+    "declare",
+    "or-replace"
+   ],
+   "sql": "BEGIN DECLARE OR REPLACE VARIABLE a INT DEFAULT 4; VALUES (a); END",
+   "error_class": "INVALID_VARIABLE_DECLARATION.REPLACE_LOCAL_VARIABLE",
+   "message": "Invalid variable declaration. The variable `a` does not support DECLARE OR REPLACE, as local variables cannot be replaced. SQLSTATE: 42K0M"
+  },
+  {
+   "id": "v070",
+   "tags": [
+    "nest",
+    "5-deep",
+    "retry-of-v040"
+   ],
+   "sql": "BEGIN BEGIN IF 1=1 THEN WHILE 1=1 DO CASE WHEN 1=1 THEN l: LOOP LEAVE l; END LOOP l; END CASE; b: BEGIN LEAVE b; END b; LEAVE ow; END WHILE; END IF; END; END",
+   "error_class": "INVALID_LABEL_USAGE.DOES_NOT_EXIST",
+   "message": "The usage of the label OW is invalid. Label was used in the LEAVE statement, but the label does not belong to any surrounding block. SQLSTATE: 42K0L"
+  },
+  {
+   "id": "v169",
+   "tags": [
+    "format",
+    "double-semicolon-statement"
+   ],
+   "sql": "BEGIN VALUES (1);; VALUES (2); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "Syntax error at or near ';': missing 'END'. SQLSTATE: 42601 (line 1, pos 17)"
+  },
+  {
+   "id": "v170",
+   "tags": [
+    "format",
+    "empty-body-semicolons"
+   ],
+   "sql": "BEGIN ; VALUES (1); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "Syntax error at or near ';'. SQLSTATE: 42601 (line 1, pos 6)"
+  },
+  {
+   "id": "v171",
+   "tags": [
+    "format",
+    "double-semicolon-in-if"
+   ],
+   "sql": "BEGIN IF 1 = 1 THEN VALUES (1);; END IF; END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "Syntax error at or near ';': extra input ';'. SQLSTATE: 42601 (line 1, pos 31)"
+  },
+  {
+   "id": "v179",
+   "tags": [
+    "handler",
+    "action-is-if"
+   ],
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE CONTINUE HANDLER FOR DIVIDE_BY_ZERO IF n = 0 THEN SET n = 5; END IF; SELECT 1/0; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "Syntax error at or near 'n'. SQLSTATE: 42601 (line 1, pos 78)"
+  },
+  {
+   "id": "v181",
+   "tags": [
+    "handler",
+    "action-is-while"
+   ],
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE CONTINUE HANDLER FOR DIVIDE_BY_ZERO WHILE n < 2 DO SET n = n + 1; END WHILE; SELECT 1/0; VALUES (n); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "Syntax error at or near 'n'. SQLSTATE: 42601 (line 1, pos 81)"
+  },
+  {
+   "id": "v204",
+   "tags": [
+    "variable-assignment-forms"
+   ],
+   "sql": "BEGIN DECLARE a INT; DECLARE b INT; SET a = 1; SET (a, b) = (SELECT 2, 3); SET VAR a = a + 1; VALUES (a, b); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "Syntax error at or near 'a': extra input 'a'. SQLSTATE: 42601 (line 1, pos 83)"
+  },
+  {
+   "id": "v208",
+   "tags": [
+    "execute-immediate-with-end-string"
+   ],
+   "sql": "BEGIN EXECUTE IMMEDIATE 'SELECT ''END; BEGIN'' AS x'; END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "Syntax error at or near 'BEGIN': extra input 'BEGIN'. SQLSTATE: 42601"
+  },
+  {
+   "id": "v217",
+   "tags": [
+    "set-var-in-block"
+   ],
+   "sql": "BEGIN DECLARE a INT; SET VAR a = 3; VALUES (a); END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "Syntax error at or near 'a': extra input 'a'. SQLSTATE: 42601 (line 1, pos 29)"
+  },
+  {
+   "id": "v241",
+   "tags": [
+    "comment",
+    "nested-block-comment"
+   ],
+   "sql": "BEGIN /* outer /* inner END; */ VALUES (1); END",
+   "error_class": "UNCLOSED_BRACKETED_COMMENT",
+   "message": "Found an unclosed bracketed comment. Please, append */ at the end of the comment. SQLSTATE: 42601"
+  },
+  {
+   "id": "v257",
+   "tags": [
+    "nest",
+    "if-in-repeat-until-expr-case"
+   ],
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; REPEAT SET n = n + 1; IF n = 1 THEN ITERATE r; END IF; UNTIL CASE WHEN n > 1 THEN TRUE ELSE FALSE END END REPEAT; END",
+   "error_class": "INVALID_LABEL_USAGE.DOES_NOT_EXIST",
+   "message": "The usage of the label R is invalid. Label was used in the ITERATE statement, but the label does not belong to any surrounding block. SQLSTATE: 42K0L"
+  },
+  {
+   "id": "v902",
+   "tags": [
+    "bare",
+    "begin"
+   ],
+   "sql": "BEGIN",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "Syntax error at or near end of input. SQLSTATE: 42601 (line 1, pos 5)"
+  },
+  {
+   "id": "v903",
+   "tags": [
+    "bare",
+    "start-transaction"
+   ],
+   "sql": "START TRANSACTION",
+   "error_class": "INVALID_STATEMENT_OR_CLAUSE",
+   "message": "The statement or clause: START TRANSACTION is not valid. SQLSTATE: 42601"
+  },
+  {
+   "id": "v904",
+   "tags": [
+    "bare",
+    "begin-semicolon"
+   ],
+   "sql": "BEGIN;",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "Syntax error at or near ';'. SQLSTATE: 42601 (line 1, pos 5)"
+  },
+  {
+   "id": "v906",
+   "tags": [
+    "bare",
+    "end"
+   ],
+   "sql": "END",
+   "error_class": "PARSE_SYNTAX_ERROR",
+   "message": "Syntax error at or near 'END'. SQLSTATE: 42601 (line 1, pos 0)"
+  },
+  {
+   "id": "v907",
+   "tags": [
+    "bare",
+    "commit"
+   ],
+   "sql": "COMMIT",
+   "error_class": "NO_ACTIVE_TRANSACTION",
+   "message": "There is no active transaction to commit."
+  }
+ ]
+}

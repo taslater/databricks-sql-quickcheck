@@ -22,6 +22,7 @@ import {
 } from "./common";
 import { KEYWORDS } from "./keywords";
 import { lex, Token } from "./lexer";
+import { checkBlocks } from "./blocks";
 import { checkRawTail, checkStatements } from "./statements";
 
 export type { CheckOptions, Diagnostic, Severity };
@@ -74,14 +75,22 @@ export function check(text: string, options: CheckOptions = {}): Diagnostic[] {
   const swallowed = new Set(out.filter((r) => r.code === "string-swallows-code").map((r) => r.start));
   const base = { text, scripting, warnings: options.warnings ?? true, explicitAliases: options.explicitAliases ?? false, out, swallowed };
 
+  // The fragments of each notebook cell, kept for the block-structure pass:
+  // a scripting block's opener and closer are in different fragments.
+  const cells: Token[][][] = [[]];
   let start = 0;
   for (let i = 0; i <= sig.length; i++) {
     const t = sig[i];
     const atEnd = i === sig.length;
     if (!atEnd && !(t.kind === "separator" || isPunct(t, ";"))) continue;
-    checkFragment(sig.slice(start, i), { ...base, openEnded: atEnd && errors.length > 0 });
+    const frag = sig.slice(start, i);
+    checkFragment(frag, { ...base, openEnded: atEnd && errors.length > 0 });
+    cells[cells.length - 1].push(dropMagicLine(frag, text));
+    if (!atEnd && t.kind === "separator") cells.push([]);
     start = i + 1;
   }
+  // A lexical error leaves the tail of the input unreliable, so no block is judged.
+  if (errors.length === 0) checkBlocks(cells, { ...base, openEnded: false });
   return finalize(text, out);
 }
 
@@ -158,7 +167,9 @@ function checkFragment(all: Token[], ctx: Ctx): void {
     }
 
     if (t.kind === "word" && !isNameContext(p)) {
-      if (t.upper === "CASE" && !(p?.kind === "word" && p.upper === "END")) {
+      // `CASE )` and `CASE ,` cannot open an expression: it is a variable called case.
+      const bareName = n !== undefined && (isPunct(n, ")") || isPunct(n, ","));
+      if (t.upper === "CASE" && !bareName && !(p?.kind === "word" && p.upper === "END")) {
         cases[stack.length].push(i);
       } else if (t.upper === "END") {
         const next = n?.kind === "word" ? n.upper! : "";
