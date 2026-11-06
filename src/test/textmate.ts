@@ -100,6 +100,44 @@ export interface Token {
   scopes: string[];
 }
 
+// Tokenizing a line is a pure function of the grammar, the rule stack it starts
+// in and the line's text, and the corpus repeats both a lot (about a third of
+// the lines of the grammar-corpus run start in a stack and text already seen).
+// So the result is memoised per grammar, keyed by a stable id for the stack
+// object and the line. Identical inputs give identical tokens; nothing is skipped.
+interface LineMemo {
+  ids: WeakMap<object, number>;
+  nextId: number;
+  results: Map<string, vsctm.ITokenizeLineResult>;
+}
+const lineMemos = new WeakMap<vsctm.IGrammar, LineMemo>();
+
+function tokenizeLineMemo(g: vsctm.IGrammar, line: string, state: vsctm.StateStack | null): vsctm.ITokenizeLineResult {
+  let memo = lineMemos.get(g);
+  if (!memo) {
+    memo = { ids: new WeakMap(), nextId: 1, results: new Map() };
+    lineMemos.set(g, memo);
+  }
+  let id = 0;
+  if (state !== null) {
+    const known = memo.ids.get(state);
+    if (known === undefined) {
+      id = memo.nextId++;
+      memo.ids.set(state, id);
+    } else {
+      id = known;
+    }
+  }
+  // A line has no line terminator, so the newline separates the two parts unambiguously.
+  const key = `${id}\n${line}`;
+  let r = memo.results.get(key);
+  if (r === undefined) {
+    r = g.tokenizeLine(line, state);
+    memo.results.set(key, r);
+  }
+  return r;
+}
+
 /** Tokenize like the editor: line by line, without line terminators. */
 export function tokenize(g: vsctm.IGrammar, text: string): { lines: Token[][]; regions: Region[] } {
   const regions: Region[] = new Array(text.length).fill("code");
@@ -111,7 +149,7 @@ export function tokenize(g: vsctm.IGrammar, text: string): { lines: Token[][]; r
     const m = eol.exec(text);
     const end = m ? m.index : text.length;
     const line = text.slice(start, end);
-    const r = g.tokenizeLine(line, state);
+    const r = tokenizeLineMemo(g, line, state);
     lines.push(r.tokens.map((t) => ({ text: line.slice(t.startIndex, t.endIndex), scopes: t.scopes })));
     for (const t of r.tokens) {
       const region = grammarRegion(t.scopes);
