@@ -11,7 +11,10 @@
   quiet on are in `docs/scripting.md`.
 - **Fixed a false positive on `BEGIN ATOMIC END`.** It was reported as a block
   with no statements; the engine accepts it, and `BEGIN END`.
-- **Fixed a false positive on a variable named `case`**, as in `VALUES (case)`.
+- **Fixed false positives on scripting labels and keyword-like names**: a
+  label that is a keyword (`LEAVE from`, `select: BEGIN`), a JSON key named
+  `then` or `end` (`j:then`), a variable named `end` inside `CASE WHEN end = 1`
+  or `IF then = 1`, and a variable named `case`, as in `VALUES (case)`.
 
 Three missed errors found in the `delete-comma` mutants (#5, #6, #7).
 

@@ -1,5 +1,5 @@
 {
- "_about": "Scripts run on a Databricks SQL warehouse (channel Current, v2026.43) on 2026-11-06. Every entry in 'valid' ran successfully (a parse error would have failed it); every entry in 'rejected' was refused by the engine. The block-structure checker must report nothing on 'valid'. Synthetic: no real tables, no real data.",
+ "_about": "Scripts run on a Databricks SQL warehouse (channel Current, v2026.43) on 2026-11-06. Every entry in 'valid' ran successfully (a parse error would have failed it); every entry in 'rejected' was refused by the engine. The block-structure checker must report nothing on 'valid'. Synthetic: no real tables, no real data. The a-numbered entries come from an adversarial pass that tried to make the block checker (or an older check) flag a script the engine accepts; each was a real false positive or a close call, and the checker now says nothing about any of them.",
  "valid": [
   {
    "id": "v001",
@@ -2155,6 +2155,3238 @@
     "begin-transaction-semicolon"
    ],
    "sql": "BEGIN TRANSACTION;"
+  },
+  {
+   "id": "a001",
+   "tags": [
+    "adversarial",
+    "label",
+    "txn-word",
+    "read",
+    "loop"
+   ],
+   "sql": "BEGIN read: LOOP LEAVE read; END LOOP read; END"
+  },
+  {
+   "id": "a002",
+   "tags": [
+    "adversarial",
+    "label",
+    "txn-word",
+    "work",
+    "begin"
+   ],
+   "sql": "BEGIN work: BEGIN VALUES (1); END work; END"
+  },
+  {
+   "id": "a003",
+   "tags": [
+    "adversarial",
+    "label",
+    "txn-word",
+    "transaction",
+    "begin"
+   ],
+   "sql": "BEGIN transaction: BEGIN VALUES (1); END transaction; END"
+  },
+  {
+   "id": "a004",
+   "tags": [
+    "adversarial",
+    "label",
+    "txn-word",
+    "isolation",
+    "loop"
+   ],
+   "sql": "BEGIN isolation: LOOP LEAVE isolation; END LOOP; END"
+  },
+  {
+   "id": "a005",
+   "tags": [
+    "adversarial",
+    "label",
+    "txn-word",
+    "immediate",
+    "repeat"
+   ],
+   "sql": "BEGIN immediate: REPEAT VALUES (1); UNTIL true END REPEAT immediate; END"
+  },
+  {
+   "id": "a006",
+   "tags": [
+    "adversarial",
+    "label",
+    "txn-word",
+    "exclusive",
+    "for"
+   ],
+   "sql": "BEGIN exclusive: FOR r AS SELECT 1 AS c DO VALUES (r.c); END FOR exclusive; END"
+  },
+  {
+   "id": "a007",
+   "tags": [
+    "adversarial",
+    "label",
+    "txn-word",
+    "deferred",
+    "while"
+   ],
+   "sql": "BEGIN deferred: WHILE false DO VALUES (1); END WHILE deferred; END"
+  },
+  {
+   "id": "a008",
+   "tags": [
+    "adversarial",
+    "label",
+    "txn-word",
+    "nested-in-if"
+   ],
+   "sql": "BEGIN IF true THEN BEGIN read: LOOP LEAVE read; END LOOP; END; END IF; END"
+  },
+  {
+   "id": "a009",
+   "tags": [
+    "adversarial",
+    "label",
+    "txn-word",
+    "work",
+    "loop",
+    "then",
+    "stmt"
+   ],
+   "sql": "BEGIN work: LOOP LEAVE work; END LOOP; VALUES (1); END"
+  },
+  {
+   "id": "a010",
+   "tags": [
+    "adversarial",
+    "label",
+    "txn-word",
+    "nested-begin"
+   ],
+   "sql": "BEGIN BEGIN work: LOOP LEAVE work; END LOOP work; END; VALUES (2); END"
+  },
+  {
+   "id": "a011",
+   "tags": [
+    "adversarial",
+    "label",
+    "txn-word",
+    "read-lower-case-end"
+   ],
+   "sql": "BEGIN READ: LOOP LEAVE read; END LOOP Read; END"
+  },
+  {
+   "id": "a012",
+   "tags": [
+    "adversarial",
+    "label",
+    "atomic",
+    "for"
+   ],
+   "sql": "BEGIN atomic: FOR r AS SELECT 1 AS c DO VALUES (r.c); END FOR; END"
+  },
+  {
+   "id": "a013",
+   "tags": [
+    "adversarial",
+    "label",
+    "atomic",
+    "for",
+    "end-label"
+   ],
+   "sql": "BEGIN atomic: FOR r AS SELECT 1 AS c DO VALUES (r.c); END FOR atomic; END"
+  },
+  {
+   "id": "a014",
+   "tags": [
+    "adversarial",
+    "label",
+    "quoted",
+    "for"
+   ],
+   "sql": "BEGIN `l`: FOR r AS SELECT 1 AS c DO VALUES (r.c); END FOR; END"
+  },
+  {
+   "id": "a015",
+   "tags": [
+    "adversarial",
+    "label",
+    "quoted",
+    "for",
+    "unquoted-end"
+   ],
+   "sql": "BEGIN `l`: FOR r AS SELECT 1 AS c DO VALUES (r.c); END FOR l; END"
+  },
+  {
+   "id": "a016",
+   "tags": [
+    "adversarial",
+    "label",
+    "quoted",
+    "for-keyword",
+    "not-first"
+   ],
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; `for`: FOR r AS SELECT 1 AS c DO VALUES (1); END FOR; END"
+  },
+  {
+   "id": "a017",
+   "tags": [
+    "adversarial",
+    "label",
+    "quoted",
+    "for",
+    "in-if"
+   ],
+   "sql": "BEGIN IF true THEN `l`: FOR r AS SELECT 1 AS c DO VALUES (1); END FOR; END IF; END"
+  },
+  {
+   "id": "a018",
+   "tags": [
+    "adversarial",
+    "then-misread",
+    "for-alias-do",
+    "if"
+   ],
+   "sql": "BEGIN FOR r AS SELECT 1 AS do DO IF r.do = 1 THEN VALUES (1); END IF; END FOR; END"
+  },
+  {
+   "id": "a019",
+   "tags": [
+    "adversarial",
+    "then-misread",
+    "struct-field-then",
+    "if"
+   ],
+   "sql": "BEGIN IF named_struct('then', 1).then = 1 THEN IF true THEN VALUES (1); END IF; END IF; END"
+  },
+  {
+   "id": "a020",
+   "tags": [
+    "adversarial",
+    "then-misread",
+    "struct-field-do",
+    "while",
+    "if"
+   ],
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; WHILE n < named_struct('do', 2).do DO IF n = 0 THEN VALUES (0); END IF; SET n = n + 1; END WHILE; END"
+  },
+  {
+   "id": "a021",
+   "tags": [
+    "adversarial",
+    "then-misread",
+    "var-then",
+    "if"
+   ],
+   "sql": "BEGIN DECLARE then INT DEFAULT 1; IF then = 1 THEN IF true THEN VALUES (1); END IF; END IF; END"
+  },
+  {
+   "id": "a022",
+   "tags": [
+    "adversarial",
+    "then-misread",
+    "var-do",
+    "while",
+    "if"
+   ],
+   "sql": "BEGIN DECLARE do INT DEFAULT 0; WHILE do < 2 DO IF do = 0 THEN VALUES (0); END IF; SET do = do + 1; END WHILE; END"
+  },
+  {
+   "id": "a023",
+   "tags": [
+    "adversarial",
+    "then-misread",
+    "elseif",
+    "struct-then"
+   ],
+   "sql": "BEGIN IF false THEN VALUES (0); ELSEIF named_struct('then', 1).then = 1 THEN IF true THEN VALUES (1); END IF; END IF; END"
+  },
+  {
+   "id": "a024",
+   "tags": [
+    "adversarial",
+    "then-misread",
+    "case-stmt",
+    "struct-then"
+   ],
+   "sql": "BEGIN CASE WHEN named_struct('then', 1).then = 1 THEN IF true THEN VALUES (1); END IF; END CASE; END"
+  },
+  {
+   "id": "a025",
+   "tags": [
+    "adversarial",
+    "then-misread",
+    "simple-case",
+    "when",
+    "struct-then"
+   ],
+   "sql": "BEGIN DECLARE n INT DEFAULT 2; CASE n WHEN 1 THEN VALUES (1); WHEN named_struct('then', 2).then THEN IF true THEN VALUES (2); END IF; END CASE; END"
+  },
+  {
+   "id": "a026",
+   "tags": [
+    "adversarial",
+    "then-misread",
+    "case-expr",
+    "struct-end"
+   ],
+   "sql": "BEGIN IF CASE WHEN named_struct('end', 1).end = 1 THEN true ELSE false END THEN IF true THEN VALUES (1); END IF; END IF; END"
+  },
+  {
+   "id": "a027",
+   "tags": [
+    "adversarial",
+    "then-misread",
+    "for-column-do"
+   ],
+   "sql": "BEGIN FOR r AS SELECT do FROM VALUES (1) AS t(do) DO IF r.do = 1 THEN VALUES (1); END IF; END FOR; END"
+  },
+  {
+   "id": "a028",
+   "tags": [
+    "adversarial",
+    "then-misread",
+    "for-var-do"
+   ],
+   "sql": "BEGIN FOR do AS SELECT 1 AS c DO IF do.c = 1 THEN VALUES (1); END IF; END FOR; END"
+  },
+  {
+   "id": "a029",
+   "tags": [
+    "adversarial",
+    "then-misread",
+    "for-alias-do",
+    "nested-for"
+   ],
+   "sql": "BEGIN FOR r AS SELECT 1 AS do DO FOR s AS SELECT 2 AS c DO VALUES (s.c); END FOR; END FOR; END"
+  },
+  {
+   "id": "a030",
+   "tags": [
+    "adversarial",
+    "then-misread",
+    "struct-do",
+    "while",
+    "case-stmt"
+   ],
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; WHILE n < 1 AND named_struct('do', true).do DO CASE WHEN true THEN SET n = n + 1; END CASE; END WHILE; END"
+  },
+  {
+   "id": "a031",
+   "tags": [
+    "adversarial",
+    "then-misread",
+    "for-alias-do",
+    "body-next-frag"
+   ],
+   "sql": "BEGIN FOR r AS SELECT 1 AS do DO VALUES (r.do); END FOR; END"
+  },
+  {
+   "id": "a032",
+   "tags": [
+    "adversarial",
+    "then-misread",
+    "struct-do",
+    "nested-loop"
+   ],
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; WHILE n < named_struct('do', 1).do DO l: LOOP LEAVE l; END LOOP; SET n = n + 1; END WHILE; END"
+  },
+  {
+   "id": "a033",
+   "tags": [
+    "adversarial",
+    "then-misread",
+    "struct-var",
+    "then",
+    "do"
+   ],
+   "sql": "BEGIN DECLARE s STRUCT<then: INT, do: INT> DEFAULT named_struct('then', 1, 'do', 2); IF s.then = 1 THEN IF s.do = 2 THEN VALUES (1); END IF; END IF; END"
+  },
+  {
+   "id": "a034",
+   "tags": [
+    "adversarial",
+    "then-misread",
+    "var-end",
+    "case-expr"
+   ],
+   "sql": "BEGIN DECLARE end INT DEFAULT 1; IF CASE WHEN end = 1 THEN true ELSE false END THEN IF true THEN VALUES (1); END IF; END IF; END"
+  },
+  {
+   "id": "a035",
+   "tags": [
+    "adversarial",
+    "then-misread",
+    "struct-then",
+    "if-in-while"
+   ],
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; WHILE n < 1 DO SET n = n + 1; IF named_struct('then', n).then = 1 THEN CASE WHEN true THEN VALUES (1); END CASE; END IF; END WHILE; END"
+  },
+  {
+   "id": "a036",
+   "tags": [
+    "adversarial",
+    "then-misread",
+    "for-alias-do",
+    "case-stmt"
+   ],
+   "sql": "BEGIN FOR r AS SELECT 1 AS do DO CASE r.do WHEN 1 THEN VALUES (1); END CASE; END FOR; END"
+  },
+  {
+   "id": "a037",
+   "tags": [
+    "adversarial",
+    "then-misread",
+    "repeat-body",
+    "if",
+    "struct-then"
+   ],
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; REPEAT SET n = n + 1; IF named_struct('then', 1).then = n THEN IF true THEN VALUES (n); END IF; END IF; UNTIL n >= 1 END REPEAT; END"
+  },
+  {
+   "id": "a038",
+   "tags": [
+    "adversarial",
+    "then-misread",
+    "var-then",
+    "elseif"
+   ],
+   "sql": "BEGIN DECLARE then INT DEFAULT 2; IF then = 1 THEN VALUES (1); ELSEIF then = 2 THEN FOR r AS SELECT 1 AS c DO VALUES (r.c); END FOR; END IF; END"
+  },
+  {
+   "id": "a039",
+   "tags": [
+    "adversarial",
+    "handler",
+    "set",
+    "struct-begin"
+   ],
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE CONTINUE HANDLER FOR DIVIDE_BY_ZERO SET n = named_struct('begin', 5).begin + 0; SELECT 1/0; VALUES (n); END"
+  },
+  {
+   "id": "a040",
+   "tags": [
+    "adversarial",
+    "handler",
+    "quoted-condition-begin"
+   ],
+   "sql": "BEGIN DECLARE `begin` CONDITION FOR SQLSTATE '45000'; DECLARE EXIT HANDLER FOR begin BEGIN VALUES (1); END; SIGNAL `begin`; END"
+  },
+  {
+   "id": "a041",
+   "tags": [
+    "adversarial",
+    "handler",
+    "var-begin",
+    "quoted"
+   ],
+   "sql": "BEGIN DECLARE `begin` INT DEFAULT 0; DECLARE CONTINUE HANDLER FOR DIVIDE_BY_ZERO SET begin = 1; SELECT 1/0; VALUES (1); END"
+  },
+  {
+   "id": "a042",
+   "tags": [
+    "adversarial",
+    "label",
+    "kw",
+    "then",
+    "begin",
+    "in-if"
+   ],
+   "sql": "BEGIN IF true THEN then: BEGIN VALUES (1); END then; END IF; END"
+  },
+  {
+   "id": "a043",
+   "tags": [
+    "adversarial",
+    "label",
+    "kw",
+    "else",
+    "begin",
+    "in-else"
+   ],
+   "sql": "BEGIN IF false THEN VALUES (0); ELSE else: BEGIN VALUES (1); END else; END IF; END"
+  },
+  {
+   "id": "a044",
+   "tags": [
+    "adversarial",
+    "label",
+    "kw",
+    "when",
+    "loop",
+    "in-case"
+   ],
+   "sql": "BEGIN CASE WHEN true THEN when: LOOP LEAVE when; END LOOP when; END CASE; END"
+  },
+  {
+   "id": "a045",
+   "tags": [
+    "adversarial",
+    "label",
+    "kw",
+    "select"
+   ],
+   "sql": "BEGIN select: BEGIN VALUES (1); END select; END"
+  },
+  {
+   "id": "a046",
+   "tags": [
+    "adversarial",
+    "label",
+    "kw",
+    "values",
+    "loop"
+   ],
+   "sql": "BEGIN values: LOOP LEAVE values; END LOOP values; END"
+  },
+  {
+   "id": "a047",
+   "tags": [
+    "adversarial",
+    "name",
+    "var",
+    "end",
+    "in",
+    "until"
+   ],
+   "sql": "BEGIN DECLARE end INT DEFAULT 0; REPEAT SET end = end + 1; UNTIL end > 1 END REPEAT; END"
+  },
+  {
+   "id": "a048",
+   "tags": [
+    "adversarial",
+    "repeat",
+    "until",
+    "struct-end"
+   ],
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; REPEAT SET n = n + 1; UNTIL n > named_struct('end', 1).end END REPEAT; END"
+  },
+  {
+   "id": "a049",
+   "tags": [
+    "adversarial",
+    "handler",
+    "labelled",
+    "begin-block",
+    "after",
+    "declare"
+   ],
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE EXIT HANDLER FOR SQLEXCEPTION h: BEGIN VALUES (1); END h; SELECT 1/0; END"
+  },
+  {
+   "id": "a050",
+   "tags": [
+    "adversarial",
+    "handler",
+    "select-alias-begin",
+    "after",
+    "declare"
+   ],
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE CONTINUE HANDLER FOR SQLEXCEPTION SELECT 1 AS begin, 2 AS b; VALUES (n); END"
+  },
+  {
+   "id": "a051",
+   "tags": [
+    "adversarial",
+    "handler",
+    "select-alias-begin",
+    "from",
+    "after",
+    "declare"
+   ],
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE EXIT HANDLER FOR SQLEXCEPTION SELECT 1 AS begin FROM range(1); VALUES (n); END"
+  },
+  {
+   "id": "a052",
+   "tags": [
+    "adversarial",
+    "handler",
+    "struct-begin",
+    "select",
+    "after",
+    "declare"
+   ],
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE EXIT HANDLER FOR SQLEXCEPTION SELECT named_struct('begin', 1).begin AS x; VALUES (n); END"
+  },
+  {
+   "id": "a053",
+   "tags": [
+    "adversarial",
+    "handler",
+    "extra-begin",
+    "then",
+    "else"
+   ],
+   "sql": "BEGIN IF true THEN BEGIN DECLARE x INT DEFAULT 0; DECLARE CONTINUE HANDLER FOR SQLEXCEPTION SELECT 1 AS begin, 2 AS y; VALUES (x); END; ELSE VALUES (2); END IF; END"
+  },
+  {
+   "id": "a054",
+   "tags": [
+    "adversarial",
+    "var-case",
+    "if",
+    "as-end"
+   ],
+   "sql": "BEGIN DECLARE case INT DEFAULT 1; IF case = 1 THEN SELECT 1 AS end; END IF; END"
+  },
+  {
+   "id": "a055",
+   "tags": [
+    "adversarial",
+    "var-case",
+    "simple-case",
+    "struct-end"
+   ],
+   "sql": "BEGIN DECLARE case INT DEFAULT 1; CASE case WHEN 1 THEN SELECT named_struct('end', 1).end AS x; END CASE; END"
+  },
+  {
+   "id": "a056",
+   "tags": [
+    "adversarial",
+    "var-case",
+    "while",
+    "as-end"
+   ],
+   "sql": "BEGIN DECLARE case INT DEFAULT 0; WHILE case < 1 DO SELECT 1 AS end; SET case = case + 1; END WHILE; END"
+  },
+  {
+   "id": "a057",
+   "tags": [
+    "adversarial",
+    "label",
+    "kw",
+    "from"
+   ],
+   "sql": "BEGIN from: LOOP LEAVE from; END LOOP from; END"
+  },
+  {
+   "id": "a058",
+   "tags": [
+    "adversarial",
+    "label",
+    "kw",
+    "where"
+   ],
+   "sql": "BEGIN where: LOOP LEAVE where; END LOOP where; END"
+  },
+  {
+   "id": "a059",
+   "tags": [
+    "adversarial",
+    "label",
+    "kw",
+    "and"
+   ],
+   "sql": "BEGIN and: LOOP LEAVE and; END LOOP and; END"
+  },
+  {
+   "id": "a060",
+   "tags": [
+    "adversarial",
+    "label",
+    "kw",
+    "or"
+   ],
+   "sql": "BEGIN or: LOOP LEAVE or; END LOOP or; END"
+  },
+  {
+   "id": "a061",
+   "tags": [
+    "adversarial",
+    "label",
+    "kw",
+    "not"
+   ],
+   "sql": "BEGIN not: LOOP LEAVE not; END LOOP not; END"
+  },
+  {
+   "id": "a062",
+   "tags": [
+    "adversarial",
+    "label",
+    "kw",
+    "in"
+   ],
+   "sql": "BEGIN in: LOOP LEAVE in; END LOOP in; END"
+  },
+  {
+   "id": "a063",
+   "tags": [
+    "adversarial",
+    "label",
+    "kw",
+    "group"
+   ],
+   "sql": "BEGIN group: LOOP LEAVE group; END LOOP group; END"
+  },
+  {
+   "id": "a064",
+   "tags": [
+    "adversarial",
+    "label",
+    "kw",
+    "limit"
+   ],
+   "sql": "BEGIN limit: LOOP LEAVE limit; END LOOP limit; END"
+  },
+  {
+   "id": "a065",
+   "tags": [
+    "adversarial",
+    "label",
+    "kw",
+    "as"
+   ],
+   "sql": "BEGIN as: LOOP LEAVE as; END LOOP as; END"
+  },
+  {
+   "id": "a066",
+   "tags": [
+    "adversarial",
+    "label",
+    "kw",
+    "is"
+   ],
+   "sql": "BEGIN is: LOOP LEAVE is; END LOOP is; END"
+  },
+  {
+   "id": "a067",
+   "tags": [
+    "adversarial",
+    "label",
+    "kw",
+    "with"
+   ],
+   "sql": "BEGIN with: LOOP LEAVE with; END LOOP with; END"
+  },
+  {
+   "id": "a068",
+   "tags": [
+    "adversarial",
+    "label",
+    "kw",
+    "into"
+   ],
+   "sql": "BEGIN into: LOOP LEAVE into; END LOOP into; END"
+  },
+  {
+   "id": "a069",
+   "tags": [
+    "adversarial",
+    "label",
+    "kw",
+    "like"
+   ],
+   "sql": "BEGIN like: LOOP LEAVE like; END LOOP like; END"
+  },
+  {
+   "id": "a070",
+   "tags": [
+    "adversarial",
+    "label",
+    "kw",
+    "between"
+   ],
+   "sql": "BEGIN between: LOOP LEAVE between; END LOOP between; END"
+  },
+  {
+   "id": "a071",
+   "tags": [
+    "adversarial",
+    "label",
+    "kw",
+    "set"
+   ],
+   "sql": "BEGIN set: LOOP LEAVE set; END LOOP set; END"
+  },
+  {
+   "id": "a072",
+   "tags": [
+    "adversarial",
+    "label",
+    "kw",
+    "declare"
+   ],
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; declare: LOOP LEAVE declare; END LOOP declare; END"
+  },
+  {
+   "id": "a073",
+   "tags": [
+    "adversarial",
+    "label",
+    "kw",
+    "then",
+    "plain",
+    "loop"
+   ],
+   "sql": "BEGIN then: LOOP LEAVE then; END LOOP then; END"
+  },
+  {
+   "id": "a074",
+   "tags": [
+    "adversarial",
+    "label",
+    "kw",
+    "else",
+    "plain",
+    "loop"
+   ],
+   "sql": "BEGIN else: LOOP LEAVE else; END LOOP else; END"
+  },
+  {
+   "id": "a075",
+   "tags": [
+    "adversarial",
+    "label",
+    "kw",
+    "when",
+    "plain",
+    "loop"
+   ],
+   "sql": "BEGIN when: LOOP LEAVE when; END LOOP when; END"
+  },
+  {
+   "id": "a076",
+   "tags": [
+    "adversarial",
+    "label",
+    "kw",
+    "select",
+    "loop"
+   ],
+   "sql": "BEGIN select: LOOP LEAVE select; END LOOP select; END"
+  },
+  {
+   "id": "a077",
+   "tags": [
+    "adversarial",
+    "label",
+    "kw",
+    "iterate",
+    "select"
+   ],
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; select: LOOP SET n = n + 1; IF n < 2 THEN ITERATE select; END IF; LEAVE select; END LOOP; END"
+  },
+  {
+   "id": "a078",
+   "tags": [
+    "adversarial",
+    "label",
+    "kw",
+    "then",
+    "loop",
+    "in",
+    "if"
+   ],
+   "sql": "BEGIN IF true THEN then: LOOP LEAVE then; END LOOP; END IF; END"
+  },
+  {
+   "id": "a079",
+   "tags": [
+    "adversarial",
+    "label",
+    "kw",
+    "values",
+    "in",
+    "if"
+   ],
+   "sql": "BEGIN IF true THEN values: LOOP LEAVE values; END LOOP; END IF; END"
+  },
+  {
+   "id": "a080",
+   "tags": [
+    "adversarial",
+    "var",
+    "handler",
+    "struct-begin"
+   ],
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE handler STRUCT<begin: INT> DEFAULT named_struct('begin', 1); VALUES (handler.begin); END"
+  },
+  {
+   "id": "a081",
+   "tags": [
+    "adversarial",
+    "handler",
+    "begin",
+    "read-label"
+   ],
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE EXIT HANDLER FOR DIVIDE_BY_ZERO BEGIN read: LOOP LEAVE read; END LOOP; END; SELECT 1/0; END"
+  },
+  {
+   "id": "a082",
+   "tags": [
+    "adversarial",
+    "txn-label",
+    "after",
+    "do",
+    "valid"
+   ],
+   "sql": "BEGIN x: WHILE true DO BEGIN work: LOOP LEAVE work; END LOOP; END; LEAVE x; END WHILE x; END"
+  },
+  {
+   "id": "a083",
+   "tags": [
+    "adversarial",
+    "txn-label",
+    "after",
+    "else"
+   ],
+   "sql": "BEGIN IF false THEN VALUES (0); ELSE BEGIN immediate: LOOP LEAVE immediate; END LOOP; END; END IF; END"
+  },
+  {
+   "id": "a084",
+   "tags": [
+    "adversarial",
+    "txn-label",
+    "after",
+    "when"
+   ],
+   "sql": "BEGIN CASE WHEN true THEN BEGIN transaction: LOOP LEAVE transaction; END LOOP; END; END CASE; END"
+  },
+  {
+   "id": "a085",
+   "tags": [
+    "adversarial",
+    "txn-label",
+    "for",
+    "after",
+    "begin"
+   ],
+   "sql": "BEGIN BEGIN read: FOR r AS SELECT 1 AS c DO VALUES (r.c); END FOR; END; END"
+  },
+  {
+   "id": "a086",
+   "tags": [
+    "adversarial",
+    "var-case",
+    "until"
+   ],
+   "sql": "BEGIN DECLARE case INT DEFAULT 0; REPEAT SET case = case + 1; UNTIL case > 1 END REPEAT; END"
+  },
+  {
+   "id": "a087",
+   "tags": [
+    "adversarial",
+    "var-case",
+    "until",
+    "struct-end"
+   ],
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; REPEAT SET n = n + 1; UNTIL named_struct('end', 2).end < n END REPEAT; END"
+  },
+  {
+   "id": "a088",
+   "tags": [
+    "adversarial",
+    "until",
+    "case-expr",
+    "struct-end"
+   ],
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; REPEAT SET n = n + 1; UNTIL CASE WHEN named_struct('end', 1).end < n THEN true ELSE false END END REPEAT; END"
+  },
+  {
+   "id": "a089",
+   "tags": [
+    "adversarial",
+    "then-misread",
+    "if",
+    "else",
+    "second"
+   ],
+   "sql": "BEGIN IF named_struct('then', 1).then = 1 THEN IF false THEN VALUES (0); ELSE VALUES (1); END IF; ELSE VALUES (2); END IF; END"
+  },
+  {
+   "id": "a090",
+   "tags": [
+    "adversarial",
+    "json-path",
+    "var",
+    "then",
+    "if"
+   ],
+   "sql": "BEGIN DECLARE j STRING DEFAULT '{\"then\": 1}'; IF j:then = '1' THEN IF true THEN VALUES (1); END IF; END IF; END"
+  },
+  {
+   "id": "a091",
+   "tags": [
+    "adversarial",
+    "json-path",
+    "var",
+    "do",
+    "while"
+   ],
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE j STRING DEFAULT '{\"do\": 1}'; WHILE n < j:do::INT DO IF n = 0 THEN VALUES (0); END IF; SET n = n + 1; END WHILE; END"
+  },
+  {
+   "id": "a092",
+   "tags": [
+    "adversarial",
+    "json-path",
+    "column",
+    "begin",
+    "handler"
+   ],
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE EXIT HANDLER FOR SQLEXCEPTION SELECT j:begin AS x FROM VALUES ('{\"begin\": 1}') AS t(j); VALUES (n); END"
+  },
+  {
+   "id": "a093",
+   "tags": [
+    "adversarial",
+    "json-path",
+    "var",
+    "then",
+    "body",
+    "next",
+    "frag"
+   ],
+   "sql": "BEGIN DECLARE j STRING DEFAULT '{\"then\": 1}'; IF j:then = '1' THEN VALUES (1); END IF; END"
+  },
+  {
+   "id": "a094",
+   "tags": [
+    "adversarial",
+    "json-path",
+    "for",
+    "column",
+    "do",
+    "if"
+   ],
+   "sql": "BEGIN FOR r AS SELECT j:do AS v FROM VALUES ('{\"do\": 1}') AS t(j) DO IF r.v = '1' THEN VALUES (1); END IF; END FOR; END"
+  },
+  {
+   "id": "a095",
+   "tags": [
+    "adversarial",
+    "label",
+    "txn-word",
+    "not-first"
+   ],
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; read: LOOP LEAVE read; END LOOP read; VALUES (n); END"
+  },
+  {
+   "id": "a096",
+   "tags": [
+    "adversarial",
+    "label",
+    "txn-word",
+    "after-atomic"
+   ],
+   "sql": "BEGIN ATOMIC read: LOOP LEAVE read; END LOOP; END"
+  },
+  {
+   "id": "a097",
+   "tags": [
+    "adversarial",
+    "label",
+    "atomic",
+    "loop"
+   ],
+   "sql": "BEGIN atomic: LOOP LEAVE atomic; END LOOP atomic; END"
+  },
+  {
+   "id": "a098",
+   "tags": [
+    "adversarial",
+    "label",
+    "atomic",
+    "begin"
+   ],
+   "sql": "BEGIN atomic: BEGIN VALUES (1); END atomic; END"
+  },
+  {
+   "id": "a099",
+   "tags": [
+    "adversarial",
+    "label",
+    "atomic",
+    "after-atomic",
+    "for"
+   ],
+   "sql": "BEGIN ATOMIC atomic: FOR r AS SELECT 1 AS c DO VALUES (1); END FOR; END"
+  },
+  {
+   "id": "a100",
+   "tags": [
+    "adversarial",
+    "label",
+    "quoted",
+    "loop"
+   ],
+   "sql": "BEGIN `l`: LOOP LEAVE `l`; END LOOP `l`; END"
+  },
+  {
+   "id": "a101",
+   "tags": [
+    "adversarial",
+    "label",
+    "quoted",
+    "space",
+    "begin"
+   ],
+   "sql": "BEGIN `my label`: BEGIN VALUES (1); END `my label`; END"
+  },
+  {
+   "id": "a102",
+   "tags": [
+    "adversarial",
+    "label",
+    "quoted",
+    "while"
+   ],
+   "sql": "BEGIN `l`: WHILE false DO VALUES (1); END WHILE l; END"
+  },
+  {
+   "id": "a103",
+   "tags": [
+    "adversarial",
+    "label",
+    "quoted",
+    "repeat"
+   ],
+   "sql": "BEGIN `l`: REPEAT VALUES (1); UNTIL true END REPEAT; END"
+  },
+  {
+   "id": "a104",
+   "tags": [
+    "adversarial",
+    "then-misread",
+    "struct-then",
+    "body-next-frag"
+   ],
+   "sql": "BEGIN IF named_struct('then', 1).then = 1 THEN VALUES (1); END IF; END"
+  },
+  {
+   "id": "a105",
+   "tags": [
+    "adversarial",
+    "then-misread",
+    "struct-then",
+    "nested-begin"
+   ],
+   "sql": "BEGIN IF named_struct('then', 1).then = 1 THEN BEGIN VALUES (1); END; END IF; END"
+  },
+  {
+   "id": "a106",
+   "tags": [
+    "adversarial",
+    "then-misread",
+    "map-key-then"
+   ],
+   "sql": "BEGIN IF map('then', 1)['then'] = 1 THEN IF true THEN VALUES (1); END IF; END IF; END"
+  },
+  {
+   "id": "a107",
+   "tags": [
+    "adversarial",
+    "then-misread",
+    "for-alias-then-in-query"
+   ],
+   "sql": "BEGIN FOR r AS SELECT 1 AS then DO IF r.then = 1 THEN VALUES (1); END IF; END FOR; END"
+  },
+  {
+   "id": "a108",
+   "tags": [
+    "adversarial",
+    "handler",
+    "select-alias-begin"
+   ],
+   "sql": "BEGIN DECLARE CONTINUE HANDLER FOR SQLEXCEPTION SELECT 1 AS begin, 2 AS b; VALUES (1); END"
+  },
+  {
+   "id": "a109",
+   "tags": [
+    "adversarial",
+    "handler",
+    "select-alias-begin",
+    "from"
+   ],
+   "sql": "BEGIN DECLARE EXIT HANDLER FOR SQLEXCEPTION SELECT 1 AS begin FROM range(1); VALUES (1); END"
+  },
+  {
+   "id": "a110",
+   "tags": [
+    "adversarial",
+    "handler",
+    "begin-block",
+    "control"
+   ],
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE CONTINUE HANDLER FOR DIVIDE_BY_ZERO BEGIN SET n = 5; END; SELECT 1/0; VALUES (n); END"
+  },
+  {
+   "id": "a111",
+   "tags": [
+    "adversarial",
+    "handler",
+    "string-begin"
+   ],
+   "sql": "BEGIN DECLARE CONTINUE HANDLER FOR SQLEXCEPTION VALUES ('begin'); VALUES (1); END"
+  },
+  {
+   "id": "a112",
+   "tags": [
+    "adversarial",
+    "handler",
+    "action-select",
+    "struct-begin"
+   ],
+   "sql": "BEGIN DECLARE EXIT HANDLER FOR SQLEXCEPTION SELECT named_struct('begin', 1).begin AS x; VALUES (1); END"
+  },
+  {
+   "id": "a113",
+   "tags": [
+    "adversarial",
+    "handler",
+    "begin-block",
+    "with",
+    "case-expr"
+   ],
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE EXIT HANDLER FOR DIVIDE_BY_ZERO BEGIN SET n = CASE WHEN n = 0 THEN 1 ELSE 2 END; VALUES (n); END; SELECT 1/0; END"
+  },
+  {
+   "id": "a114",
+   "tags": [
+    "adversarial",
+    "handler",
+    "begin-block",
+    "nested",
+    "if"
+   ],
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE CONTINUE HANDLER FOR DIVIDE_BY_ZERO BEGIN IF n = 0 THEN SET n = 7; END IF; END; SELECT 1/0; VALUES (n); END"
+  },
+  {
+   "id": "a115",
+   "tags": [
+    "adversarial",
+    "handler",
+    "labelled",
+    "begin-block"
+   ],
+   "sql": "BEGIN DECLARE EXIT HANDLER FOR SQLEXCEPTION h: BEGIN VALUES (1); END h; SELECT 1/0; END"
+  },
+  {
+   "id": "a116",
+   "tags": [
+    "adversarial",
+    "handler",
+    "var",
+    "named",
+    "handler"
+   ],
+   "sql": "BEGIN DECLARE handler INT DEFAULT 3; VALUES (handler); END"
+  },
+  {
+   "id": "a117",
+   "tags": [
+    "adversarial",
+    "handler",
+    "signal-resignal"
+   ],
+   "sql": "BEGIN DECLARE EXIT HANDLER FOR SQLSTATE '45000' BEGIN VALUES ('caught'); END; SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'boom'; END"
+  },
+  {
+   "id": "a118",
+   "tags": [
+    "adversarial",
+    "handler",
+    "get-diagnostics"
+   ],
+   "sql": "BEGIN DECLARE EXIT HANDLER FOR DIVIDE_BY_ZERO BEGIN DECLARE msg STRING; GET DIAGNOSTICS CONDITION 1 msg = MESSAGE_TEXT; VALUES (msg IS NOT NULL); END; SELECT 1/0; END"
+  },
+  {
+   "id": "a119",
+   "tags": [
+    "adversarial",
+    "handler",
+    "not-found"
+   ],
+   "sql": "BEGIN DECLARE EXIT HANDLER FOR NOT FOUND VALUES (0); VALUES (1); END"
+  },
+  {
+   "id": "a120",
+   "tags": [
+    "adversarial",
+    "handler",
+    "sqlstate",
+    "value"
+   ],
+   "sql": "BEGIN DECLARE EXIT HANDLER FOR SQLSTATE VALUE '22012' VALUES (0); SELECT 1/0; END"
+  },
+  {
+   "id": "a121",
+   "tags": [
+    "adversarial",
+    "handler",
+    "nested",
+    "handler",
+    "in",
+    "handler"
+   ],
+   "sql": "BEGIN DECLARE EXIT HANDLER FOR DIVIDE_BY_ZERO BEGIN DECLARE EXIT HANDLER FOR SQLEXCEPTION VALUES (2); VALUES (1); END; SELECT 1/0; END"
+  },
+  {
+   "id": "a122",
+   "tags": [
+    "adversarial",
+    "handler",
+    "body",
+    "loop"
+   ],
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE CONTINUE HANDLER FOR DIVIDE_BY_ZERO BEGIN l: LOOP SET n = n + 1; IF n > 2 THEN LEAVE l; END IF; END LOOP l; END; SELECT 1/0; VALUES (n); END"
+  },
+  {
+   "id": "a123",
+   "tags": [
+    "adversarial",
+    "label",
+    "kw",
+    "while",
+    "while"
+   ],
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; while: WHILE n < 2 DO SET n = n + 1; END WHILE while; VALUES (n); END"
+  },
+  {
+   "id": "a124",
+   "tags": [
+    "adversarial",
+    "label",
+    "kw",
+    "for",
+    "for"
+   ],
+   "sql": "BEGIN for: FOR r AS SELECT 1 AS c DO VALUES (r.c); END FOR for; END"
+  },
+  {
+   "id": "a125",
+   "tags": [
+    "adversarial",
+    "label",
+    "kw",
+    "repeat",
+    "repeat"
+   ],
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; repeat: REPEAT SET n = n + 1; UNTIL n > 1 END REPEAT repeat; END"
+  },
+  {
+   "id": "a126",
+   "tags": [
+    "adversarial",
+    "label",
+    "kw",
+    "case",
+    "begin"
+   ],
+   "sql": "BEGIN case: BEGIN VALUES (1); END case; END"
+  },
+  {
+   "id": "a127",
+   "tags": [
+    "adversarial",
+    "label",
+    "kw",
+    "until",
+    "repeat"
+   ],
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; until: REPEAT SET n = n + 1; IF n > 5 THEN LEAVE until; END IF; UNTIL n > 1 END REPEAT until; END"
+  },
+  {
+   "id": "a128",
+   "tags": [
+    "adversarial",
+    "label",
+    "kw",
+    "do",
+    "while"
+   ],
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; do: WHILE n < 1 DO SET n = n + 1; END WHILE do; END"
+  },
+  {
+   "id": "a129",
+   "tags": [
+    "adversarial",
+    "label",
+    "kw",
+    "elseif",
+    "loop"
+   ],
+   "sql": "BEGIN elseif: LOOP LEAVE elseif; END LOOP elseif; END"
+  },
+  {
+   "id": "a130",
+   "tags": [
+    "adversarial",
+    "label",
+    "kw",
+    "if",
+    "loop"
+   ],
+   "sql": "BEGIN if: LOOP LEAVE if; END LOOP if; END"
+  },
+  {
+   "id": "a131",
+   "tags": [
+    "adversarial",
+    "label",
+    "kw",
+    "loop",
+    "begin"
+   ],
+   "sql": "BEGIN loop: BEGIN VALUES (1); END loop; END"
+  },
+  {
+   "id": "a132",
+   "tags": [
+    "adversarial",
+    "label",
+    "kw",
+    "while",
+    "begin"
+   ],
+   "sql": "BEGIN while: BEGIN VALUES (1); END while; END"
+  },
+  {
+   "id": "a133",
+   "tags": [
+    "adversarial",
+    "label",
+    "kw",
+    "for",
+    "begin"
+   ],
+   "sql": "BEGIN for: BEGIN VALUES (1); END for; END"
+  },
+  {
+   "id": "a134",
+   "tags": [
+    "adversarial",
+    "label",
+    "kw",
+    "repeat",
+    "begin"
+   ],
+   "sql": "BEGIN repeat: BEGIN VALUES (1); END repeat; END"
+  },
+  {
+   "id": "a135",
+   "tags": [
+    "adversarial",
+    "label",
+    "kw",
+    "loop",
+    "while"
+   ],
+   "sql": "BEGIN loop: WHILE false DO VALUES (1); END WHILE loop; END"
+  },
+  {
+   "id": "a136",
+   "tags": [
+    "adversarial",
+    "label",
+    "kw",
+    "while",
+    "loop"
+   ],
+   "sql": "BEGIN while: LOOP LEAVE while; END LOOP while; END"
+  },
+  {
+   "id": "a137",
+   "tags": [
+    "adversarial",
+    "label",
+    "kw",
+    "if",
+    "begin",
+    "with",
+    "inner",
+    "if"
+   ],
+   "sql": "BEGIN if: BEGIN IF true THEN VALUES (1); END IF; END if; END"
+  },
+  {
+   "id": "a138",
+   "tags": [
+    "adversarial",
+    "label",
+    "kw",
+    "loop",
+    "begin",
+    "with",
+    "inner",
+    "loop"
+   ],
+   "sql": "BEGIN loop: BEGIN l: LOOP LEAVE l; END LOOP; END loop; END"
+  },
+  {
+   "id": "a139",
+   "tags": [
+    "adversarial",
+    "label",
+    "kw",
+    "case",
+    "begin",
+    "inner",
+    "case"
+   ],
+   "sql": "BEGIN case: BEGIN CASE WHEN true THEN VALUES (1); END CASE; END case; END"
+  },
+  {
+   "id": "a140",
+   "tags": [
+    "adversarial",
+    "label",
+    "kw",
+    "if",
+    "begin",
+    "unlabelled",
+    "end"
+   ],
+   "sql": "BEGIN if: BEGIN VALUES (1); END; END"
+  },
+  {
+   "id": "a141",
+   "tags": [
+    "adversarial",
+    "label",
+    "kw",
+    "leave",
+    "iterate"
+   ],
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; leave: LOOP SET n = n + 1; IF n > 2 THEN LEAVE leave; END IF; ITERATE leave; END LOOP leave; END"
+  },
+  {
+   "id": "a142",
+   "tags": [
+    "adversarial",
+    "label",
+    "case",
+    "differs",
+    "begin"
+   ],
+   "sql": "BEGIN Outer: BEGIN VALUES (1); END OUTER; END"
+  },
+  {
+   "id": "a143",
+   "tags": [
+    "adversarial",
+    "label",
+    "sibling",
+    "reuse",
+    "loops"
+   ],
+   "sql": "BEGIN l: LOOP LEAVE l; END LOOP l; l: LOOP LEAVE l; END LOOP l; END"
+  },
+  {
+   "id": "a144",
+   "tags": [
+    "adversarial",
+    "label",
+    "nested",
+    "distinct",
+    "deep"
+   ],
+   "sql": "BEGIN a: BEGIN b: LOOP c: BEGIN d: WHILE true DO LEAVE b; END WHILE d; END c; END LOOP b; END a; END"
+  },
+  {
+   "id": "a145",
+   "tags": [
+    "adversarial",
+    "label",
+    "newline",
+    "after",
+    "colon"
+   ],
+   "sql": "BEGIN l:\nLOOP LEAVE l; END LOOP l; END"
+  },
+  {
+   "id": "a146",
+   "tags": [
+    "adversarial",
+    "label",
+    "digits"
+   ],
+   "sql": "BEGIN l1: LOOP LEAVE l1; END LOOP l1; END"
+  },
+  {
+   "id": "a147",
+   "tags": [
+    "adversarial",
+    "label",
+    "underscore"
+   ],
+   "sql": "BEGIN _l: LOOP LEAVE _l; END LOOP _l; END"
+  },
+  {
+   "id": "a148",
+   "tags": [
+    "adversarial",
+    "closer",
+    "newline",
+    "end-if"
+   ],
+   "sql": "BEGIN IF true THEN VALUES (1); END\nIF; END"
+  },
+  {
+   "id": "a149",
+   "tags": [
+    "adversarial",
+    "closer",
+    "comment",
+    "between",
+    "end-if"
+   ],
+   "sql": "BEGIN IF true THEN VALUES (1); END -- c\n IF; END"
+  },
+  {
+   "id": "a150",
+   "tags": [
+    "adversarial",
+    "closer",
+    "block-comment",
+    "between",
+    "end-if"
+   ],
+   "sql": "BEGIN IF true THEN VALUES (1); END /* x */ IF; END"
+  },
+  {
+   "id": "a151",
+   "tags": [
+    "adversarial",
+    "closer",
+    "block-comment",
+    "end-loop-label"
+   ],
+   "sql": "BEGIN l: LOOP LEAVE l; END /* a */ LOOP /* b */ l; END"
+  },
+  {
+   "id": "a152",
+   "tags": [
+    "adversarial",
+    "closer",
+    "tab",
+    "end-while"
+   ],
+   "sql": "BEGIN WHILE false DO VALUES (1); END\tWHILE; END"
+  },
+  {
+   "id": "a153",
+   "tags": [
+    "adversarial",
+    "closer",
+    "lowercase"
+   ],
+   "sql": "begin if true then values (1); end if; end"
+  },
+  {
+   "id": "a154",
+   "tags": [
+    "adversarial",
+    "closer",
+    "mixed",
+    "case"
+   ],
+   "sql": "Begin If true Then Values (1); End If; End"
+  },
+  {
+   "id": "a155",
+   "tags": [
+    "adversarial",
+    "closer",
+    "trailing",
+    "comment"
+   ],
+   "sql": "BEGIN VALUES (1); END; -- done"
+  },
+  {
+   "id": "a156",
+   "tags": [
+    "adversarial",
+    "closer",
+    "trailing",
+    "block",
+    "comment"
+   ],
+   "sql": "BEGIN VALUES (1); END /* done */"
+  },
+  {
+   "id": "a157",
+   "tags": [
+    "adversarial",
+    "closer",
+    "leading",
+    "comment"
+   ],
+   "sql": "\n-- lead\nBEGIN VALUES (1); END"
+  },
+  {
+   "id": "a158",
+   "tags": [
+    "adversarial",
+    "closer",
+    "comment",
+    "before",
+    "end"
+   ],
+   "sql": "BEGIN VALUES (1); /* END; */ END"
+  },
+  {
+   "id": "a159",
+   "tags": [
+    "adversarial",
+    "closer",
+    "line-comment",
+    "with",
+    "end"
+   ],
+   "sql": "BEGIN VALUES (1); -- END IF;\nEND"
+  },
+  {
+   "id": "a160",
+   "tags": [
+    "adversarial",
+    "string",
+    "end-if"
+   ],
+   "sql": "BEGIN VALUES ('END IF;'); END"
+  },
+  {
+   "id": "a161",
+   "tags": [
+    "adversarial",
+    "string",
+    "begin"
+   ],
+   "sql": "BEGIN SELECT 'BEGIN' AS x; END"
+  },
+  {
+   "id": "a162",
+   "tags": [
+    "adversarial",
+    "string",
+    "escaped",
+    "quote",
+    "end"
+   ],
+   "sql": "BEGIN SELECT 'it\\'s END;' AS x; END"
+  },
+  {
+   "id": "a163",
+   "tags": [
+    "adversarial",
+    "string",
+    "raw",
+    "backslash"
+   ],
+   "sql": "BEGIN SELECT r'C:\\' AS x; IF true THEN VALUES (1); END IF; END"
+  },
+  {
+   "id": "a164",
+   "tags": [
+    "adversarial",
+    "string",
+    "double-quoted",
+    "end",
+    "loop"
+   ],
+   "sql": "BEGIN SELECT \"END LOOP;\" AS x; END"
+  },
+  {
+   "id": "a165",
+   "tags": [
+    "adversarial",
+    "exec-immediate",
+    "using"
+   ],
+   "sql": "BEGIN DECLARE v INT; EXECUTE IMMEDIATE 'SELECT ? + 1' INTO v USING 2; VALUES (v); END"
+  },
+  {
+   "id": "a166",
+   "tags": [
+    "adversarial",
+    "dollar-quoted",
+    "none"
+   ],
+   "sql": "BEGIN SELECT 'x' AS `end`; END"
+  },
+  {
+   "id": "a167",
+   "tags": [
+    "adversarial",
+    "name",
+    "end",
+    "column"
+   ],
+   "sql": "BEGIN SELECT end FROM VALUES (1) AS t(end); END"
+  },
+  {
+   "id": "a168",
+   "tags": [
+    "adversarial",
+    "name",
+    "end",
+    "struct",
+    "field"
+   ],
+   "sql": "BEGIN SELECT named_struct('end', 1).end AS x; END"
+  },
+  {
+   "id": "a169",
+   "tags": [
+    "adversarial",
+    "name",
+    "repeat",
+    "function"
+   ],
+   "sql": "BEGIN SELECT repeat('x', 3) AS r; END"
+  },
+  {
+   "id": "a170",
+   "tags": [
+    "adversarial",
+    "name",
+    "repeat",
+    "function",
+    "set"
+   ],
+   "sql": "BEGIN DECLARE s STRING; SET s = repeat('ab', 2); VALUES (s); END"
+  },
+  {
+   "id": "a171",
+   "tags": [
+    "adversarial",
+    "name",
+    "repeat",
+    "function",
+    "values"
+   ],
+   "sql": "BEGIN VALUES (repeat('a', 2)); END"
+  },
+  {
+   "id": "a172",
+   "tags": [
+    "adversarial",
+    "name",
+    "if",
+    "function"
+   ],
+   "sql": "BEGIN SELECT if(true, 1, 2) AS x; END"
+  },
+  {
+   "id": "a173",
+   "tags": [
+    "adversarial",
+    "name",
+    "if",
+    "function",
+    "in",
+    "if"
+   ],
+   "sql": "BEGIN IF if(true, 1, 2) = 1 THEN VALUES (1); END IF; END"
+  },
+  {
+   "id": "a174",
+   "tags": [
+    "adversarial",
+    "name",
+    "var",
+    "loop"
+   ],
+   "sql": "BEGIN DECLARE loop INT DEFAULT 1; SET loop = loop + 1; VALUES (loop); END"
+  },
+  {
+   "id": "a175",
+   "tags": [
+    "adversarial",
+    "name",
+    "var",
+    "while",
+    "set"
+   ],
+   "sql": "BEGIN DECLARE while INT DEFAULT 0; SET while = 2; VALUES (while); END"
+  },
+  {
+   "id": "a176",
+   "tags": [
+    "adversarial",
+    "name",
+    "var",
+    "case",
+    "in",
+    "if"
+   ],
+   "sql": "BEGIN DECLARE case INT DEFAULT 1; IF case = 1 THEN VALUES (1); END IF; END"
+  },
+  {
+   "id": "a177",
+   "tags": [
+    "adversarial",
+    "name",
+    "var",
+    "until"
+   ],
+   "sql": "BEGIN DECLARE until INT DEFAULT 0; REPEAT SET until = until + 1; UNTIL until > 2 END REPEAT; VALUES (until); END"
+  },
+  {
+   "id": "a178",
+   "tags": [
+    "adversarial",
+    "name",
+    "var",
+    "for"
+   ],
+   "sql": "BEGIN DECLARE for INT DEFAULT 0; SET for = 1; VALUES (for); END"
+  },
+  {
+   "id": "a179",
+   "tags": [
+    "adversarial",
+    "name",
+    "var",
+    "begin",
+    "quoted"
+   ],
+   "sql": "BEGIN DECLARE `begin` INT DEFAULT 4; VALUES (`begin`); END"
+  },
+  {
+   "id": "a180",
+   "tags": [
+    "adversarial",
+    "name",
+    "table",
+    "alias",
+    "loop"
+   ],
+   "sql": "BEGIN SELECT loop.id FROM range(1) AS loop; END"
+  },
+  {
+   "id": "a181",
+   "tags": [
+    "adversarial",
+    "name",
+    "struct",
+    "field",
+    "case",
+    "in",
+    "if"
+   ],
+   "sql": "BEGIN IF named_struct('case', 1).case = 1 THEN VALUES (1); END IF; END"
+  },
+  {
+   "id": "a182",
+   "tags": [
+    "adversarial",
+    "name",
+    "struct",
+    "field",
+    "when",
+    "in",
+    "case"
+   ],
+   "sql": "BEGIN CASE named_struct('when', 1).when WHEN 1 THEN VALUES (1); END CASE; END"
+  },
+  {
+   "id": "a183",
+   "tags": [
+    "adversarial",
+    "case",
+    "simple",
+    "operand",
+    "case-expr"
+   ],
+   "sql": "BEGIN DECLARE n INT DEFAULT 1; CASE CASE WHEN n = 1 THEN 'a' ELSE 'b' END WHEN 'a' THEN VALUES (1); ELSE VALUES (2); END CASE; END"
+  },
+  {
+   "id": "a184",
+   "tags": [
+    "adversarial",
+    "case",
+    "when",
+    "subquery",
+    "case"
+   ],
+   "sql": "BEGIN CASE WHEN (SELECT CASE WHEN true THEN 1 END) = 1 THEN VALUES (1); END CASE; END"
+  },
+  {
+   "id": "a185",
+   "tags": [
+    "adversarial",
+    "case",
+    "when",
+    "value",
+    "case-expr"
+   ],
+   "sql": "BEGIN DECLARE n INT DEFAULT 1; CASE n WHEN CASE WHEN true THEN 1 END THEN VALUES (1); END CASE; END"
+  },
+  {
+   "id": "a186",
+   "tags": [
+    "adversarial",
+    "case",
+    "nested",
+    "case",
+    "stmt",
+    "in",
+    "else"
+   ],
+   "sql": "BEGIN DECLARE n INT DEFAULT 2; CASE n WHEN 1 THEN VALUES (1); ELSE CASE WHEN n = 2 THEN VALUES (2); ELSE VALUES (3); END CASE; END CASE; END"
+  },
+  {
+   "id": "a187",
+   "tags": [
+    "adversarial",
+    "case",
+    "multiple",
+    "when",
+    "exists"
+   ],
+   "sql": "BEGIN CASE WHEN EXISTS (SELECT 1 WHERE false) THEN VALUES (0); WHEN 1 IN (SELECT 1) THEN VALUES (1); ELSE VALUES (2); END CASE; END"
+  },
+  {
+   "id": "a188",
+   "tags": [
+    "adversarial",
+    "case",
+    "when",
+    "with",
+    "in-list",
+    "then"
+   ],
+   "sql": "BEGIN DECLARE n INT DEFAULT 3; CASE WHEN n IN (1, 2) THEN VALUES (1); WHEN n BETWEEN 3 AND 4 THEN VALUES (3); END CASE; END"
+  },
+  {
+   "id": "a189",
+   "tags": [
+    "adversarial",
+    "case",
+    "when",
+    "lambda"
+   ],
+   "sql": "BEGIN CASE WHEN exists(array(1, 2), x -> x > 1) THEN VALUES (1); END CASE; END"
+  },
+  {
+   "id": "a190",
+   "tags": [
+    "adversarial",
+    "case",
+    "stmt",
+    "in",
+    "while"
+   ],
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; WHILE n < 3 DO CASE n WHEN 0 THEN SET n = n + 1; WHEN 1 THEN SET n = n + 2; ELSE SET n = n + 3; END CASE; END WHILE; VALUES (n); END"
+  },
+  {
+   "id": "a191",
+   "tags": [
+    "adversarial",
+    "case",
+    "expr",
+    "in",
+    "values",
+    "in",
+    "case",
+    "stmt"
+   ],
+   "sql": "BEGIN CASE WHEN true THEN VALUES (CASE WHEN false THEN 1 ELSE 2 END); END CASE; END"
+  },
+  {
+   "id": "a192",
+   "tags": [
+    "adversarial",
+    "case",
+    "stmt",
+    "body",
+    "if"
+   ],
+   "sql": "BEGIN CASE WHEN true THEN IF true THEN VALUES (1); END IF; END CASE; END"
+  },
+  {
+   "id": "a193",
+   "tags": [
+    "adversarial",
+    "if",
+    "else-if",
+    "nested"
+   ],
+   "sql": "BEGIN IF false THEN VALUES (0); ELSE IF true THEN VALUES (1); END IF; END IF; END"
+  },
+  {
+   "id": "a194",
+   "tags": [
+    "adversarial",
+    "if",
+    "exists",
+    "subquery"
+   ],
+   "sql": "BEGIN IF EXISTS (SELECT 1 FROM range(2) WHERE id > 0) THEN VALUES (1); END IF; END"
+  },
+  {
+   "id": "a195",
+   "tags": [
+    "adversarial",
+    "if",
+    "not",
+    "exists"
+   ],
+   "sql": "BEGIN IF NOT EXISTS (SELECT 1 WHERE false) THEN VALUES (1); END IF; END"
+  },
+  {
+   "id": "a196",
+   "tags": [
+    "adversarial",
+    "if",
+    "case-expr",
+    "cond"
+   ],
+   "sql": "BEGIN IF CASE WHEN true THEN 1 ELSE 0 END = 1 THEN VALUES (1); END IF; END"
+  },
+  {
+   "id": "a197",
+   "tags": [
+    "adversarial",
+    "if",
+    "paren",
+    "cond",
+    "no",
+    "space"
+   ],
+   "sql": "BEGIN IF(1 = 1)THEN VALUES (1); END IF; END"
+  },
+  {
+   "id": "a198",
+   "tags": [
+    "adversarial",
+    "if",
+    "cond",
+    "with",
+    "then",
+    "string"
+   ],
+   "sql": "BEGIN IF 'THEN' = 'THEN' THEN VALUES (1); END IF; END"
+  },
+  {
+   "id": "a199",
+   "tags": [
+    "adversarial",
+    "if",
+    "cond",
+    "scalar",
+    "subquery",
+    "with",
+    "case",
+    "then"
+   ],
+   "sql": "BEGIN IF (SELECT CASE WHEN true THEN 'THEN' END) = 'THEN' THEN VALUES (1); END IF; END"
+  },
+  {
+   "id": "a200",
+   "tags": [
+    "adversarial",
+    "if",
+    "many",
+    "elseif",
+    "nested",
+    "blocks"
+   ],
+   "sql": "BEGIN DECLARE n INT DEFAULT 3; IF n = 1 THEN BEGIN VALUES (1); END; ELSEIF n = 2 THEN l: LOOP LEAVE l; END LOOP; ELSEIF n = 3 THEN WHILE false DO VALUES (0); END WHILE; ELSE CASE WHEN true THEN VALUES (4); END CASE; END IF; END"
+  },
+  {
+   "id": "a201",
+   "tags": [
+    "adversarial",
+    "if",
+    "then",
+    "if",
+    "then",
+    "same",
+    "frag"
+   ],
+   "sql": "BEGIN IF true THEN IF true THEN IF true THEN VALUES (1); END IF; END IF; END IF; END"
+  },
+  {
+   "id": "a202",
+   "tags": [
+    "adversarial",
+    "if",
+    "lambda",
+    "cond"
+   ],
+   "sql": "BEGIN IF exists(array(1, 2), x -> x > 1) THEN VALUES (1); END IF; END"
+  },
+  {
+   "id": "a203",
+   "tags": [
+    "adversarial",
+    "if",
+    "cond",
+    "in-list"
+   ],
+   "sql": "BEGIN IF 2 IN (1, 2, 3) THEN VALUES (1); END IF; END"
+  },
+  {
+   "id": "a204",
+   "tags": [
+    "adversarial",
+    "if",
+    "cond",
+    "like"
+   ],
+   "sql": "BEGIN IF 'do' LIKE 'd%' THEN VALUES (1); END IF; END"
+  },
+  {
+   "id": "a205",
+   "tags": [
+    "adversarial",
+    "if",
+    "cond",
+    "between"
+   ],
+   "sql": "BEGIN IF 2 BETWEEN 1 AND 3 THEN VALUES (1); END IF; END"
+  },
+  {
+   "id": "a206",
+   "tags": [
+    "adversarial",
+    "if",
+    "cond",
+    "map",
+    "access"
+   ],
+   "sql": "BEGIN IF map('a', 1)['a'] = 1 THEN VALUES (1); END IF; END"
+  },
+  {
+   "id": "a207",
+   "tags": [
+    "adversarial",
+    "if",
+    "cond",
+    "cast"
+   ],
+   "sql": "BEGIN IF CAST('1' AS INT) = 1 THEN VALUES (1); END IF; END"
+  },
+  {
+   "id": "a208",
+   "tags": [
+    "adversarial",
+    "if",
+    "cond",
+    "double-colon"
+   ],
+   "sql": "BEGIN IF '1'::INT = 1 THEN VALUES (1); END IF; END"
+  },
+  {
+   "id": "a209",
+   "tags": [
+    "adversarial",
+    "if",
+    "cond",
+    "is",
+    "null"
+   ],
+   "sql": "BEGIN DECLARE v INT; IF v IS NULL THEN VALUES (1); END IF; END"
+  },
+  {
+   "id": "a210",
+   "tags": [
+    "adversarial",
+    "while",
+    "cond",
+    "subquery",
+    "with",
+    "do",
+    "string"
+   ],
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; WHILE n < (SELECT 2 WHERE 'DO' = 'DO') DO SET n = n + 1; END WHILE; END"
+  },
+  {
+   "id": "a211",
+   "tags": [
+    "adversarial",
+    "while",
+    "cond",
+    "case-expr"
+   ],
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; WHILE CASE WHEN n < 2 THEN true ELSE false END DO SET n = n + 1; END WHILE; END"
+  },
+  {
+   "id": "a212",
+   "tags": [
+    "adversarial",
+    "while",
+    "paren",
+    "no",
+    "space"
+   ],
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; WHILE(n < 2)DO SET n = n + 1; END WHILE; END"
+  },
+  {
+   "id": "a213",
+   "tags": [
+    "adversarial",
+    "while",
+    "body",
+    "if",
+    "same",
+    "frag"
+   ],
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; WHILE n < 2 DO IF n = 0 THEN SET n = 1; ELSE SET n = 2; END IF; END WHILE; END"
+  },
+  {
+   "id": "a214",
+   "tags": [
+    "adversarial",
+    "for",
+    "long",
+    "query"
+   ],
+   "sql": "BEGIN DECLARE s INT DEFAULT 0; FOR r AS SELECT a.id AS x, b.id AS y FROM range(2) AS a JOIN range(2) AS b ON a.id = b.id WHERE a.id >= 0 GROUP BY a.id, b.id HAVING count(*) > 0 ORDER BY x DO SET s = s + 1; END FOR; VALUES (s); END"
+  },
+  {
+   "id": "a215",
+   "tags": [
+    "adversarial",
+    "for",
+    "query",
+    "with",
+    "case",
+    "expr"
+   ],
+   "sql": "BEGIN FOR r AS SELECT CASE WHEN id = 0 THEN 'a' ELSE 'b' END AS v FROM range(2) DO VALUES (r.v); END FOR; END"
+  },
+  {
+   "id": "a216",
+   "tags": [
+    "adversarial",
+    "for",
+    "query",
+    "cte"
+   ],
+   "sql": "BEGIN FOR r AS WITH t AS (SELECT 1 AS c) SELECT c FROM t DO VALUES (r.c); END FOR; END"
+  },
+  {
+   "id": "a217",
+   "tags": [
+    "adversarial",
+    "for",
+    "query",
+    "values"
+   ],
+   "sql": "BEGIN FOR r AS VALUES (1), (2) DO VALUES (1); END FOR; END"
+  },
+  {
+   "id": "a218",
+   "tags": [
+    "adversarial",
+    "for",
+    "query",
+    "union"
+   ],
+   "sql": "BEGIN FOR r AS SELECT 1 AS c UNION ALL SELECT 2 DO VALUES (r.c); END FOR; END"
+  },
+  {
+   "id": "a219",
+   "tags": [
+    "adversarial",
+    "for",
+    "query",
+    "with",
+    "string",
+    "do"
+   ],
+   "sql": "BEGIN FOR r AS SELECT 'DO' AS s DO VALUES (r.s); END FOR; END"
+  },
+  {
+   "id": "a220",
+   "tags": [
+    "adversarial",
+    "for",
+    "query",
+    "lambda"
+   ],
+   "sql": "BEGIN FOR r AS SELECT transform(array(1, 2), x -> x + 1) AS a DO VALUES (size(r.a)); END FOR; END"
+  },
+  {
+   "id": "a221",
+   "tags": [
+    "adversarial",
+    "for",
+    "no",
+    "var"
+   ],
+   "sql": "BEGIN FOR SELECT 1 AS c DO VALUES (1); END FOR; END"
+  },
+  {
+   "id": "a222",
+   "tags": [
+    "adversarial",
+    "for",
+    "body",
+    "if",
+    "same",
+    "frag"
+   ],
+   "sql": "BEGIN FOR r AS SELECT 1 AS c DO IF r.c = 1 THEN VALUES (1); END IF; END FOR; END"
+  },
+  {
+   "id": "a223",
+   "tags": [
+    "adversarial",
+    "for",
+    "labeled",
+    "nested"
+   ],
+   "sql": "BEGIN o: FOR r AS SELECT id FROM range(2) DO i: FOR s AS SELECT id AS j FROM range(2) DO IF s.j = 1 THEN ITERATE o; END IF; END FOR i; END FOR o; END"
+  },
+  {
+   "id": "a224",
+   "tags": [
+    "adversarial",
+    "for",
+    "query",
+    "subquery",
+    "in",
+    "where"
+   ],
+   "sql": "BEGIN FOR r AS SELECT id FROM range(3) WHERE id IN (SELECT id FROM range(2)) DO VALUES (r.id); END FOR; END"
+  },
+  {
+   "id": "a225",
+   "tags": [
+    "adversarial",
+    "repeat",
+    "until",
+    "complex"
+   ],
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; REPEAT SET n = n + 1; UNTIL n >= 2 AND (n < 10 OR n IS NULL) END REPEAT; END"
+  },
+  {
+   "id": "a226",
+   "tags": [
+    "adversarial",
+    "repeat",
+    "until",
+    "case-expr"
+   ],
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; REPEAT SET n = n + 1; UNTIL CASE WHEN n > 1 THEN true ELSE false END END REPEAT; END"
+  },
+  {
+   "id": "a227",
+   "tags": [
+    "adversarial",
+    "repeat",
+    "until",
+    "exists"
+   ],
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; REPEAT SET n = n + 1; UNTIL EXISTS (SELECT 1 WHERE n > 1) END REPEAT; END"
+  },
+  {
+   "id": "a228",
+   "tags": [
+    "adversarial",
+    "repeat",
+    "until",
+    "newline",
+    "end",
+    "repeat"
+   ],
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; REPEAT SET n = n + 1; UNTIL n > 1\nEND\nREPEAT; END"
+  },
+  {
+   "id": "a229",
+   "tags": [
+    "adversarial",
+    "repeat",
+    "body",
+    "nested",
+    "blocks"
+   ],
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; REPEAT IF n = 0 THEN SET n = 1; END IF; WHILE n < 2 DO SET n = n + 1; END WHILE; UNTIL n >= 2 END REPEAT; END"
+  },
+  {
+   "id": "a230",
+   "tags": [
+    "adversarial",
+    "repeat",
+    "labeled",
+    "iterate"
+   ],
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; r: REPEAT SET n = n + 1; IF n = 1 THEN ITERATE r; END IF; UNTIL n >= 2 END REPEAT r; END"
+  },
+  {
+   "id": "a231",
+   "tags": [
+    "adversarial",
+    "repeat",
+    "first",
+    "stmt",
+    "paren"
+   ],
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; REPEAT (SELECT 1); SET n = n + 1; UNTIL n > 0 END REPEAT; END"
+  },
+  {
+   "id": "a232",
+   "tags": [
+    "adversarial",
+    "loop",
+    "first",
+    "stmt",
+    "paren"
+   ],
+   "sql": "BEGIN l: LOOP (SELECT 1); LEAVE l; END LOOP; END"
+  },
+  {
+   "id": "a233",
+   "tags": [
+    "adversarial",
+    "loop",
+    "iterate",
+    "leave"
+   ],
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; l: LOOP SET n = n + 1; IF n < 2 THEN ITERATE l; END IF; LEAVE l; END LOOP; END"
+  },
+  {
+   "id": "a234",
+   "tags": [
+    "adversarial",
+    "atomic",
+    "with",
+    "if"
+   ],
+   "sql": "BEGIN ATOMIC IF true THEN VALUES (1); END IF; END"
+  },
+  {
+   "id": "a235",
+   "tags": [
+    "adversarial",
+    "depth",
+    "8",
+    "mixed"
+   ],
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; a: BEGIN IF true THEN w: WHILE n < 1 DO SET n = n + 1; CASE WHEN true THEN l: LOOP r: REPEAT FOR x AS SELECT 1 AS c DO BEGIN VALUES (x.c); END; END FOR; UNTIL true END REPEAT r; LEAVE l; END LOOP l; END CASE; END WHILE w; END IF; END a; END"
+  },
+  {
+   "id": "a236",
+   "tags": [
+    "adversarial",
+    "empty",
+    "begin",
+    "end"
+   ],
+   "sql": "BEGIN END"
+  },
+  {
+   "id": "a237",
+   "tags": [
+    "adversarial",
+    "nested",
+    "empty",
+    "begin"
+   ],
+   "sql": "BEGIN BEGIN END; VALUES (1); END"
+  },
+  {
+   "id": "a238",
+   "tags": [
+    "adversarial",
+    "set",
+    "multiple",
+    "vars"
+   ],
+   "sql": "BEGIN DECLARE a INT; DECLARE b INT; SET (a, b) = (SELECT 1, 2); VALUES (a + b); END"
+  },
+  {
+   "id": "a239",
+   "tags": [
+    "adversarial",
+    "values",
+    "then",
+    "end",
+    "same",
+    "line"
+   ],
+   "sql": "BEGIN VALUES (1); VALUES (2); END"
+  },
+  {
+   "id": "a240",
+   "tags": [
+    "adversarial",
+    "select",
+    "with",
+    "where",
+    "begin-like"
+   ],
+   "sql": "BEGIN SELECT id AS begin_at FROM range(1) WHERE id = 0; END"
+  },
+  {
+   "id": "a241",
+   "tags": [
+    "adversarial",
+    "select",
+    "alias",
+    "then"
+   ],
+   "sql": "BEGIN SELECT 1 AS then, 2 AS do, 3 AS else; END"
+  },
+  {
+   "id": "a242",
+   "tags": [
+    "adversarial",
+    "select",
+    "case",
+    "expr",
+    "with",
+    "end",
+    "alias"
+   ],
+   "sql": "BEGIN SELECT CASE WHEN true THEN 1 END AS end; END"
+  },
+  {
+   "id": "a243",
+   "tags": [
+    "adversarial",
+    "leave",
+    "from",
+    "nested",
+    "if"
+   ],
+   "sql": "BEGIN o: BEGIN IF true THEN LEAVE o; END IF; VALUES (0); END o; VALUES (1); END"
+  },
+  {
+   "id": "a244",
+   "tags": [
+    "adversarial",
+    "signal",
+    "handled"
+   ],
+   "sql": "BEGIN DECLARE c CONDITION FOR SQLSTATE '45000'; DECLARE EXIT HANDLER FOR c VALUES (1); SIGNAL c; END"
+  },
+  {
+   "id": "a245",
+   "tags": [
+    "adversarial",
+    "merge-like",
+    "when",
+    "text",
+    "in",
+    "select"
+   ],
+   "sql": "BEGIN SELECT CASE WHEN 1 = 1 THEN 'WHEN MATCHED THEN' END AS m; END"
+  },
+  {
+   "id": "a246",
+   "tags": [
+    "adversarial",
+    "pipe",
+    "syntax",
+    "in",
+    "block"
+   ],
+   "sql": "BEGIN FROM range(2) |> WHERE id > 0 |> SELECT id; END"
+  },
+  {
+   "id": "a247",
+   "tags": [
+    "adversarial",
+    "from-first",
+    "query"
+   ],
+   "sql": "BEGIN FROM range(2) SELECT id; END"
+  },
+  {
+   "id": "a248",
+   "tags": [
+    "adversarial",
+    "with",
+    "cte",
+    "then",
+    "if"
+   ],
+   "sql": "BEGIN WITH t AS (SELECT 1 AS c) SELECT c FROM t; IF true THEN VALUES (1); END IF; END"
+  },
+  {
+   "id": "a249",
+   "tags": [
+    "adversarial",
+    "explain?",
+    "describe",
+    "inside"
+   ],
+   "sql": "BEGIN SELECT current_date() AS d; END"
+  },
+  {
+   "id": "a250",
+   "tags": [
+    "adversarial",
+    "if",
+    "inside",
+    "values",
+    "subquery"
+   ],
+   "sql": "BEGIN IF (SELECT max(id) FROM range(3)) = 2 THEN VALUES (1); END IF; END"
+  },
+  {
+   "id": "a251",
+   "tags": [
+    "adversarial",
+    "var-case",
+    "elseif",
+    "as-end"
+   ],
+   "sql": "BEGIN DECLARE case INT DEFAULT 2; IF case = 1 THEN VALUES (1); ELSEIF case = 2 THEN SELECT 2 AS end; END IF; END"
+  },
+  {
+   "id": "a252",
+   "tags": [
+    "adversarial",
+    "for-var-case",
+    "as-end"
+   ],
+   "sql": "BEGIN FOR case AS SELECT 1 AS c DO SELECT case.c AS end; END FOR; END"
+  },
+  {
+   "id": "a253",
+   "tags": [
+    "adversarial",
+    "var-end",
+    "if",
+    "as-end-free"
+   ],
+   "sql": "BEGIN DECLARE end INT DEFAULT 1; IF end = 1 THEN VALUES (end); END IF; END"
+  },
+  {
+   "id": "a254",
+   "tags": [
+    "adversarial",
+    "label",
+    "kw",
+    "by"
+   ],
+   "sql": "BEGIN by: LOOP LEAVE by; END LOOP by; END"
+  },
+  {
+   "id": "a255",
+   "tags": [
+    "adversarial",
+    "label",
+    "kw",
+    "order"
+   ],
+   "sql": "BEGIN order: LOOP LEAVE order; END LOOP order; END"
+  },
+  {
+   "id": "a256",
+   "tags": [
+    "adversarial",
+    "label",
+    "kw",
+    "null"
+   ],
+   "sql": "BEGIN null: LOOP LEAVE null; END LOOP null; END"
+  },
+  {
+   "id": "a257",
+   "tags": [
+    "adversarial",
+    "label",
+    "kw",
+    "table"
+   ],
+   "sql": "BEGIN table: LOOP LEAVE table; END LOOP table; END"
+  },
+  {
+   "id": "a258",
+   "tags": [
+    "adversarial",
+    "label",
+    "kw",
+    "distinct"
+   ],
+   "sql": "BEGIN distinct: LOOP LEAVE distinct; END LOOP distinct; END"
+  },
+  {
+   "id": "a259",
+   "tags": [
+    "adversarial",
+    "label",
+    "kw",
+    "exists"
+   ],
+   "sql": "BEGIN exists: LOOP LEAVE exists; END LOOP exists; END"
+  },
+  {
+   "id": "a260",
+   "tags": [
+    "adversarial",
+    "label",
+    "kw",
+    "over"
+   ],
+   "sql": "BEGIN over: LOOP LEAVE over; END LOOP over; END"
+  },
+  {
+   "id": "a261",
+   "tags": [
+    "adversarial",
+    "label",
+    "kw",
+    "do",
+    "in",
+    "while",
+    "body"
+   ],
+   "sql": "BEGIN WHILE false DO do: LOOP LEAVE do; END LOOP; END WHILE; END"
+  },
+  {
+   "id": "a262",
+   "tags": [
+    "adversarial",
+    "var",
+    "kw",
+    "from"
+   ],
+   "sql": "BEGIN DECLARE from INT DEFAULT 1; VALUES (from); END"
+  },
+  {
+   "id": "a263",
+   "tags": [
+    "adversarial",
+    "var",
+    "kw",
+    "select"
+   ],
+   "sql": "BEGIN DECLARE select INT DEFAULT 1; VALUES (select); END"
+  },
+  {
+   "id": "a264",
+   "tags": [
+    "adversarial",
+    "var",
+    "kw",
+    "then",
+    "set"
+   ],
+   "sql": "BEGIN DECLARE then INT DEFAULT 1; SET then = then + 1; VALUES (then); END"
+  },
+  {
+   "id": "a265",
+   "tags": [
+    "adversarial",
+    "var",
+    "kw",
+    "when",
+    "in",
+    "if"
+   ],
+   "sql": "BEGIN DECLARE when INT DEFAULT 1; IF when = 1 THEN VALUES (when); END IF; END"
+  },
+  {
+   "id": "a266",
+   "tags": [
+    "adversarial",
+    "var",
+    "kw",
+    "else",
+    "in",
+    "if"
+   ],
+   "sql": "BEGIN DECLARE else INT DEFAULT 1; IF else = 1 THEN VALUES (1); END IF; END"
+  },
+  {
+   "id": "a267",
+   "tags": [
+    "adversarial",
+    "var",
+    "kw",
+    "do",
+    "in",
+    "values"
+   ],
+   "sql": "BEGIN DECLARE do INT DEFAULT 3; VALUES (do); END"
+  },
+  {
+   "id": "a268",
+   "tags": [
+    "adversarial",
+    "var",
+    "kw",
+    "until",
+    "in",
+    "if"
+   ],
+   "sql": "BEGIN DECLARE until INT DEFAULT 1; IF until = 1 THEN VALUES (until); END IF; END"
+  },
+  {
+   "id": "a269",
+   "tags": [
+    "adversarial",
+    "struct",
+    "type",
+    "loop",
+    "field"
+   ],
+   "sql": "BEGIN DECLARE s STRUCT<loop: INT, end: INT> DEFAULT named_struct('loop', 1, 'end', 2); VALUES (s.loop + s.end); END"
+  },
+  {
+   "id": "a270",
+   "tags": [
+    "adversarial",
+    "handler",
+    "multi",
+    "condition"
+   ],
+   "sql": "BEGIN DECLARE EXIT HANDLER FOR SQLSTATE '22012', DIVIDE_BY_ZERO VALUES (0); SELECT 1/0; END"
+  },
+  {
+   "id": "a271",
+   "tags": [
+    "adversarial",
+    "handler",
+    "continue",
+    "then",
+    "if"
+   ],
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; DECLARE CONTINUE HANDLER FOR DIVIDE_BY_ZERO SET n = 1; SELECT 1/0; IF n = 1 THEN VALUES ('handled'); END IF; END"
+  },
+  {
+   "id": "a272",
+   "tags": [
+    "adversarial",
+    "label",
+    "kw",
+    "begin",
+    "loop",
+    "inner",
+    "leave"
+   ],
+   "sql": "BEGIN l: LOOP loop: BEGIN LEAVE l; END loop; END LOOP l; END"
+  },
+  {
+   "id": "a273",
+   "tags": [
+    "adversarial",
+    "label",
+    "kw",
+    "if",
+    "on",
+    "begin",
+    "in",
+    "if"
+   ],
+   "sql": "BEGIN IF true THEN if: BEGIN VALUES (1); END if; END IF; END"
+  },
+  {
+   "id": "a274",
+   "tags": [
+    "adversarial",
+    "label",
+    "kw",
+    "case",
+    "on",
+    "loop",
+    "in",
+    "case"
+   ],
+   "sql": "BEGIN CASE WHEN true THEN case: LOOP LEAVE case; END LOOP case; END CASE; END"
+  },
+  {
+   "id": "a275",
+   "tags": [
+    "adversarial",
+    "label",
+    "kw",
+    "for",
+    "on",
+    "begin",
+    "in",
+    "for"
+   ],
+   "sql": "BEGIN FOR r AS SELECT 1 AS c DO for: BEGIN VALUES (r.c); END for; END FOR; END"
+  },
+  {
+   "id": "a276",
+   "tags": [
+    "adversarial",
+    "label",
+    "kw",
+    "repeat",
+    "on",
+    "begin",
+    "in",
+    "repeat"
+   ],
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; REPEAT repeat: BEGIN SET n = n + 1; END repeat; UNTIL n > 0 END REPEAT; END"
+  },
+  {
+   "id": "a277",
+   "tags": [
+    "adversarial",
+    "label",
+    "kw",
+    "while",
+    "on",
+    "loop",
+    "in",
+    "while"
+   ],
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; WHILE n < 1 DO while: LOOP SET n = n + 1; LEAVE while; END LOOP while; END WHILE; END"
+  },
+  {
+   "id": "a278",
+   "tags": [
+    "adversarial",
+    "label",
+    "kw",
+    "end",
+    "on",
+    "begin"
+   ],
+   "sql": "BEGIN end: BEGIN VALUES (1); END end; END"
+  },
+  {
+   "id": "a279",
+   "tags": [
+    "adversarial",
+    "window",
+    "function",
+    "in",
+    "if"
+   ],
+   "sql": "BEGIN IF (SELECT max(r) FROM (SELECT row_number() OVER (ORDER BY id) AS r FROM range(3))) = 3 THEN VALUES (1); END IF; END"
+  },
+  {
+   "id": "a280",
+   "tags": [
+    "adversarial",
+    "if",
+    "cond",
+    "with",
+    "if-function",
+    "then"
+   ],
+   "sql": "BEGIN IF if(true, 'THEN', 'x') = 'THEN' THEN VALUES (1); END IF; END"
+  },
+  {
+   "id": "a281",
+   "tags": [
+    "adversarial",
+    "while",
+    "cond",
+    "nested",
+    "case",
+    "do",
+    "string"
+   ],
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; WHILE CASE WHEN n < 1 THEN 'DO' ELSE 'x' END = 'DO' DO SET n = n + 1; END WHILE; END"
+  },
+  {
+   "id": "a282",
+   "tags": [
+    "adversarial",
+    "case",
+    "stmt",
+    "when",
+    "then",
+    "string"
+   ],
+   "sql": "BEGIN CASE WHEN 'THEN' = 'THEN' THEN VALUES (1); END CASE; END"
+  },
+  {
+   "id": "a283",
+   "tags": [
+    "adversarial",
+    "if",
+    "inside",
+    "for",
+    "inside",
+    "repeat",
+    "inside",
+    "case"
+   ],
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; CASE WHEN true THEN REPEAT FOR r AS SELECT id FROM range(2) DO IF r.id = 1 THEN SET n = n + 1; END IF; END FOR; UNTIL true END REPEAT; END CASE; VALUES (n); END"
+  },
+  {
+   "id": "a284",
+   "tags": [
+    "adversarial",
+    "comment",
+    "containing",
+    "then"
+   ],
+   "sql": "BEGIN IF true /* THEN */ THEN VALUES (1); END IF; END"
+  },
+  {
+   "id": "a285",
+   "tags": [
+    "adversarial",
+    "comment",
+    "line",
+    "inside",
+    "cond"
+   ],
+   "sql": "BEGIN IF true -- THEN\n THEN VALUES (1); END IF; END"
+  },
+  {
+   "id": "a286",
+   "tags": [
+    "adversarial",
+    "comment",
+    "between",
+    "label",
+    "colon"
+   ],
+   "sql": "BEGIN l /* x */ : LOOP LEAVE l; END LOOP l; END"
+  },
+  {
+   "id": "a287",
+   "tags": [
+    "adversarial",
+    "hint-like",
+    "comment"
+   ],
+   "sql": "BEGIN SELECT /*+ REPARTITION(1) */ id FROM range(1); END"
+  },
+  {
+   "id": "a288",
+   "tags": [
+    "adversarial",
+    "unicode",
+    "string"
+   ],
+   "sql": "BEGIN SELECT '\u00e9 END; \u00fc' AS x; END"
+  },
+  {
+   "id": "a289",
+   "tags": [
+    "adversarial",
+    "crlf",
+    "newlines"
+   ],
+   "sql": "BEGIN\r\nIF true THEN\r\nVALUES (1);\r\nEND IF;\r\nEND"
+  },
+  {
+   "id": "a290",
+   "tags": [
+    "adversarial",
+    "multiple",
+    "trailing",
+    "semicolons",
+    "ws"
+   ],
+   "sql": "BEGIN VALUES (1); END ;  "
+  },
+  {
+   "id": "a291",
+   "tags": [
+    "adversarial",
+    "deep",
+    "nesting",
+    "12"
+   ],
+   "sql": "BEGIN BEGIN BEGIN BEGIN BEGIN BEGIN BEGIN BEGIN BEGIN BEGIN BEGIN BEGIN VALUES (1); END; END; END; END; END; END; END; END; END; END; END; END"
+  },
+  {
+   "id": "a292",
+   "tags": [
+    "adversarial",
+    "deep",
+    "if",
+    "10"
+   ],
+   "sql": "BEGIN IF true THEN IF true THEN IF true THEN IF true THEN IF true THEN IF true THEN IF true THEN IF true THEN IF true THEN IF true THEN VALUES (1); END IF; END IF; END IF; END IF; END IF; END IF; END IF; END IF; END IF; END IF; END"
+  },
+  {
+   "id": "a293",
+   "tags": [
+    "adversarial",
+    "for",
+    "alias",
+    "end",
+    "body"
+   ],
+   "sql": "BEGIN FOR r AS SELECT 1 AS end DO VALUES (r.end); END FOR; END"
+  },
+  {
+   "id": "a294",
+   "tags": [
+    "adversarial",
+    "for",
+    "alias",
+    "case",
+    "body"
+   ],
+   "sql": "BEGIN FOR r AS SELECT 1 AS case DO VALUES (r.case); END FOR; END"
+  },
+  {
+   "id": "a295",
+   "tags": [
+    "adversarial",
+    "for",
+    "var",
+    "then"
+   ],
+   "sql": "BEGIN FOR then AS SELECT 1 AS c DO VALUES (then.c); END FOR; END"
+  },
+  {
+   "id": "a296",
+   "tags": [
+    "adversarial",
+    "loop",
+    "single",
+    "stmt",
+    "leave"
+   ],
+   "sql": "BEGIN l: LOOP LEAVE l; END LOOP; END"
+  },
+  {
+   "id": "a297",
+   "tags": [
+    "adversarial",
+    "while",
+    "body",
+    "single",
+    "iterate-free"
+   ],
+   "sql": "BEGIN DECLARE n INT DEFAULT 0; WHILE n < 1 DO SET n = 1; END WHILE; END"
+  },
+  {
+   "id": "a298",
+   "tags": [
+    "adversarial",
+    "repeat",
+    "until",
+    "immediately"
+   ],
+   "sql": "BEGIN REPEAT VALUES (1); UNTIL true END REPEAT; END"
+  },
+  {
+   "id": "a299",
+   "tags": [
+    "adversarial",
+    "empty",
+    "begin",
+    "nested",
+    "in",
+    "if"
+   ],
+   "sql": "BEGIN IF true THEN BEGIN END; END IF; END"
+  },
+  {
+   "id": "a300",
+   "tags": [
+    "adversarial",
+    "empty",
+    "begin",
+    "atomic"
+   ],
+   "sql": "BEGIN ATOMIC END"
+  },
+  {
+   "id": "a301",
+   "tags": [
+    "adversarial",
+    "json-path",
+    "column",
+    "loop",
+    "plain"
+   ],
+   "sql": "BEGIN SELECT j:loop AS x FROM VALUES ('{\"loop\": 1}') AS t(j); END"
   }
  ],
  "rejected": [

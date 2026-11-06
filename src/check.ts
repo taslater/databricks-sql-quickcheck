@@ -265,7 +265,8 @@ function checkOperator(t: Token, p: Token | undefined, n: Token | undefined, ctx
       if (!ctx.openEnded && op === ":") {
         report(ctx, "missing-operand", "error", t, "`:` has nothing after it before the statement ends");
       }
-    } else if (n.kind === "word" && NOT_A_TYPE.has(n.upper!)) {
+    } else if (n.kind === "word" && NOT_A_TYPE.has(n.upper!) && !(op === ":" && n.start === t.end)) {
+      // `v:end` and `j:then` are JSON paths; `v: FROM t` (a gap after the colon) is the mistake.
       const what = op === "::" ? "type" : "field name";
       report(ctx, "missing-operand", "error", t, `\`${op}\` has no ${what} after it: \`${n.text}\` starts a new clause`);
     }

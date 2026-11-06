@@ -40,18 +40,85 @@ const TRANSACTION_WORDS = new Set<string>(["TRANSACTION", "WORK", "ISOLATION", "
 /** Statements whose tail is raw text: their words are not scripting words. */
 const RAW_LEADS = new Set<string>(["SET", "RESET", "ADD", "LIST", "REFRESH", "DFS"]);
 
+/** Words no statement starts with: seeing one where a body should start means a mis-read. */
+const CANNOT_START = new Set<string>(["FROM", "WHERE", "AND", "OR", "NOT", "IN", "IS", "LIKE", "BETWEEN", "AS", "ON", "USING", "GROUP", "ORDER", "HAVING", "LIMIT", "JOIN", "UNION"]);
+
 const isWord = (t: Token | undefined, ...upper: string[]): boolean =>
   t?.kind === "word" && upper.includes(t.upper!);
 const isColon = (t: Token | undefined): boolean => t?.kind === "op" && t.text === ":";
 const isOpen = (t: Token): boolean => isPunct(t, "(") || isPunct(t, "[") || isPunct(t, "{");
 const isClose = (t: Token): boolean => isPunct(t, ")") || isPunct(t, "]") || isPunct(t, "}");
 
-/** A name that follows `.`, `:`, `::` or AS is a name whatever it spells. */
+/** A name that follows `.`, `::` or AS is a name whatever it spells. */
 function afterNameMarker(p: Token | undefined): boolean {
   if (!p) return false;
   if (p.kind === "punct") return p.text === ".";
   if (p.kind === "op") return p.text === "::";
   return p.kind === "word" && p.upper === "AS";
+}
+
+/** As above, and after `:` too: `j:then` is a JSON path, but `lbl: LOOP` is a label. */
+function afterNameOrPath(p: Token | undefined): boolean {
+  return afterNameMarker(p) || (p !== undefined && isColon(p));
+}
+
+// Words after which an operand starts, so a block word right after one is a name.
+const OPERAND_START = new Set<string>([
+  "IF", "ELSEIF", "WHEN", "WHILE", "FOR", "CASE", "AS", "SELECT", "FROM", "WHERE", "AND", "OR", "NOT",
+  "IN", "IS", "LIKE", "BETWEEN", "SET", "UNTIL", "THEN", "ELSE", "DO", "VALUES", "ON", "BY",
+]);
+const UNARY = new Set(["-", "+", "~", "!"]);
+
+/**
+ * `then`, `do`, `end` can be column, field or variable names. A word in a name
+ * position (after `.`, `:` or AS; first in the condition; right after an
+ * operator, comma, `(` or a word that starts an operand; or followed by an
+ * operator or `.`) is never the keyword.
+ */
+function usedAsName(toks: Token[], i: number, from: number): boolean {
+  const p = toks[i - 1];
+  const n = toks[i + 1];
+  if (afterNameOrPath(p) || i === from) return true;
+  if (n && ((n.kind === "op" && !isColon(n)) || isPunct(n, "."))) return true;
+  if (p && (p.kind === "op" || isPunct(p, ",") || isPunct(p, "("))) return true;
+  // A word that starts an operand does so only if it is a keyword here, not itself a name.
+  return p?.kind === "word" && OPERAND_START.has(p.upper!) && !usedAsName(toks, i - 1, from);
+}
+
+interface CaseMarks {
+  open: Set<number>;
+  close: Set<number>;
+}
+
+/**
+ * Which `CASE` and `END` tokens from `from` are one CASE *expression*. A CASE
+ * counts only when an END closes it later in the fragment, so a variable named
+ * `case` (`IF case = 1 THEN`, `CASE case WHEN 1`) is left out, and an END counts
+ * only in a closing position, so a variable named `end` is too.
+ */
+function caseMarks(toks: Token[], from: number): CaseMarks {
+  const open = new Set<number>();
+  const close = new Set<number>();
+  const stack: number[] = [];
+  for (let i = from; i < toks.length; i++) {
+    const t = toks[i];
+    if (t.kind !== "word") continue;
+    const p = toks[i - 1];
+    const n = toks[i + 1];
+    if (t.upper === "CASE") {
+      const asName = afterNameOrPath(p) ||
+        (n !== undefined && ((n.kind === "op" && !UNARY.has(n.text) && !isColon(n)) || isPunct(n, ".") || isPunct(n, ",") || isPunct(n, ")")));
+      if (!asName) stack.push(i);
+    } else if (t.upper === "END" && stack.length > 0) {
+      const asName = afterNameOrPath(p) || (n !== undefined && isPunct(n, ".")) ||
+        (p !== undefined && (p.kind === "op" || isPunct(p, ",") || isPunct(p, "(") || (p.kind === "word" && OPERAND_START.has(p.upper!))));
+      if (!asName) {
+        open.add(stack.pop()!);
+        close.add(i);
+      }
+    }
+  }
+  return { open, close };
 }
 
 /**
@@ -60,7 +127,8 @@ function afterNameMarker(p: Token | undefined): boolean {
  * and `END` are not the statement's). -1 when there is none, or when the scan
  * runs into an unbalanced bracket.
  */
-function scan(toks: Token[], from: number, stop: (i: number) => boolean): number {
+function scan(toks: Token[], from: number, stop: (i: number) => boolean, emptyOk = false): number {
+  const marks = caseMarks(toks, from);
   let depth = 0;
   let cases = 0;
   for (let i = from; i < toks.length; i++) {
@@ -70,15 +138,9 @@ function scan(toks: Token[], from: number, stop: (i: number) => boolean): number
       if (depth === 0) return -1;
       depth--;
     } else if (t.kind === "word" && depth === 0) {
-      if (t.upper === "CASE" && !afterNameMarker(toks[i - 1])) {
-        cases++;
-        continue;
-      }
-      if (t.upper === "END" && cases > 0) {
-        cases--;
-        continue;
-      }
-      if (cases === 0 && stop(i)) return i;
+      if (marks.open.has(i)) cases++;
+      else if (marks.close.has(i)) cases--;
+      else if (cases === 0 && !(usedAsName(toks, i, from) && !(emptyOk && i === from)) && stop(i)) return i;
     }
   }
   return -1;
@@ -86,6 +148,7 @@ function scan(toks: Token[], from: number, stop: (i: number) => boolean): number
 
 /** Brackets and CASE...END all balance from `from` to the fragment's end. */
 function wellFormed(toks: Token[], from: number): boolean {
+  const marks = caseMarks(toks, from);
   let depth = 0;
   let cases = 0;
   for (let i = from; i < toks.length; i++) {
@@ -95,15 +158,16 @@ function wellFormed(toks: Token[], from: number): boolean {
       if (depth === 0) return false;
       depth--;
     } else if (t.kind === "word" && depth === 0) {
-      if (t.upper === "CASE" && !afterNameMarker(toks[i - 1])) cases++;
-      else if (t.upper === "END") {
-        if (cases === 0) return false;
-        cases--;
-      }
+      if (marks.open.has(i)) cases++;
+      else if (marks.close.has(i)) cases--;
+      else if (t.upper === "END" && !usedAsName(toks, i, from) && cases === 0) return false;
     }
   }
   return depth === 0 && cases === 0;
 }
+
+/** A label compares case-insensitively, backticks or not. */
+const labelKey = (t: Token): string => (t.kind === "qident" ? t.text.slice(1, -1) : t.text).toLowerCase();
 
 class Cell {
   private readonly stack: Block[] = [];
@@ -140,18 +204,42 @@ class Cell {
     // Only for a PROCEDURE: in `CREATE VIEW v AS SELECT 1 AS begin` the word
     // after AS is a name, and it must stay one.
     if (lead === "CREATE" && toks.slice(0, 6).some((t) => isWord(t, "PROCEDURE"))) {
-      const b = scan(toks, 1, (i) => isWord(toks[i], "BEGIN") && !isPunct(toks[i - 1], "."));
-      if (b >= 0) return this.head(toks, b);
-      return;
-    }
-    // DECLARE ... HANDLER FOR cond <action>: the action may be a BEGIN block.
-    if (lead === "DECLARE" && toks.some((t) => isWord(t, "HANDLER"))) {
-      const b = scan(toks, 1, (i) => isWord(toks[i], "BEGIN"));
-      if (b >= 0) return this.head(toks, b);
-      if (scan(toks, 1, (i) => isWord(toks[i], "IF", "WHILE", "LOOP", "REPEAT", "FOR", "CASE")) >= 0) this.gaveUp = true;
+      // The body is the first depth-0 BEGIN; after AS it is not a name here.
+      let depth = 0;
+      for (let b = 1; b < toks.length; b++) {
+        if (isOpen(toks[b])) depth++;
+        else if (isClose(toks[b])) depth = Math.max(0, depth - 1);
+        else if (depth === 0 && isWord(toks[b], "BEGIN") && !isPunct(toks[b - 1], ".")) return this.head(toks, b);
+      }
       return;
     }
     this.head(toks, 0);
+  }
+
+  /** `DECLARE EXIT HANDLER FOR cond action`: find the action's block, if it is one. */
+  private handler(toks: Token[], at: number): void {
+    let depth = 0;
+    for (let i = at + 4; i < toks.length; i++) {
+      const t = toks[i];
+      if (isOpen(t)) depth++;
+      else if (isClose(t)) depth = Math.max(0, depth - 1);
+      else if (t.kind === "word" && depth === 0) {
+        const p = toks[i - 1];
+        if (!isWord(t, "BEGIN", "IF", "WHILE", "LOOP", "REPEAT", "FOR", "CASE")) continue;
+        const nx = toks[i + 1];
+        if (afterNameMarker(p) || isWord(p, "FOR") || (p && isPunct(p, ",")) || (nx && (nx.kind === "op" || isPunct(nx, ".")))) continue;
+        if (isWord(t, "BEGIN")) {
+          if (p && isColon(p)) {
+            // `h: BEGIN` is a label; `j:begin` is a JSON path. Only the spacing tells them apart.
+            const colon = p;
+            if (colon.end === t.start || !(toks[i - 2]?.kind === "word" || toks[i - 2]?.kind === "qident")) return void (this.gaveUp = true);
+            return this.head(toks, i - 2);
+          }
+          return this.head(toks, i);
+        }
+        return void (this.gaveUp = true); // some other block as the handler's action
+      }
+    }
   }
 
   /** Read blocks from a position where a statement can start. */
@@ -160,20 +248,22 @@ class Cell {
     while (i < toks.length && !this.gaveUp) {
       let tok = toks[i];
       let label: Token | undefined;
-      if (tok.kind === "word" && isColon(toks[i + 1]) && isWord(toks[i + 2], ...LABELLED)) {
+      if ((tok.kind === "word" || tok.kind === "qident") && isColon(toks[i + 1]) && isWord(toks[i + 2], ...LABELLED)) {
         label = tok;
         i += 2;
         tok = toks[i];
       }
+      if (tok.kind === "op" && i > from) return void (this.gaveUp = true); // no statement starts with an operator
       if (tok.kind !== "word") return this.plain(toks, i);
+      if (i > from && CANNOT_START.has(tok.upper!)) return void (this.gaveUp = true); // we mis-read where a body starts
       const next = toks[i + 1];
       const top = this.stack[this.stack.length - 1];
       switch (tok.upper) {
         case "BEGIN": {
           if (!next) return void (this.gaveUp = true); // a bare `BEGIN;` could be a transaction
-          if (isWord(next, ...TRANSACTION_WORDS)) return;
+          if (isWord(next, ...TRANSACTION_WORDS) && !isColon(toks[i + 2])) return;
           this.open("BEGIN", tok, label);
-          i += isWord(next, "ATOMIC") ? 2 : 1;
+          i += isWord(next, "ATOMIC") && !isColon(toks[i + 2]) ? 2 : 1;
           continue;
         }
         case "IF": {
@@ -207,7 +297,7 @@ class Cell {
           continue;
         }
         case "CASE": {
-          const w = scan(toks, i + 1, (k) => isWord(toks[k], "WHEN"));
+          const w = scan(toks, i + 1, (k) => isWord(toks[k], "WHEN"), true);
           if (w < 0) {
             const endCase = scan(toks, i + 1, (k) => isWord(toks[k], "END") && isWord(toks[k + 1], "CASE"));
             if (endCase >= 0) return this.fail("incomplete-block", tok, "`CASE` has no `WHEN` before its `END CASE`.");
@@ -252,6 +342,13 @@ class Cell {
           i = e;
           continue;
         }
+        case "DECLARE": {
+          // DECLARE EXIT|CONTINUE HANDLER FOR cond <action>: the action may be a BEGIN block.
+          if (isWord(toks[i + 1], "EXIT", "CONTINUE") && isWord(toks[i + 2], "HANDLER") && isWord(toks[i + 3], "FOR")) {
+            return this.handler(toks, i);
+          }
+          return this.plain(toks, i);
+        }
         case "THEN":
         case "DO":
           return this.fail("misplaced-block-word", tok,
@@ -283,7 +380,7 @@ class Cell {
       const t = toks[i];
       if (isOpen(t)) depth++;
       else if (isClose(t)) depth = Math.max(0, depth - 1);
-      else if (t.kind === "word" && depth === 0 && !afterNameMarker(toks[i - 1]) && !isColon(toks[i + 1])) {
+      else if (t.kind === "word" && depth === 0 && !afterNameOrPath(toks[i - 1]) && !isColon(toks[i + 1])) {
         const n = toks[i + 1];
         const callLike = n !== undefined && isPunct(n, "(");
         if (isWord(t, "BEGIN", "LOOP", "WHILE") || (isWord(t, "REPEAT") && !callLike)) {
@@ -307,7 +404,7 @@ class Cell {
     let j = i + 1;
     let kw = "";
     if (toks[j]?.kind === "word" && CLOSER_WORDS.has(toks[j].upper!)) kw = toks[j++].upper!;
-    const label = toks[j]?.kind === "word" ? toks[j++] : undefined;
+    const label = toks[j]?.kind === "word" || toks[j]?.kind === "qident" ? toks[j++] : undefined;
     const shown = kw === "" ? "END" : `END ${kw}`;
     if (j < toks.length) {
       // A block's end takes a closer word and a label, then the statement ends.
@@ -348,7 +445,7 @@ class Cell {
         `\`${label.text}\` is an end label, but ${this.describe(top)} has no label.`);
       return;
     }
-    if (label && top.label && label.upper !== top.label.upper) {
+    if (label && top.label && labelKey(label) !== labelKey(top.label)) {
       report(this.ctx, "mismatched-block", "error", label,
         `The end label \`${label.text}\` does not match the begin label \`${top.label.text}\` of ${this.describe(top)}.`);
       this.gaveUp = true;

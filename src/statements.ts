@@ -583,7 +583,34 @@ export class Stmt {
     // `AS OF` is a fixed pair (`VERSION AS OF 3`), not `AS` introducing an
     // alias, so the name-context rule must not swallow the `OF`.
     if (t.upper === "OF" && this.isKw(i - 1, "AS")) return true;
-    return !isNameContext(this.toks[i - 1]);
+    if (isNameContext(this.toks[i - 1])) return false;
+    return !this.isScriptLabel(i);
+  }
+
+  /**
+   * A word that names a scripting label, whatever it spells: `from: LOOP`,
+   * `LEAVE from`, and the label after a closer (`END LOOP from`).
+   */
+  private isScriptLabel(i: number): boolean {
+    const { toks } = this;
+    const n = toks[i + 1];
+    if (n && n.kind === "op" && n.text === ":") return true;
+    const p = toks[i - 1];
+    if (p?.kind === "word" && (p.upper === "LEAVE" || p.upper === "ITERATE")) return true;
+    if (toks[0]?.kind === "word" && toks[0].upper === "END") {
+      const second = toks[1]?.kind === "word" ? toks[1].upper! : "";
+      const typed = ["IF", "WHILE", "LOOP", "FOR", "REPEAT", "CASE"].includes(second);
+      return i === (typed ? 2 : 1);
+    }
+    return false;
+  }
+
+  /** An END in operand position is a variable called end, not a CASE closer. */
+  private endIsOperand(i: number): boolean {
+    const p = this.toks[i - 1];
+    if (!p) return false;
+    if (p.kind === "op" || isPunct(p, ",") || isPunct(p, "(")) return true;
+    return p.kind === "word" && ["WHEN", "THEN", "ELSE", "AND", "OR", "NOT", "IF", "WHILE", "UNTIL", "SELECT", "SET", "IS", "IN"].includes(p.upper!);
   }
 
   isPunctAt(i: number, ch: string): boolean {
@@ -677,7 +704,7 @@ export class Stmt {
     const open: number[] = [];
     for (let i = 0; i < this.toks.length; i++) {
       if (this.isKw(i, "CASE") && !this.isKw(i - 1, "END")) open.push(i);
-      else if (this.isKw(i, "END") && !this.isKw(i + 1, "IF", "LOOP", "WHILE", "FOR", "REPEAT", "CASE")) {
+      else if (this.isKw(i, "END") && !this.endIsOperand(i) && !this.isKw(i + 1, "IF", "LOOP", "WHILE", "FOR", "REPEAT", "CASE")) {
         for (let k = open.length - 1; k >= 0; k--) {
           if (this.depth[open[k]] === this.depth[i]) {
             spans.push([open[k], i]);
@@ -884,7 +911,7 @@ export class Stmt {
       for (let k = c + 1; k < e; k++) {
         if (this.depth[k] !== d) continue;
         if (this.isKw(k, "CASE") && !this.isKw(k - 1, "END")) nested++;
-        else if (this.isKw(k, "END") && nested > 0) nested--;
+        else if (this.isKw(k, "END") && !this.endIsOperand(k) && nested > 0) nested--;
         if (nested > 0 || this.isKw(k, "CASE")) continue;
         if (this.isKw(k, "WHEN")) {
           if (state === "when") return bad(lastWhen, "WHEN has no THEN");
@@ -998,6 +1025,9 @@ export class Stmt {
       const rule = FORBIDDEN_PAIRS.get(`${a.upper} ${b.upper}`);
       if (rule === undefined) continue;
       if (rule.lead !== undefined && rule.lead !== this.lead) continue;
+      // `IF then = 1`: a word followed by an operator is an operand.
+      const after = toks[i + 1];
+      if (a.upper === "IF" && after && after.kind === "op" && after.text !== ":") continue;
       // Both must be keywords here, not names: Spark lets almost any keyword be
       // an identifier, and `AS`/`.` context is what tells them apart.
       if (!this.isKw(i - 1, a.upper!) || !this.isKw(i, b.upper!)) continue;

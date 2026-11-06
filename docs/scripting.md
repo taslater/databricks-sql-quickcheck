@@ -89,13 +89,33 @@ oracle is the engine instead: every script in `eval/scripting/` was run on a
 Databricks SQL warehouse (channel Current, v2026.43) on 2026-11-06, by agents
 that were not told what the checker does.
 
-- `eval/scripting/valid.json`: 256 scripts the engine ran, covering every
-  statement kind, labels, handlers, nesting, CASE expressions, `if()` and
-  `repeat()` as functions, keywords as names, comments, strings and layout.
-  The checker says nothing about any of them
-  (`src/test/scripting-fixtures.test.ts`). Writing them found two false
-  positives before release: a block labelled `if` closed by `END if`, and a
-  variable named `case`.
+- `eval/scripting/valid.json`: 557 scripts the engine ran: 256 written to cover
+  every statement kind, labels, handlers, nesting, CASE expressions, `if()` and
+  `repeat()` as functions, keywords as names, comments, strings and layout,
+  and 301 from an adversarial pass (below). The checker says nothing about any
+  of them (`src/test/scripting-fixtures.test.ts`). Writing the first 256 found
+  two false positives: a block labelled `if` closed by `END if`, and a variable
+  named `case`.
+- The adversarial pass: a stronger model read `src/blocks.ts` and tried to
+  write scripts the engine runs but the checker flags. It ran 364 and found 94
+  false positives, 66 in this pass and 28 in older checks. They fall into a
+  few families, all fixed and all kept as fixtures:
+  - a label right after `BEGIN` spelled like a transaction word
+    (`BEGIN read: LOOP`) or `atomic`, and quoted labels (`` `l`: FOR ``);
+  - `then`, `do`, `end`, `case`, `begin` and `when` used as names: a field
+    (`x.then`, `j:do`), an alias (`AS do`), a variable (`IF then = 1 THEN`,
+    `UNTIL end > 1`). The rule is that a word in a name position is a name, and
+    a `CASE` counts as an opener only when an `END` closes it in the same
+    fragment;
+  - a handler scan that read `AS begin`, a variable called `handler`, or
+    `DECLARE EXIT HANDLER` inside a one-line `BEGIN DECLARE ...` as a block;
+  - older checks that did not know a scripting label can be any word
+    (`LEAVE from`, `select: BEGIN`, `END LOOP with`), that a JSON key can be
+    `then` or `end` (`j:then`), and that `end` can be a variable inside
+    `CASE WHEN end = 1`.
+  A safety net came out of it: if the token right after a `THEN` or `DO` is
+  `FROM`, `WHERE`, an operator or another word no statement starts with, the
+  matcher has mis-read where the body begins and gives up.
 - `eval/scripting/invalid.json`: 278 scripts with one block-structure mistake
   each, with the engine's error class, plus the repaired twin of each. The
   checker says nothing about any of the 278 twins, and flags 276 of the 278
@@ -146,6 +166,7 @@ Known gaps, each recorded so a later change can take it on. The two scripts in
   variable name;
 - `DECLARE ... HANDLER FOR cond;` with no action. The handler's condition list
   and its action are not separable without a grammar;
+- an unwrapped `IF` or `WHILE` as a handler's action (the engine refuses it);
 - the label rules that need scope: a label on the outermost `BEGIN`,
   `LEAVE` / `ITERATE` naming no label in scope, a nested block reusing an
   enclosing label (`LABEL_OR_FOR_VARIABLE_ALREADY_EXISTS`);
