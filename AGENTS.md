@@ -98,6 +98,18 @@ everyday mistakes made to the clean files it is 95% of keyword typos, 94% of
 deleted `;` and 96% of deleted column commas (all as of 2026-09-26). A change
 that trades a false positive for recall is the wrong trade.
 
+**The catch baseline guards against lost catches.** The false-positive gate
+cannot see a change that stops catching, so `eval/baseline.json` records the
+ids of the reference must-reject cases caught as errors, and the caught count
+of each guaranteed mutation kind, for the pinned `CORPUS_REF` and the seed and
+budget it names. `eval/compare_baseline.py` runs in CI right after `evaluate.py`:
+it exits 1 on a lost catch (naming each case id) or a kind whose count dropped,
+and prints new catches without failing. A PR that gains catches updates the
+baseline in the same commit: run `evaluate.py` against the pinned corpus, then
+`python eval/compare_baseline.py --update`. A `CORPUS_REF` bump regenerates it
+in its own PR. The comparison's unit tests, which need no corpus, run with
+`python3 -m unittest discover -s eval -p 'test_*.py'`.
+
 **The must-reject cases are split by shape, and only one half is ours.** The
 reference corpus has 395 of them and a single catch rate over all 395 is
 misleading, because most of what it counts is grammar-level and out of remit.

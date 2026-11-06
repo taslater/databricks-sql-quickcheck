@@ -52,10 +52,13 @@ npm test                        # typecheck plus unit tests
 git clone https://github.com/taslater/databricks-sql-corpus ../databricks-sql-corpus
 (cd ../databricks-sql-corpus && make venv && make corpus-fetch)
 ../databricks-sql-corpus/.venv/bin/python eval/evaluate.py   # exits 1 on any false positive
+python eval/compare_baseline.py                                # exits 1 on a lost catch
 ../databricks-sql-corpus/.venv/bin/python scripts/derive_shape_sets.py
 ```
 
-CI runs both on every PR.
+CI runs all of these on every PR. A new catch needs the baseline updated in the
+same commit: `python eval/compare_baseline.py --update`, after `evaluate.py`
+against the pinned corpus (see AGENTS.md).
 
 ## Reporting a bug
 

@@ -29,6 +29,8 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm test
+      - name: unit tests for the catch-baseline comparison
+        run: python3 -m unittest discover -s eval -p 'test_*.py'
 
   corpus-gate:
     # The false-positive gate: no error or warning on any valid corpus file,
@@ -74,9 +76,18 @@ jobs:
       - name: evaluate
         working-directory: quickcheck
         run: python eval/evaluate.py --corpus ../corpus
+      - name: no lost catch against the committed baseline
+        # Fails on a reference must-reject case that is no longer caught, or a
+        # guaranteed mutation kind whose caught count went down. New catches pass.
+        working-directory: quickcheck
+        run: python eval/compare_baseline.py
       - name: the grammar agrees with the lexer on every corpus file
         working-directory: quickcheck
         run: node out/test/grammar-corpus.js ../corpus/corpus/cache
       - name: re-check the shipped shape sets against every valid source
         working-directory: quickcheck
         run: python scripts/derive_shape_sets.py --corpus ../corpus
+      - name: headline numbers in the job summary
+        if: always()
+        working-directory: quickcheck
+        run: python eval/compare_baseline.py --headline >> "$GITHUB_STEP_SUMMARY"

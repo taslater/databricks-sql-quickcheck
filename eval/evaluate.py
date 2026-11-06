@@ -248,7 +248,8 @@ def main() -> int:
     from dbsqlparse.corpus.sources import REMOTE_SOURCES
 
     qc = Quickcheck()
-    results: dict = {"sources": {}, "reference": {}, "mutation": {}}
+    results: dict = {"sources": {}, "reference": {}, "mutation": {},
+                     "config": {"seed": args.seed, "mutations": args.mutations}}
 
     # A known-bad control first. If the checker, or this harness, has stopped
     # seeing anything, every number below would read as a success.
@@ -315,6 +316,7 @@ def main() -> int:
     reject = collections.Counter()
     by_shape: dict[str, collections.Counter] = collections.defaultdict(collections.Counter)
     still_missed: dict[str, list[str]] = collections.defaultdict(list)
+    caught_ids: list[str] = []
     for case in cases:
         diags, _ = qc.check(case.sql, case.id)
         if case.verdict == "must-parse":
@@ -324,6 +326,8 @@ def main() -> int:
             reject["parse_warn"] += bool(warnings_of(diags))
         else:
             caught = bool(errors_of(diags))
+            if caught:
+                caught_ids.append(case.id)
             reject["reject_total"] += 1
             reject["reject_error"] += caught
             reject["reject_any"] += bool(diags)
@@ -353,6 +357,7 @@ def main() -> int:
     results["reference"] = dict(
         reject,
         false_positives=[c for c, _ in parse_fp],
+        caught_ids=sorted(caught_ids),
         by_shape={k: dict(v) for k, v in by_shape.items()},
         structural_total=struct_total,
         structural_caught=struct_err,
