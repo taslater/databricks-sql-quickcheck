@@ -90,7 +90,7 @@ corpus, so "unseen, therefore wrong" fires on one valid statement in five. Read
 that file before adding a check that generalises, and before relaxing this rule.
 
 The evaluation must still report `0` error files and `0` warning files on the
-valid corpus, and `823/823` clean must-parse reference cases (the count grows
+valid corpus, and `845/845` clean must-parse reference cases (the count grows
 as the corpus does). Its exit status is non-zero on any false positive, and 2
 if its known-bad control stops firing. It also reports catch rates. On the
 corpus's own `mutate.py` mutants the guaranteed tier is at 100.0%. On
@@ -111,7 +111,7 @@ in its own PR. The comparison's unit tests, which need no corpus, run with
 `python3 -m unittest discover -s eval -p 'test_*.py'`.
 
 **The must-reject cases are split by shape, and only one half is ours.** The
-reference corpus has 395 of them and a single catch rate over all 395 is
+reference corpus has 409 of them and a single catch rate over all 409 is
 misleading, because most of what it counts is grammar-level and out of remit.
 `shape_of` in the evaluation buckets each case:
 
@@ -323,7 +323,7 @@ yours and cannot be skipped**:
    COMPUTE` was refused for a different reason: `ANALYZE TABLE compute COMPUTE
    STATISTICS` is a table named `compute`, and nothing at this depth tells them
    apart. The 16 that remain unshipped are printed on every run.
-3. **vetoed by data** -- absent from the 562 valid files and 823 must-parse
+3. **vetoed by data** -- absent from the 562 valid files and 845 must-parse
    cases, re-checked every run, failing loudly.
 
 `lead` is the positional evidence that keeps a pair off a name, and it is load

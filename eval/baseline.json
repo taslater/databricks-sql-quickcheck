@@ -112,6 +112,8 @@
     "create-view.without-as-query",
     "create-volume.comment-without-text",
     "create-volume.location-without-path",
+    "decimal.missing-precision",
+    "decimal.trailing-comma",
     "declare-variable.without-name",
     "delete-from.where-without-predicate",
     "delete-from.without-table",
@@ -155,6 +157,7 @@
     "fsck-repair-table.between-without-end",
     "fsck-repair-table.between-without-start",
     "fsck-repair-table.without-table",
+    "function-invocation.argument-without-comma",
     "generate.without-mode",
     "generate.without-table-name",
     "get-diagnostics.without-item",
@@ -177,6 +180,7 @@
     "insert.empty-replace-using",
     "insert.replace-on-without-expression",
     "insert.replace-where-without-predicate",
+    "is-distinct-from.without-right-operand",
     "join.natural-with-criteria",
     "join.on-without-expression",
     "join.using-empty",
@@ -263,6 +267,7 @@
     "values.trailing-comma",
     "values.without-expression",
     "variant.with-parameters",
+    "where.exists-without-query",
     "where.without-expression",
     "window.without-spec"
   ]

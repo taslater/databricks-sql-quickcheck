@@ -124,14 +124,14 @@ both directions. These figures are from 2026-09-26:
 | | result |
 | --- | --- |
 | Valid corpus: 561 files from 13 sources (Databricks notebooks, TPC-DS/TPC-H/SSB, SQLFluff's sparksql and databricks fixtures) | **0 errors, 0 warnings** |
-| Reference must-parse cases, transcribed from the Databricks SQL docs | **823 / 823 clean** |
+| Reference must-parse cases, transcribed from the Databricks SQL docs | **845 / 845 clean** |
 | **Everyday mistakes** made in those clean files: one keyword typo per file (a swapped, dropped or doubled letter) | **494 / 518 flagged (95%)** |
 | Everyday mistakes: one `;` deleted between statements | **224 / 239 flagged (94%)** |
 | Everyday mistakes: one comma deleted between column definitions | **50 / 52 flagged (96%)** |
 | Guaranteed-invalid mutants from the corpus's `mutate.py` (brackets, quotes, commas, operators) | **2596 / 2597 errors (100.0%)**; the last one is caught as a `string-swallows-code` warning |
 | `mutate.py` weak mutants (deleted comma or keyword, dangling `AND`/`OR`) | 44% / 54% / 100% flagged (4% / 24% / 100% as errors); many deleted commas leave valid SQL |
-| Reference must-reject cases, all | 241 / 395; most of the rest are reachable in principle and are being triaged ([scope](docs/scope.md)) |
-| Reference must-reject cases a shallow checker can reach | **189 / 233 (81%)** |
+| Reference must-reject cases, all | 250 / 409; most of the rest are reachable in principle and are being triaged ([scope](docs/scope.md)) |
+| Reference must-reject cases a shallow checker can reach | **194 / 234 (83%)** |
 | Spark's own SQL test suite, 304 files of unusual syntax | 7 errors, each checked by hand: all real, and most sit under the file's own negative-test heading |
 | Speed over the valid corpus (1.1M characters) | 115 ms total; median 0.12 ms per file, p95 0.7 ms, max 2.0 ms |
 
