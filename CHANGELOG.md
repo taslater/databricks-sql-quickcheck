@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.3.1 (2026-11-06)
+
+- **Fixed a false positive on `IS [NOT] DISTINCT FROM`.** The `FROM` of the
+  operator was read as a query clause with no `SELECT` before it, so
+  `WHEN MATCHED AND (t.a IS DISTINCT FROM s.b)` in a `MERGE`, and the same
+  inside any bracket after `AND`, `OR`, `ON` or `IN`, was reported as an error.
+  Reported and fixed by Paul Sedra (#43, #44).
+
 ## 0.3.0 (2026-11-02)
 
 The first release on the Visual Studio Marketplace.
