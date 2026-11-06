@@ -247,6 +247,7 @@
     "subselect.except-trailing-comma",
     "subselect.from-without-reference",
     "sync.without-source",
+    "table-reference.query-after-alias",
     "table-reference.without-table",
     "tablesample.repeatable-without-seed",
     "tablesample.without-sample",
