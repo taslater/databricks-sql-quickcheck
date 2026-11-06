@@ -552,6 +552,7 @@ export function checkStatements(toks: Token[], depth: number[], ctx: Ctx): void 
   s.truncatedStatement();
   s.forbiddenAdjacency();
   s.exclusiveAlternatives();
+  s.subqueryAliasThenQuery();
   s.emptyLists();
 }
 
@@ -1269,6 +1270,40 @@ export class Stmt {
         if (FROM_JOINS.has(t.upper!)) joined = true;
         if (!IN_FROM_CLAUSE.has(t.upper!)) break; // the FROM clause has ended
       }
+    }
+  }
+
+  /**
+   * `FROM (SELECT a FROM t) x (SELECT b FROM u) y`: a query bracket straight
+   * after an alias. After an alias the only bracket Databricks allows is the
+   * column alias list `( column_identifier [, ...] )`, and `SELECT`, `WITH`
+   * and `VALUES` are not identifiers, so no valid SQL has this shape. The
+   * alias must be a plain name (`x`, `` `x` ``) and the bracket before it
+   * must close a query, so `explode(a) x (SELECT ...)`, `t TABLESAMPLE (...)`
+   * and the infix operators that can take a subquery on their right
+   * (`(SELECT 1) DIV (SELECT 2)`, `RLIKE`, `MOD`, `IN`) stay quiet.
+   */
+  subqueryAliasThenQuery(): void {
+    const { toks, ctx } = this;
+    const QUERY_OPENERS = ["SELECT", "WITH", "VALUES"];
+    // Words that take a bracket on their right and are not aliases.
+    const INFIX = new Set(["DIV", "MOD", "XOR", "RLIKE", "REGEXP", "LIKE", "ILIKE", "IS", "NOT", "AND", "OR", "ANY", "SOME", "ALL", "IN", "EXISTS", "BETWEEN", "ESCAPE", "COLLATE", "AT", "OVER", "WITHIN", "FILTER", "OF", "AS", "ON", "USING", "LATERAL", "TABLESAMPLE", "UNION", "INTERSECT", "EXCEPT", "MINUS"]);
+    const opensQuery = (j: number): boolean => toks[j]?.kind === "word" && QUERY_OPENERS.includes(toks[j].upper!);
+    for (let l = 2; l + 1 < toks.length; l++) {
+      if (!isPunct(toks[l], "(") || !opensQuery(l + 1)) continue;
+      const alias = toks[l - 1];
+      const plainName = alias.kind === "qident" || (alias.kind === "word" && !KEYWORDS.has(alias.upper!) && !INFIX.has(alias.upper!));
+      if (!plainName || !isPunct(toks[l - 2], ")")) continue;
+      // Find the `(` that the `)` before the alias closes.
+      let d = 0;
+      let open = -1;
+      for (let k = l - 2; k >= 0; k--) {
+        if (isPunct(toks[k], ")")) d++;
+        else if (isPunct(toks[k], "(") && --d === 0) { open = k; break; }
+      }
+      if (open < 0 || !opensQuery(open + 1) || ctx.flagged?.has(alias.start)) continue;
+      report(ctx, "missing-comma", "error", toks[l],
+        `A bracket starting \`${toks[l + 1].upper}\` cannot follow the alias \`${alias.text}\`. Is a comma missing before this subquery?`);
     }
   }
 
