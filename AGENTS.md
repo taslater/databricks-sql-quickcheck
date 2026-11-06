@@ -315,6 +315,12 @@ through every later cell).
   language change as a close and an open of the same document in one tick,
   which is how `language.ts` tells a user's switch back to `sql` from a
   reopened file.
+- **The language carries its own file icon** (`icons/databricks-sql.svg`).
+  Explorer, tab and Source Control icons follow an open document's language,
+  and no file icon theme knows `databricks-sql`, so without it a switched
+  notebook shows the generic file icon. VS Code uses a language's icon only
+  where the theme has none. `.vscodeignore` drops `images/*.svg`, so keep it
+  out of `images/`.
 - **The grammar's keyword list leaves out common column names** (`NAME`,
   `TYPE`, `KEY`, `VALUE`, `DATA`, `YEAR`). A word after `.` is never a keyword.
 - **Folding per cell was left out on purpose.** A folding-range provider

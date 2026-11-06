@@ -65,7 +65,11 @@
           ".dbsql"
         ],
         "firstLine": "^\\uFEFF?-- Databricks notebook source",
-        "configuration": "./language-configuration.json"
+        "configuration": "./language-configuration.json",
+        "icon": {
+          "light": "./icons/databricks-sql.svg",
+          "dark": "./icons/databricks-sql.svg"
+        }
       }
     ],
     "grammars": [

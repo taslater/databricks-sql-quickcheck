@@ -1,0 +1,45 @@
+name: Extension bug
+description: the VS Code extension misbehaves (icons, language mode, settings, speed, a crash), not a finding on SQL.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        For a finding on valid SQL, or invalid SQL that is not flagged, use **False positive** or **Missed error** instead.
+        **Do not paste SQL, file names or screenshots you are not allowed to publish.**
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What you saw, and what you expected instead. A screenshot helps.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: How to reproduce it
+      description: The smallest steps that show it, for example "open a .sql file that starts with `-- Databricks notebook source`".
+    validations:
+      required: true
+  - type: input
+    id: extension-version
+    attributes:
+      label: quickcheck version
+      description: From the Extensions view.
+      placeholder: "0.4.0"
+    validations:
+      required: true
+  - type: input
+    id: vscode-version
+    attributes:
+      label: VS Code version and OS
+      description: From Help > About.
+      placeholder: "1.105.1, Windows 11"
+    validations:
+      required: true
+  - type: textarea
+    id: settings
+    attributes:
+      label: Related settings
+      description: Any `databricksSqlQuickcheck.*` or `files.associations` settings you changed, and the file icon theme you use.
+      render: json
