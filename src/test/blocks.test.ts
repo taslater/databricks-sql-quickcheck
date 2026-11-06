@@ -173,6 +173,14 @@ describe("block structure: required words and misplaced words", () => {
     ["BEGIN CASE 1 WHEN 1 THEN VALUES (1); WHEN 2 THEN VALUES (2); ELSE VALUES (3); END CASE; END", null],
     ["BEGIN IF 1 = 1 THEN VALUES (1); END IF a; END", "mismatched-block"],
     ["BEGIN BEGIN VALUES (1); END a; END", "mismatched-block"],
+    ["BEGIN BEGIN VALUES (1); END 'lbl'; END", "misplaced-block-word"],
+    ["BEGIN IF 1 = 1 THEN VALUES (1); END IF 'x'; END", "misplaced-block-word"],
+    ["BEGIN VALUES (1); END SELECT 1; END", "misplaced-block-word"],
+    ["BEGIN REPEAT VALUES (1); UNTIL true END REPEAT END REPEAT; END", "misplaced-block-word"],
+    ["BEGIN VALUES (1); THEN VALUES (2); END", "misplaced-block-word"],
+    ["BEGIN VALUES (1); DO VALUES (2); END", "misplaced-block-word"],
+    ["BEGIN CASE 1 END CASE; END", "incomplete-block"],
+    ["BEGIN CASE END CASE; END", "incomplete-block"],
   ];
   for (const [sql, code] of rows) {
     it(code === null ? `quiet: ${sql}` : `${code}: ${sql}`, () => {

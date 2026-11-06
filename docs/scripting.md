@@ -15,7 +15,7 @@ seen open, and matches each closer against the top of the stack.
 | `mismatched-block` | error | a closer that is not the open block's: `IF ... THEN ...; END`, `WHILE ... DO ...; END IF`, `REPEAT ...; END REPEAT` with no `UNTIL`, `END LOOP other` after `lbl: LOOP` |
 | `unmatched-block` | error | a closer with no open block: `BEGIN SELECT 1; END; END` |
 | `incomplete-block` | error | a required word is missing: `IF` / `ELSEIF` / `WHEN` with no `THEN`, `WHILE` / `FOR` with no `DO`, a `CASE` with no `WHEN`, `UNTIL cond` with no `END REPEAT`; or a `WHILE`, `FOR`, `LOOP` or `REPEAT` with no statement in its body (`WHILE c DO END WHILE`; an empty `BEGIN END` is valid) |
-| `misplaced-block-word` | error | an `ELSE` or `ELSEIF` outside an `IF`, a `WHEN` outside a `CASE` statement, an `UNTIL` outside a `REPEAT`, a second `ELSE`, or an `ELSEIF` / `WHEN` after the `ELSE` |
+| `misplaced-block-word` | error | an `ELSE` or `ELSEIF` outside an `IF`, a `WHEN` outside a `CASE` statement, an `UNTIL` outside a `REPEAT`, a second `ELSE`, an `ELSEIF` / `WHEN` after the `ELSE`, a `THEN` or `DO` that starts a statement, or anything but a label after a block's `END` (`END IF 'x'`, `END SELECT 1`: a `;` is missing) |
 
 Every one is an error because the engine rejects each of them (below). After
 the first one in a cell the pass stops: a stack that has already disagreed with
@@ -57,7 +57,6 @@ reports from a half-understood stack. It gives up on:
   still typing it); a balanced fragment with no `THEN` is `incomplete-block`;
 - `REPEAT (`, which is the string function and cannot open a block, but could
   be anything the user is typing;
-- anything after a closer on the same fragment other than its label;
 - `DECLARE ... HANDLER` whose action is a block statement other than `BEGIN`;
 - a lexical error anywhere in the file (an unterminated string or comment): the
   tokens after it are not reliable, so no block is judged at all.
@@ -99,8 +98,8 @@ that were not told what the checker does.
   variable named `case`.
 - `eval/scripting/invalid.json`: 278 scripts with one block-structure mistake
   each, with the engine's error class, plus the repaired twin of each. The
-  checker says nothing about any of the 278 twins, and flags 260 of the 278
-  mistakes (`src/test/scripting-invalid.test.ts`). The 18 it misses are listed
+  checker says nothing about any of the 278 twins, and flags 276 of the 278
+  mistakes (`src/test/scripting-invalid.test.ts`). The 2 it misses are listed
   in the file as `checker_misses`, and the test fails if one of them starts
   being caught without the list being updated, so the number only goes up.
   Engine error classes: 243 `PARSE_SYNTAX_ERROR`, 19
@@ -139,13 +138,14 @@ them:
 
 ## Not checked yet
 
-Known gaps, each recorded so a later change can take it on. The 18 scripts in
+Known gaps, each recorded so a later change can take it on. The two scripts in
 `checker_misses` are the measured edge:
 
-- a `THEN` or `DO` at a statement start with nothing before it, and a
-  `DECLARE ... HANDLER` with no action;
-- a `CASE` with no `WHEN` where the fragment also holds the `END CASE`;
-- a second `UNTIL` inside the condition of the first;
+- a second `UNTIL` in the condition of the first (`UNTIL a UNTIL b END REPEAT`).
+  Flagging it would be wrong for `UNTIL until > 1`, since `until` is a legal
+  variable name;
+- `DECLARE ... HANDLER FOR cond;` with no action. The handler's condition list
+  and its action are not separable without a grammar;
 - the label rules that need scope: a label on the outermost `BEGIN`,
   `LEAVE` / `ITERATE` naming no label in scope, a nested block reusing an
   enclosing label (`LABEL_OR_FOR_VARIABLE_ALREADY_EXISTS`);

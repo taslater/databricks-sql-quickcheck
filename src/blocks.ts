@@ -208,7 +208,11 @@ class Cell {
         }
         case "CASE": {
           const w = scan(toks, i + 1, (k) => isWord(toks[k], "WHEN"));
-          if (w < 0) return this.noKeyword(toks, i, "CASE", "WHEN", "the CASE");
+          if (w < 0) {
+            const endCase = scan(toks, i + 1, (k) => isWord(toks[k], "END") && isWord(toks[k + 1], "CASE"));
+            if (endCase >= 0) return this.fail("incomplete-block", tok, "`CASE` has no `WHEN` before its `END CASE`.");
+            return this.noKeyword(toks, i, "CASE", "WHEN", "the CASE");
+          }
           const t = scan(toks, w + 1, (k) => isWord(toks[k], "THEN"));
           if (t < 0) return this.noKeyword(toks, w, "WHEN", "THEN", "its condition");
           this.open("CASE", tok);
@@ -248,6 +252,10 @@ class Cell {
           i = e;
           continue;
         }
+        case "THEN":
+        case "DO":
+          return this.fail("misplaced-block-word", tok,
+            `\`${tok.upper}\` starts a statement here: it belongs after the condition of an \`${tok.upper === "THEN" ? "IF, ELSEIF or WHEN" : "WHILE or FOR"}\`.`);
         case "END":
           return this.close(toks, i);
         default:
@@ -300,8 +308,13 @@ class Cell {
     let kw = "";
     if (toks[j]?.kind === "word" && CLOSER_WORDS.has(toks[j].upper!)) kw = toks[j++].upper!;
     const label = toks[j]?.kind === "word" ? toks[j++] : undefined;
-    if (j < toks.length) return void (this.gaveUp = true); // more after the closer: do not guess
     const shown = kw === "" ? "END" : `END ${kw}`;
+    if (j < toks.length) {
+      // A block's end takes a closer word and a label, then the statement ends.
+      const extra = toks[j];
+      return this.fail("misplaced-block-word", extra,
+        `\`${shown}\` is followed by \`${extra.text}\`. After a block's end only a label can follow, so a \`;\` is probably missing.`);
+    }
 
     const empty = this.justOpened;
     this.justOpened = undefined;
