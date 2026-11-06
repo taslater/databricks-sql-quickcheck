@@ -109,7 +109,7 @@ jobs:
             fi
           ) &
           chain=$!
-          step grammar node out/test/grammar-corpus.js ../corpus/corpus/cache &
+          step grammar sh -c 'exit 1' &
           grammar=$!
           step shapes python scripts/derive_shape_sets.py --corpus ../corpus &
           shapes=$!
