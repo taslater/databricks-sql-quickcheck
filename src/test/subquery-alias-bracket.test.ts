@@ -76,3 +76,10 @@ describe("subqueryAliasThenQuery", () => {
     clean("WITH a AS (SELECT 1), b AS (SELECT 2) SELECT * FROM a, b");
   });
 });
+
+describe("subqueryAliasThenQuery: a column named like a query opener", () => {
+  it("stays quiet on a column alias list that names a column `values`", () => {
+    clean("SELECT * FROM (SELECT 1 a, 2 b) x (values, b)");
+    clean("SELECT * FROM (SELECT 1 a) x (values)");
+  });
+});

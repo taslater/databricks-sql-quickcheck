@@ -1288,7 +1288,10 @@ export class Stmt {
     const QUERY_OPENERS = ["SELECT", "WITH", "VALUES"];
     // Words that take a bracket on their right and are not aliases.
     const INFIX = new Set(["DIV", "MOD", "XOR", "RLIKE", "REGEXP", "LIKE", "ILIKE", "IS", "NOT", "AND", "OR", "ANY", "SOME", "ALL", "IN", "EXISTS", "BETWEEN", "ESCAPE", "COLLATE", "AT", "OVER", "WITHIN", "FILTER", "OF", "AS", "ON", "USING", "LATERAL", "TABLESAMPLE", "UNION", "INTERSECT", "EXCEPT", "MINUS"]);
-    const opensQuery = (j: number): boolean => toks[j]?.kind === "word" && QUERY_OPENERS.includes(toks[j].upper!);
+    // A word that opens a query, not a column named `values` in `x (values, b)`.
+    const opensQuery = (j: number): boolean =>
+      toks[j]?.kind === "word" && QUERY_OPENERS.includes(toks[j].upper!) &&
+      !(isPunct(toks[j + 1], ",") || isPunct(toks[j + 1], ")"));
     for (let l = 2; l + 1 < toks.length; l++) {
       if (!isPunct(toks[l], "(") || !opensQuery(l + 1)) continue;
       const alias = toks[l - 1];
