@@ -596,6 +596,18 @@ describe("a query that lost its SELECT", () => {
     assert.deepEqual(codes("WITH c AS (SELECT 1 AS a) a, b FROM c"), ["missing-keyword"]);
   });
 
+  it("the FROM of IS [NOT] DISTINCT FROM is the operator's own", () => {
+    clean("MERGE INTO target USING source ON target.id = source.id\n"
+      + "WHEN MATCHED AND (target.a IS DISTINCT FROM source.b) THEN UPDATE SET target.a = source.b");
+    clean("SELECT * FROM t WHERE x AND (a IS NOT DISTINCT FROM b)");
+    clean("SELECT * FROM t WHERE (a IS DISTINCT FROM b) OR (c IS NOT DISTINCT FROM d)");
+    clean("SELECT * FROM t WHERE x IN (a IS DISTINCT FROM b)");
+    clean("SELECT * FROM t JOIN u ON (t.a IS NOT DISTINCT FROM u.a) WHERE t.b = 1");
+    // The operator's FROM is skipped, not the scan: a lost SELECT is still caught after it.
+    assert.deepEqual(codes("SELECT * FROM t WHERE x IN (a IS DISTINCT FROM b FROM u)"), ["missing-keyword"]);
+    assert.deepEqual(codes("SELECT * FROM (a, b FROM t) x"), ["missing-keyword"]);
+  });
+
   it("a function call's FROM is ordinary syntax", () => {
     clean("SELECT extract(YEAR FROM d), substring(s FROM 2 FOR 3), trim(BOTH ' ' FROM s) FROM t");
     clean("SELECT a FROM t WHERE a > (extract(YEAR FROM d) + 1)");

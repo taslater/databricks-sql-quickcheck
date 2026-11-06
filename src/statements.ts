@@ -1225,6 +1225,9 @@ export class Stmt {
       const u = t.upper!;
       if (u === "SELECT" || u === "WITH" || SET_OPERATORS.has(u) || NOT_A_SELECT_LIST.has(u)) return;
       if (u !== "FROM") continue;
+      // `a IS DISTINCT FROM b` / `a IS NOT DISTINCT FROM b`: the operator's own
+      // `FROM`, not a query clause. Keep scanning, since a real one may follow.
+      if (this.isKw(k - 1, "DISTINCT") && this.isKw(k - 2, "IS", "NOT")) continue;
       if (k > s && !ctx.flagged?.has(t.start)) {
         report(ctx, "missing-keyword", "error", t,
           "`FROM` with nothing selected: a query starts here, and no `SELECT` comes before its `FROM`");
