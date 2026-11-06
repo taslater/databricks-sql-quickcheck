@@ -24,6 +24,10 @@
   label that is a keyword (`LEAVE from`, `select: BEGIN`), a JSON key named
   `then` or `end` (`j:then`), a variable named `end` inside `CASE WHEN end = 1`
   or `IF then = 1`, and a variable named `case`, as in `VALUES (case)`.
+- **Fixed the missing file icon on notebooks** (#60). A `.sql` notebook switched
+  to the Databricks SQL mode showed the generic file icon in the explorer, tabs
+  and Source Control, because no file icon theme knows the language. The
+  language now has an icon, used only where the active theme has none.
 
 ## 0.3.1 (2026-11-06)
 
