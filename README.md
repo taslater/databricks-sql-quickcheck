@@ -52,7 +52,8 @@ There are two severities, and the line between them is deliberate.
 | --- | --- | --- |
 | `keyword-typo` | error | `SELECT a FORM t`, `GROPU BY`, `CRATE TABLE`, `IS NUL`, `LEFT JION`, `CASE WEHN`, `AS SELCT`, `SHOW TABELS` |
 | `missing-semicolon` | error | `CREATE CATALOG c` then `CREATE SCHEMA s` on the next line; `SET k = v` then a `SELECT` that Spark would read as part of the value |
-| `missing-comma` | error | between column definitions: `id STRING COMMENT 'x'` then `ts BIGINT` |
+| `missing-comma` | error | between column definitions: `id STRING COMMENT 'x'` then `ts BIGINT`; a query bracket right after a subquery's alias: `(SELECT a FROM t) x (SELECT b FROM u) y` |
+| `adjacent-numbers` | error | `IN (2, 3, 5 7)`, `SELECT 1 2`, `1.2.3` |
 | `clause-order` | error | `GROUP BY a WHERE b`, `LIMIT 10 ORDER BY a`, a second `WHERE` |
 | `case-structure` | error | `CASE WHEN a 'x' END` (no THEN), `ELSE` before `WHEN`, a second `ELSE` |
 | `dangling-keyword` | error | `WHERE a > 1 AND;`, `WHERE GROUP BY`, `SELECT FROM t`, `JOIN ON` |
@@ -62,7 +63,7 @@ There are two severities, and the line between them is deliberate.
 | `double-comma` / `leading-comma` / `trailing-comma` | error | `a,, b`, `f(, a)`, `(a INT, b INT,)` |
 | `missing-operand` | error | `a + )`, `a = = b`, `(= b)`, `WHERE y >` |
 | `case-without-end` | error | `CASE WHEN a THEN 1 ELSE 0 AS flag` |
-| `missing-comma` | warning | in queries: `SELECT id name email`, `GROUP BY a b`, `coalesce(a b)`, `SELECT a b(c)` |
+| `missing-comma` | warning | in queries: `SELECT id name email`, `GROUP BY a b`, `coalesce(a b)`, `SELECT a b(c)`; in a FROM list: `FROM a x, b y c z` |
 | `alias-on-new-line` | warning | `first_name` then `last_name` on the next line. This is valid SQL that aliases one column as the other, which is the classic silent missing comma. |
 | `comma-before-clause` | warning | `SELECT a, b, FROM t` |
 | `unknown-statement` | warning | a statement starting with a word that starts no Databricks statement |
