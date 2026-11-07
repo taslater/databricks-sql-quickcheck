@@ -205,6 +205,122 @@ describe("parameters and names", () => {
   });
 });
 
+describe("keyword groups", () => {
+  const CLAUSE = "keyword.other.databricks-sql";
+  const PREDICATE = "keyword.operator.wordlike.predicate.databricks-sql";
+  const LOGIC = "keyword.operator.wordlike.logical.databricks-sql";
+  const FLOW = "keyword.control.flow.databricks-sql";
+
+  /** The single scope-carrying token that `phrase` must be, whole. */
+  function phrase(text: string, words: string, scope: string): void {
+    const at = text.indexOf(words);
+    assert.ok(at >= 0, `\`${words}\` not in ${JSON.stringify(text)}`);
+    const lineNo = text.slice(0, at).split("\n").length - 1;
+    const column = at - (text.lastIndexOf("\n", at - 1) + 1);
+    let start = 0;
+    for (const t of tokenize(g, text).lines[lineNo]) {
+      if (column < start + t.text.length) {
+        assert.equal(t.text, words, `\`${words}\` is split in ${JSON.stringify(text)}`);
+        assert.ok(t.scopes.includes(scope), `\`${words}\` is ${t.scopes.at(-1)}, want ${scope}`);
+        return;
+      }
+      start += t.text.length;
+    }
+    assert.fail(`no token at \`${words}\``);
+  }
+
+  it("keeps a predicate phrase whole", () => {
+    const text = "SELECT 1 WHERE a IS NOT DISTINCT FROM b AND c IS NULL AND d NOT IN (1) AND NOT EXISTS (SELECT 1)";
+    phrase(text, "IS NOT DISTINCT FROM", PREDICATE);
+    phrase(text, "IS NULL", PREDICATE);
+    phrase(text, "NOT IN", PREDICATE);
+    phrase(text, "NOT EXISTS", PREDICATE);
+    phrase(text, "AND", LOGIC);
+  });
+
+  it("gives AND, OR and NOT the connective group", () => {
+    const text = "SELECT 1 WHERE a OR NOT b";
+    phrase(text, "OR", LOGIC);
+    phrase(text, "NOT", LOGIC);
+  });
+
+  it("gives BETWEEN its own AND, and a window frame's to the clause", () => {
+    const text = "SELECT sum(x) OVER (ROWS BETWEEN 1 PRECEDING AND CURRENT ROW) FROM t WHERE h BETWEEN 1 AND 5 AND k";
+    phrase(text, "ROWS BETWEEN", CLAUSE);
+    assert.ok(scopesOf(text, "AND CURRENT").includes(CLAUSE));
+    assert.ok(scopesOf(text, "BETWEEN 1 AND 5").includes(PREDICATE));
+    assert.ok(scopesOf(text, "AND 5").includes(PREDICATE));
+    assert.ok(scopesOf(text, "AND k").includes(LOGIC));
+  });
+
+  it("frames a MERGE branch as flow, with its condition and action apart", () => {
+    const text = "MERGE INTO t USING s ON t.id = s.id\nWHEN NOT MATCHED BY SOURCE AND t.x THEN DELETE\nWHEN NOT MATCHED\n  BY TARGET THEN INSERT *";
+    phrase(text, "WHEN NOT MATCHED BY SOURCE", FLOW);
+    phrase(text, "BY TARGET", FLOW);
+    phrase(text, "THEN", FLOW);
+    assert.ok(scopesOf(text, "AND t.x").includes(LOGIC));
+    assert.ok(scopesOf(text, "DELETE").includes(CLAUSE));
+  });
+
+  it("colours a CASE as flow", () => {
+    const text = "SELECT CASE WHEN a THEN 1 ELSE 2 END";
+    for (const w of ["CASE", "WHEN", "THEN", "ELSE", "END"]) assert.ok(scopesOf(text, w).includes(FLOW), w);
+  });
+
+  it("reads DDL: types, constraints, OR REPLACE, schedules", () => {
+    const text = [
+      "CREATE OR REPLACE TABLE main.s.orders (",
+      "  id BIGINT NOT NULL COMMENT 'k',",
+      "  CONSTRAINT fk FOREIGN KEY (id) REFERENCES main.s.customers (id) NOT ENFORCED RELY",
+      ") SCHEDULE EVERY 2 HOURS AS SELECT * FROM STREAM read_files('x')",
+    ].join("\n");
+    phrase(text, "OR REPLACE", CLAUSE);
+    assert.ok(scopesOf(text, "BIGINT").includes("support.type.databricks-sql"));
+    phrase(text, "NOT NULL", CLAUSE);
+    phrase(text, "NOT ENFORCED", CLAUSE);
+    phrase(text, "RELY", CLAUSE);
+    phrase(text, "HOURS", CLAUSE);
+    phrase(text, "STREAM", CLAUSE);
+    for (const w of ["orders (", "customers ("]) {
+      assert.ok(!scopesOf(text, w).some((s) => s.startsWith("support.function")), `${w} is a table, not a call`);
+    }
+    assert.ok(scopesOf(text, "read_files").includes("support.function.databricks-sql"));
+  });
+
+  it("leaves a table called stream alone", () => {
+    const text = "SELECT * FROM stream WHERE x";
+    assert.ok(!scopesOf(text, "stream").some((s) => s.startsWith("keyword")));
+  });
+
+  it("reads DECLARE as a statement, not flow", () => {
+    assert.ok(scopesOf("BEGIN DECLARE v INT; END", "DECLARE").includes(CLAUSE));
+  });
+
+  it("reads a constraint and IF NOT EXISTS as clauses", () => {
+    const text = "CREATE TABLE IF NOT EXISTS t (id BIGINT NOT NULL, PRIMARY KEY (id))";
+    phrase(text, "IF NOT EXISTS", CLAUSE);
+    phrase(text, "NOT NULL", CLAUSE);
+    phrase(text, "PRIMARY KEY", CLAUSE);
+  });
+
+  it("leaves SOURCE, TARGET and KEY as names elsewhere", () => {
+    const text = "SELECT source, target, key FROM t ORDER BY target\nGROUP BY source";
+    for (const w of ["source,", "target,", "key", "target\n", "source\n".trim()]) {
+      assert.ok(!scopesOf(text, w).some((s) => s.startsWith("keyword")), w);
+    }
+    const last = tokenize(g, text).lines[1].at(-1)!;
+    assert.equal(last.text.trim(), "source");
+    assert.ok(!last.scopes.some((s) => s.startsWith("keyword")));
+  });
+
+  it("reads if( as a function and IF as flow", () => {
+    const text = "BEGIN IF x THEN SELECT if(a, 1, 0); END IF; END";
+    assert.ok(scopesOf(text, "if(").includes("support.function.databricks-sql"));
+    assert.ok(scopesOf(text, "IF x").includes(FLOW));
+    for (const w of ["END IF", "IF;"]) assert.ok(scopesOf(text, w).includes(FLOW), w);
+  });
+});
+
 describe("agreement with the lexer", () => {
   it("on every example in the repo", () => {
     const dir = path.join(__dirname, "..", "..", "examples");

@@ -204,6 +204,15 @@ all 867 corpus files. In this mode:
 - Bracketed comments nest.
 - `$$` bodies are opaque. After `LANGUAGE PYTHON` or `LANGUAGE YAML` they are
   coloured as Python or YAML.
+- Keywords are colored by what they do, and a phrase keeps one color: clause
+  words (`CREATE OR REPLACE TABLE`, `NOT NULL`, `UPDATE SET`), branching
+  (`CASE … END`, MERGE's `WHEN NOT MATCHED BY SOURCE … THEN`, scripting
+  blocks), and conditions, meaning predicates (`IS NOT DISTINCT FROM`,
+  `NOT IN`, `BETWEEN … AND`) and the connectives `AND`, `OR` and `NOT`. Types
+  are colored as built-in types. To recolor a group, target its scope in
+  `editor.tokenColorCustomizations`: `keyword.other`, `keyword.control.flow`,
+  `keyword.operator.wordlike.predicate`, `keyword.operator.wordlike.logical`
+  or `support.type`, each ending in `.databricks-sql`.
 - Widget and dashboard parameters (`${x}`, `$x`, `{{ x }}`) and Jinja are
   marked as templates, and `:name` as a parameter.
 - In a notebook, strings and comments stop at `-- COMMAND ----------`. A magic

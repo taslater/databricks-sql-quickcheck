@@ -323,6 +323,19 @@ through every later cell).
   out of `images/`.
 - **The grammar's keyword list leaves out common column names** (`NAME`,
   `TYPE`, `KEY`, `VALUE`, `DATA`, `YEAR`). A word after `.` is never a keyword.
+- **Keywords are colored by what they do, in four groups**: clause words
+  (`keyword.other`), branching (`keyword.control.flow`), predicates
+  (`keyword.operator.wordlike.predicate`) and the connectives AND, OR, NOT
+  (`keyword.operator.wordlike.logical`). The scope names are chosen for the
+  colors default themes give them, so that a condition reads as one color
+  between the clause and branch words around it. Look at a change in a real
+  theme before shipping it. Phrases are matched whole (`IS NOT DISTINCT FROM`,
+  `WHEN NOT MATCHED BY SOURCE`, `NOT NULL`, `CREATE OR REPLACE`), and a word
+  left out of the lists as a common name (`SOURCE`, `KEY`, `HOUR`) is colored
+  only inside a phrase that rules out a name.
+- **A function call needs the bracket to touch the name.** `orders (id
+  BIGINT)` is a column list. Published SQL writes over 17,000 calls tight and
+  under 100 with a space.
 - **Folding per cell was left out on purpose.** A folding-range provider
   replaces indentation folding for the language rather than adding to it.
 

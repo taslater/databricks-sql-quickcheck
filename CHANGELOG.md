@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.5.0 (2026-11-07)
+
+- **Keyword colors follow what a word does.** The grammar sorted keywords one
+  word at a time, so phrases split across colors: `IS` against `DISTINCT FROM`,
+  `WHEN`/`THEN` against `MATCHED` and `UPDATE SET`, and AND/OR in plain
+  operator gray. There are now four groups, each with its own scope: clause
+  words, branching (`CASE … END`, MERGE's `WHEN MATCHED … THEN`, scripting
+  blocks), predicates (`IS NOT DISTINCT FROM`, `NOT IN`, `BETWEEN … AND`), and
+  the connectives AND, OR and NOT. A phrase is matched whole, so the `NOT` in
+  `NOT NULL` or the `OR` in `CREATE OR REPLACE` is not a connective. A window
+  frame's `ROWS BETWEEN … AND` is a clause, not a comparison.
+- **Types color as built-in types** (`support.type`), not as keywords, so a
+  column definition's type stands apart from its constraint words.
+- **A table's column list is no longer colored as a function call.** A call is
+  a name with the bracket touching it (`count(x)`), so `CREATE TABLE orders (id
+  BIGINT)` and `REFERENCES customers (id)` leave the table name alone.
+
 ## 0.4.0 (2026-11-06)
 
 - **SQL scripting block structure** (#11). A new pass matches block openers and

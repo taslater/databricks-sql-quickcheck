@@ -339,28 +339,123 @@
       "name": "constant.language.databricks-sql"
     },
     "types": {
+      "comment": "`support.type`, built-in types, rather than `storage.type`: most themes give `storage.type` the keyword color, and in a column definition the type is what the eye looks for between the name and the constraint words.",
       "match": "(?i)(?<![.\\w])(?:BIGINT|BINARY|BOOLEAN|BYTE|CHAR|CHARACTER|DATE|DEC|DECIMAL|DOUBLE|FLOAT|GEOGRAPHY|GEOMETRY|INT|INTEGER|INTERVAL|LONG|NUMERIC|REAL|SHORT|SMALLINT|STRING|TIMESTAMP|TIMESTAMP_LTZ|TIMESTAMP_NTZ|TINYINT|VARCHAR|VARIANT|VOID|ARRAY|MAP|STRUCT|OBJECT)\\b",
-      "name": "storage.type.databricks-sql"
+      "name": "support.type.databricks-sql"
     },
     "keywords": {
-      "comment": "Almost every Databricks keyword is also a legal name, so the list leaves out the words most often used as column names (NAME, TYPE, KEY, VALUE, DATA, YEAR, ...). A word after a `.` is always a name.",
+      "comment": "Four groups, by what the word does, each with its own scope so a theme or `editor.tokenColorCustomizations` can color it. Clause words say what a statement does and where its parts begin (`keyword.other`). Branching and scripting flow frames a block: `CASE WHEN ... THEN ... ELSE ... END`, MERGE's `WHEN [NOT] MATCHED ... THEN`, `IF`, `WHILE`, `BEGIN ... END` (`keyword.control.flow`). Predicates test a value, and are operators in word form: `IS [NOT] DISTINCT FROM`, `IS [NOT] NULL`, `[NOT] IN`, `LIKE`, `BETWEEN ... AND`, `EXISTS`, `ANY` (`keyword.operator.wordlike.predicate`). The connectives AND, OR and NOT join tests into a condition (`keyword.operator.wordlike.logical`). Predicates and connectives share a family, so a condition reads as one color between the clause and branch words around it: MERGE reads as WHEN MATCHED, a condition, THEN, an action. A phrase is matched whole, so a NOT or a NULL inside one (`NOT NULL`, `CREATE OR REPLACE`) is neither a connective nor a value. Almost every Databricks keyword is also a legal name, so the lists leave out the words most often used as column names (NAME, TYPE, KEY, VALUE, DATA, YEAR, SOURCE, TARGET, HOUR, ...); a phrase names one only where the position rules out a name. A word after a `.` is always a name.",
       "patterns": [
         {
-          "match": "(?i)(?<![.\\w])(?:AND|OR|NOT|IN|IS|LIKE|ILIKE|RLIKE|REGEXP|BETWEEN|EXISTS|ANY|SOME|ALL|DIV|ESCAPE)\\b",
-          "name": "keyword.operator.word.databricks-sql"
+          "match": "(?i)(?<![.\\w])(?:PRIMARY|FOREIGN)\\s+KEY\\b",
+          "name": "keyword.other.databricks-sql"
         },
         {
-          "match": "(?i)(?<![.\\w])(?:CASE|WHEN|THEN|ELSE|END|IF|ELSEIF|BEGIN|LOOP|WHILE|REPEAT|UNTIL|FOR|DO|ITERATE|LEAVE|RETURN|DECLARE|SIGNAL|RESIGNAL|HANDLER|CONTINUE|EXIT|CALL)\\b",
-          "name": "keyword.control.databricks-sql"
+          "comment": "MERGE's `BY SOURCE` on a line of its own. SOURCE and TARGET are common names (`ORDER BY source`), so only where THEN or AND follows.",
+          "match": "(?i)(?<![.\\w])BY\\s+(?:SOURCE|TARGET)\\b(?=\\s+(?:THEN|AND)\\b)",
+          "name": "keyword.control.flow.databricks-sql"
         },
         {
-          "match": "(?i)(?<![.\\w])(?:SELECT|FROM|WHERE|GROUP|BY|HAVING|ORDER|LIMIT|OFFSET|QUALIFY|WINDOW|UNION|INTERSECT|EXCEPT|MINUS|DISTINCT|AS|ON|USING|JOIN|INNER|LEFT|RIGHT|FULL|OUTER|CROSS|SEMI|ANTI|NATURAL|LATERAL|VIEW|WITH|RECURSIVE|VALUES|INSERT|INTO|OVERWRITE|UPDATE|SET|DELETE|MERGE|MATCHED|CREATE|REPLACE|TEMPORARY|TEMP|GLOBAL|EXTERNAL|TABLE|TABLES|MATERIALIZED|STREAMING|LIVE|SCHEMA|SCHEMAS|DATABASE|CATALOG|VOLUME|FUNCTION|PROCEDURE|FLOW|ALTER|DROP|TRUNCATE|RENAME|ADD|COLUMN|COLUMNS|CONSTRAINT|PRIMARY|FOREIGN|REFERENCES|CHECK|PARTITIONED|PARTITION|CLUSTER|DISTRIBUTE|SORT|ZORDER|LOCATION|COMMENT|TBLPROPERTIES|DBPROPERTIES|OPTIONS|USE|SHOW|DESCRIBE|DESC|ASC|EXPLAIN|ANALYZE|COMPUTE|STATISTICS|REFRESH|CACHE|UNCACHE|LAZY|OPTIMIZE|VACUUM|RESTORE|CLONE|SHALLOW|DEEP|HISTORY|DETAIL|VERSION|OF|GRANT|REVOKE|DENY|PRIVILEGES|TO|COPY|FILEFORMAT|FORMAT_OPTIONS|COPY_OPTIONS|CONVERT|OVER|ROWS|RANGE|UNBOUNDED|PRECEDING|FOLLOWING|CURRENT|ROW|FILTER|WITHIN|RESPECT|IGNORE|NULLS|FIRST|LAST|PIVOT|UNPIVOT|TABLESAMPLE|EXPECT|VIOLATION|FAIL|APPLY|CHANGES|AUTO|CDC|SEQUENCE|STORED|TRACK|GENERATED|ALWAYS|IDENTITY|DEFAULT|COLLATE|EXECUTE|IMMEDIATE|VARIABLE|VAR|LANGUAGE|RETURNS|DETERMINISTIC|SECURITY|DEFINER|INVOKER|ATOMIC|SCHEDULE|EVERY|INCREMENTAL|WATERMARK|DELAY|PRIVATE|ONCE|SYNC|UNDROP)\\b",
+          "comment": "MERGE's branch head, matched whole: `WHEN [NOT] MATCHED [BY SOURCE|TARGET]`. The NOT is not a connective.",
+          "match": "(?i)(?<![.\\w])(?:WHEN\\s+)?(?:NOT\\s+)?MATCHED(?:\\s+BY\\s+(?:SOURCE|TARGET))?\\b",
+          "name": "keyword.control.flow.databricks-sql"
+        },
+        {
+          "comment": "Constraints: `NOT NULL`, `NOT ENFORCED`. `IS NOT NULL` is matched first, as a predicate.",
+          "match": "(?i)(?<![.\\w])NOT\\s+(?:NULL|ENFORCED|DEFERRABLE)\\b",
+          "name": "keyword.other.databricks-sql"
+        },
+        {
+          "match": "(?i)(?<![.\\w])(RETAIN)\\s+(\\d+(?:\\.\\d*)?)\\s+(HOURS)\\b",
+          "captures": {
+            "1": { "name": "keyword.other.databricks-sql" },
+            "2": { "name": "constant.numeric.databricks-sql" },
+            "3": { "name": "keyword.other.databricks-sql" }
+          }
+        },
+        {
+          "comment": "A window frame's `ROWS BETWEEN ... AND ...` bounds the frame; it is a clause, not a comparison.",
+          "begin": "(?i)(?<![.\\w])((?:ROWS|RANGE)\\s+BETWEEN)\\b",
+          "beginCaptures": {
+            "1": { "name": "keyword.other.databricks-sql" }
+          },
+          "end": "(?i)(?<![.\\w])(AND)\\b|(?=[;)])|(?=^--\\s*COMMAND\\s*-{2,}[ \\t]*$)",
+          "endCaptures": {
+            "1": { "name": "keyword.other.databricks-sql" }
+          },
+          "patterns": [{ "include": "$self" }]
+        },
+        {
+          "comment": "`CREATE OR REPLACE`, `CREATE OR REFRESH`: not a connective.",
+          "match": "(?i)(?<![.\\w])OR\\s+(?:REPLACE|REFRESH)\\b",
+          "name": "keyword.other.databricks-sql"
+        },
+        {
+          "comment": "A refresh schedule. HOUR, DAY and the rest are common names, so only here.",
+          "match": "(?i)(?<![.\\w])(EVERY)\\s+(\\d+)\\s+(HOURS?|DAYS?|WEEKS?|MINUTES?)\\b",
+          "captures": {
+            "1": { "name": "keyword.other.databricks-sql" },
+            "2": { "name": "constant.numeric.databricks-sql" },
+            "3": { "name": "keyword.other.databricks-sql" }
+          }
+        },
+        {
+          "comment": "`FROM STREAM live.t`, `STREAM read_files(...)`. A table may be called stream, so only before a dotted name or a call.",
+          "match": "(?i)(?<![.\\w])STREAM(?=\\s+(?:[\\w`]+\\.[\\w`.]+|[A-Za-z_]\\w*\\())",
+          "name": "keyword.other.databricks-sql"
+        },
+        {
+          "comment": "DDL's `IF [NOT] EXISTS` is a clause, not a branch or a predicate.",
+          "match": "(?i)(?<![.\\w])IF\\s+(?:NOT\\s+)?EXISTS\\b",
+          "name": "keyword.other.databricks-sql"
+        },
+        {
+          "match": "(?i)(?<![.\\w])IS\\s+(?:NOT\\s+)?(?:DISTINCT\\s+FROM|NULL|TRUE|FALSE|UNKNOWN)\\b",
+          "name": "keyword.operator.wordlike.predicate.databricks-sql"
+        },
+        {
+          "comment": "`NOT IN`, `NOT EXISTS`: one predicate, not a connective and a predicate.",
+          "match": "(?i)(?<![.\\w])NOT\\s+(?:IN|LIKE|ILIKE|RLIKE|REGEXP|EXISTS)\\b",
+          "name": "keyword.operator.wordlike.predicate.databricks-sql"
+        },
+        {
+          "comment": "The AND that closes a BETWEEN belongs to it, not to the boolean logic around it. The region also stops at words no operand holds, so a BETWEEN still being typed doesn't claim a later AND.",
+          "begin": "(?i)(?<![.\\w])((?:NOT\\s+)?BETWEEN)\\b",
+          "beginCaptures": {
+            "1": { "name": "keyword.operator.wordlike.predicate.databricks-sql" }
+          },
+          "end": "(?i)(?<![.\\w])(AND)\\b|(?=;)|(?=^--\\s*COMMAND\\s*-{2,}[ \\t]*$)|(?=(?<![.\\w])(?:THEN|WHEN|ELSE|END|WHERE|GROUP|HAVING|LIMIT|OR)\\b)",
+          "endCaptures": {
+            "1": { "name": "keyword.operator.wordlike.predicate.databricks-sql" }
+          },
+          "patterns": [{ "include": "$self" }]
+        },
+        {
+          "match": "(?i)(?<![.\\w])(?:AND|OR|NOT)\\b",
+          "name": "keyword.operator.wordlike.logical.databricks-sql"
+        },
+        {
+          "match": "(?i)(?<![.\\w])(?:IN|IS|LIKE|ILIKE|RLIKE|REGEXP|BETWEEN|EXISTS|ANY|SOME|ALL|ESCAPE)\\b",
+          "name": "keyword.operator.wordlike.predicate.databricks-sql"
+        },
+        {
+          "comment": "`if(c, a, b)` is a function.",
+          "match": "(?i)(?<![.\\w])IF\\b(?!\\s*\\()",
+          "name": "keyword.control.flow.databricks-sql"
+        },
+        {
+          "match": "(?i)(?<![.\\w])(?:CASE|WHEN|THEN|ELSE|END|ELSEIF|BEGIN|LOOP|WHILE|REPEAT|UNTIL|FOR|DO|ITERATE|LEAVE|RETURN|SIGNAL|RESIGNAL|HANDLER|CONTINUE|EXIT)\\b",
+          "name": "keyword.control.flow.databricks-sql"
+        },
+        {
+          "match": "(?i)(?<![.\\w])(?:DIV|RETAIN|DECLARE|CALL|RELY|NORELY|AFTER|SELECT|FROM|WHERE|GROUP|BY|HAVING|ORDER|LIMIT|OFFSET|QUALIFY|WINDOW|UNION|INTERSECT|EXCEPT|MINUS|DISTINCT|AS|ON|USING|JOIN|INNER|LEFT|RIGHT|FULL|OUTER|CROSS|SEMI|ANTI|NATURAL|LATERAL|VIEW|WITH|RECURSIVE|VALUES|INSERT|INTO|OVERWRITE|UPDATE|SET|DELETE|MERGE|MATCHED|CREATE|REPLACE|TEMPORARY|TEMP|GLOBAL|EXTERNAL|TABLE|TABLES|MATERIALIZED|STREAMING|LIVE|SCHEMA|SCHEMAS|DATABASE|CATALOG|VOLUME|FUNCTION|PROCEDURE|FLOW|ALTER|DROP|TRUNCATE|RENAME|ADD|COLUMN|COLUMNS|CONSTRAINT|PRIMARY|FOREIGN|REFERENCES|CHECK|PARTITIONED|PARTITION|CLUSTER|DISTRIBUTE|SORT|ZORDER|LOCATION|COMMENT|TBLPROPERTIES|DBPROPERTIES|OPTIONS|USE|SHOW|DESCRIBE|DESC|ASC|EXPLAIN|ANALYZE|COMPUTE|STATISTICS|REFRESH|CACHE|UNCACHE|LAZY|OPTIMIZE|VACUUM|RESTORE|CLONE|SHALLOW|DEEP|HISTORY|DETAIL|VERSION|OF|GRANT|REVOKE|DENY|PRIVILEGES|TO|COPY|FILEFORMAT|FORMAT_OPTIONS|COPY_OPTIONS|CONVERT|OVER|ROWS|RANGE|UNBOUNDED|PRECEDING|FOLLOWING|CURRENT|ROW|FILTER|WITHIN|RESPECT|IGNORE|NULLS|FIRST|LAST|PIVOT|UNPIVOT|TABLESAMPLE|EXPECT|VIOLATION|FAIL|APPLY|CHANGES|AUTO|CDC|SEQUENCE|STORED|TRACK|GENERATED|ALWAYS|IDENTITY|DEFAULT|COLLATE|EXECUTE|IMMEDIATE|VARIABLE|VAR|LANGUAGE|RETURNS|DETERMINISTIC|SECURITY|DEFINER|INVOKER|ATOMIC|SCHEDULE|EVERY|INCREMENTAL|WATERMARK|DELAY|PRIVATE|ONCE|SYNC|UNDROP)\\b",
           "name": "keyword.other.databricks-sql"
         }
       ]
     },
     "function-calls": {
-      "match": "(?<![\\w$])([A-Za-z_][A-Za-z0-9_]*)(?=\\s*\\()",
+      "comment": "Only where the bracket touches the name. A table's column list is usually written with a space (`CREATE TABLE orders (id BIGINT)`, `REFERENCES customers (id)`), and a call almost never is.",
+      "match": "(?<![\\w$])([A-Za-z_][A-Za-z0-9_]*)(?=\\()",
       "captures": {
         "1": { "name": "support.function.databricks-sql" }
       }
